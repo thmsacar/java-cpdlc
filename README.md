@@ -18,7 +18,7 @@ It is written on Java so you can use it on any platform (Windows/Linux/macOS).
 - If any connection problem occurs your callsign will become red.
 
 ## Contribution
-As of now, the code doesn't have javadoc so it's a bit of mess. I will for sure add java doc and necessary comments to the code. 
+As of now, the code doesn't have javadoc so it's a bit of mess. I will for sure write javadoc and necessary comments to the code. 
 
 However, any pull requests are still welcome. See below what I am currently working on. 
 
