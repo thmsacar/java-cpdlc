@@ -40,7 +40,11 @@ public class DashboardPanel extends JPanel {
     //Callsign area
     private JLabel callsignLabel;
     private JLabel atsLabel;
+
+    //ATS connection status variables
     private String currentATS;
+    private boolean isLoggedOn = false;
+    private String pendingLogonStation = "";
 
     //Message list
     private DefaultListModel<AcarsMessage> messageModel;
@@ -109,6 +113,8 @@ public class DashboardPanel extends JPanel {
 
         cardLayout.show(cardContainer, "LIST");
 
+
+        //TODO acars message ile çözülebilir mi??
         try {
             HoppieAPI.HoppieResponse response = hoppieAPI.sendPing(callsign);
             if (response.body().equalsIgnoreCase("ok")) {
@@ -123,7 +129,7 @@ public class DashboardPanel extends JPanel {
             setConnectionStatus(false);
         }
 
-
+        changeATSUnit("LTBB");
 
         addMessage(new CpdlcMessage("LTBB", "cpdlc", "THY1GF", "DIRECT ASMAP", 1, -1, "WU"));
         addMessage(new CpdlcMessage("LTBB", "cpdlc", "THY1GF", "CONTACT LGAA 132.150", 1, -1, "R"));
@@ -217,8 +223,11 @@ public class DashboardPanel extends JPanel {
 
     public void changeATSUnit(String ats){
         this.currentATS = ats;
-        atsLabel.setText("ATS: " + currentATS);
-        setCPDLCMenuButtons();
+        atsLabel.setText("ATS: " + (currentATS==null?"----":currentATS));
+
+        isLoggedOn = (currentATS!=null);
+
+        updateMenuState();
     }
 
     private PilotButton createReturnButton() {
@@ -302,6 +311,7 @@ public class DashboardPanel extends JPanel {
         messageList = new JList<>(messageModel);
         messageList.setFont(new Font("Monospaced", Font.PLAIN, 14));
 
+        //List renderer
         messageList.setCellRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index,
@@ -333,6 +343,7 @@ public class DashboardPanel extends JPanel {
         });
 
 
+        //List selection listener
         messageList.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 handleMessageSelection(messageList.getSelectedValue());
@@ -506,7 +517,7 @@ public class DashboardPanel extends JPanel {
         btnRequest = createCpdlcMenuButton("REQUEST");
         btnReport = createCpdlcMenuButton("REPORT");
 
-        setCPDLCMenuButtons();
+        updateMenuState();
 
         cpdlcMenu.add(btnClearance);
         cpdlcMenu.add(btnLogonATC);
@@ -527,17 +538,39 @@ public class DashboardPanel extends JPanel {
         return btn;
     }
 
-    private void setCPDLCMenuButtons(){
-        if (currentATS==null){
-            btnLogonATC.setText("ATC LOGON");
-            disableButton(btnRequest);
-            disableButton(btnReport);
-        }else {
-            btnLogonATC.setText("LOGOFF");
+    //Updates to the relevant menu state according to ATC LOGON status (isLoggedOn)
+    private void updateMenuState() {
+        if (isLoggedOn) { //We are connected to an ATC
+            //Change to LOGOFF button
+            btnLogonATC.setText("LOGOFF " + currentATS);
+            btnLogonATC.setForeground(Color.RED);
+
+            //These button only works if logged on to ATC
             enableButton(btnRequest);
             enableButton(btnReport);
+        } else { //We are not connected to an ATC
+            //Change to LOGON button
+            btnLogonATC.setText("ATC LOGON");
+            btnLogonATC.setForeground(Color.MAGENTA);
+
+            //These button only works if logged on to ATC
+            disableButton(btnRequest);
+            disableButton(btnReport);
         }
     }
+
+    //TODO incelenip silinebilir
+//    private void setCPDLCMenuButtons(){
+//        if (!isLoggedOn){
+//            btnLogonATC.setText("ATC LOGON");
+//            disableButton(btnRequest);
+//            disableButton(btnReport);
+//        }else {
+//            btnLogonATC.setText("LOGOFF");
+//            enableButton(btnRequest);
+//            enableButton(btnReport);
+//        }
+//    }
 
     //Disables button interaction and changes color
     private void disableButton(JButton button){
@@ -580,6 +613,7 @@ public class DashboardPanel extends JPanel {
         cardLayout.show(cardContainer, "CPDLC");
     }
 
+    //TODO Hoppie response mantığı değişmeli
     private void sendTelex(String station, String message) {
         //Thread for networking
         new Thread(()->{
@@ -644,6 +678,7 @@ public class DashboardPanel extends JPanel {
         }
     }
 
+    //TODO Hoppie response mantığı değişmeli
     private void sendResponseAndReturn(String response, CpdlcMessage originalMsg) {
         //Thread for networking
         new Thread(() -> {
@@ -660,6 +695,8 @@ public class DashboardPanel extends JPanel {
                     case "AFFIRM": httpResponse = hoppieAPI.affirm(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
                     case "NEGATIVE": httpResponse = hoppieAPI.negative(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
                 }
+
+                //TODO hoppie response
                 if (httpResponse.body()!=null && httpResponse.body().trim().equalsIgnoreCase("ok")){
                     msg = new CpdlcMessage(this.callsign, "cpdlc", originalMsg.getFrom(), response, cpdlcNumber, originalMsg.getMsgNumber(), "N");
                     setConnectionStatus(true);
@@ -675,6 +712,7 @@ public class DashboardPanel extends JPanel {
                 });
 
             } catch (Exception ex) {
+                //TODO hoppie response
                 msg = new AcarsMessage("system", "ERROR: " + ex.getMessage());
                 setConnectionStatus(false);
                 AcarsMessage finalMsg = msg;
@@ -686,6 +724,22 @@ public class DashboardPanel extends JPanel {
             }
         }).start();
     }
+
+//    TODO HoppieResponse burada incelemek yerine direkt hata mesajı veya normal mesajla AcarsMessage dönse???
+//    private void sendLogonAction(String targetStation, String remarks) {
+//        this.pendingLogonStation = targetStation;
+//
+//        try {
+//            HoppieAPI.HoppieResponse response = hoppieAPI.sendLogonATC(targetStation, callsign, remarks);
+//            if (response.body().trim().equalsIgnoreCase("ok")){
+//                addMessage(new AcarsMessage(this.callsign, "cpdlc", ));
+//            }
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//
+//        System.out.println("Logon request sent to: " + targetStation + ". Waiting for acceptance...");
+//    }
 
     private void startAutoFetch() {
         fetcherService = Executors.newSingleThreadScheduledExecutor();
@@ -699,6 +753,13 @@ public class DashboardPanel extends JPanel {
                     SwingUtilities.invokeLater(() -> {
                         for (AcarsMessage msg : newMessages) {
                             System.out.println("Adding msg"+msg);
+                            //LOGON ACCEPTED
+                            //  TODO Burada ATS unit degisme olayı olacak ama once CPDLC mesajlarının hoppieresponse dönmesi olayını çözmek lazım her yerde kullandık bunu
+//                            if(msg.getMessage().contains("LOGON ACCEPTED")){
+//                                //Change ATS unit
+//                                changeATSUnit(msg.);
+//
+//                            }
                             addMessage(msg);
                         }
                         messageList.setSelectedIndex(0);
@@ -732,6 +793,7 @@ public class DashboardPanel extends JPanel {
                     try {
                         Class<?> appClass = Class.forName("com.apple.eawt.Application");
                         Object application = appClass.getMethod("getApplication").invoke(null);
+                        //TODO requestUserAttention method ile ilgili bi problem var??
                         appClass.getMethod("requestUserAttention", int.class).invoke(application, 1);
                         appClass.getMethod("setDockIconBadge", String.class).invoke(application, "!");
 

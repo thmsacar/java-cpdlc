@@ -79,9 +79,9 @@ public class AcarsMessage {
     }
 
     public String getDetailFormat(String callsign){
-        String entry;
+        String entry = TimeFormatter.zuluTime(this.getTimestamp());
         if ("system".equalsIgnoreCase(this.getType())) {
-            entry = "SYSTEM: " + this.getMessage();
+            entry += " SYSTEM:\n" + this.getMessage();
         } else {
             String contact;
             if (this.getFrom().equalsIgnoreCase(callsign)) {
@@ -89,7 +89,7 @@ public class AcarsMessage {
             } else {
                 contact = "FROM " + this.getFrom() ;
             }
-            entry = TimeFormatter.zuluTime(this.getTimestamp());
+//            entry = TimeFormatter.zuluTime(this.getTimestamp());
             if ("telex".equalsIgnoreCase(this.getType())) {
                 entry += " TELEX " + contact + ": \n" + this.getMessage();
             } else if ("cpdlc".equalsIgnoreCase(this.getType())) {

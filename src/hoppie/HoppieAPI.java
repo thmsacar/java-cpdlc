@@ -18,12 +18,15 @@ public class HoppieAPI {
     private final String PDC_TEMPLATE = "REQUEST PREDEP CLEARANCE %s %s TO %s AT %s STAND %s ATIS %s EOB %s";
     //remarks(free text)
     private final String LOGON_TEMPLATE = "REQUEST LOGON %s";
+    //request
+
     ///data2/msgNo/repliedNo/isReplyRequired/messageTxt
     private final String CPDLC_MSG = "/data2/%s/%s/%s/%s";
 
 
+
     private final String urlStr = "http://www.hoppie.nl/acars/system/connect.html/connect.html";
-    private String logon;
+    private final String logon;
     private int cpdlcCounter;
 
     // Response class to contain HttpResponse (compatible Java8)
@@ -115,6 +118,7 @@ public class HoppieAPI {
         return list;
     }
 
+    //TODO return AcarsMessage
     //To send a pre-departure clearance request
     public HoppieResponse sendPDCRequest(String station, Flight flight, String stand, String atis) throws IOException {
         return this.sendPDCrequestAux(station, flight.getCallsign(), flight.getAircraft(), flight.getOrigin(), flight.getDestination(), stand, atis, flight.getOffBlockTime());
@@ -135,6 +139,7 @@ public class HoppieAPI {
         return sendHttpRequest(url);
     }
 
+    //TODO return AcarsMessage
     public HoppieResponse sendTelex(String station, String callsign, String message) throws IOException {
         String url = createFullUrl(callsign, station, "telex", message);
         return sendHttpRequest(url);
@@ -175,14 +180,16 @@ public class HoppieAPI {
         return response;
     }
 
+    //TODO return AcarsMessage
     public HoppieResponse sendLogonATC(String station, String callsign, String freeText) throws IOException {
         if (freeText==null) freeText="";
         String logonMsg = String.format(LOGON_TEMPLATE, freeText);
         return cpdlcRequest(station, callsign, logonMsg, true);
     }
 
-    // --- CPDLC Response Metodları ---
 
+    // --- CPDLC Response Methods ---
+    //TODO return AcarsMessage for all of these
     public HoppieResponse wilco(String station, String callsign, int repliedMsg) throws IOException {
         return this.cpdlcRequest(station, callsign, "WILCO", false, repliedMsg );
     }
