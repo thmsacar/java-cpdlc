@@ -1,8 +1,6 @@
 package flight;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TimeZone;
 
 public class Flight {
 
@@ -11,10 +9,8 @@ public class Flight {
     private String destination;
     private String aircraft;
     private Date offBlockTime;
-    private TimeFormatter timeFormatter;
+    private final TimeFormatter timeFormatter;
 
-//    SimpleDateFormat sdfLocal = new SimpleDateFormat("HH:mm z");
-//    SimpleDateFormat sdfZulu = new SimpleDateFormat("HHmm'Z'");
 
     public Flight(String callsign, String origin, String destination, String aircraft, Integer offBlockTime) {
         this.callsign = callsign;

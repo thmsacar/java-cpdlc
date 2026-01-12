@@ -6,18 +6,18 @@ import java.util.TimeZone;
 
 public class TimeFormatter {
 
-    private static SimpleDateFormat sdfLocal = new SimpleDateFormat("HH:mm z");
-    private static SimpleDateFormat sdfZulu = new SimpleDateFormat("HH:mm'Z'");
+    private static final SimpleDateFormat sdfLocal = new SimpleDateFormat("HH:mm z");
+    private static final SimpleDateFormat sdfZulu = new SimpleDateFormat("HH:mm'Z'");
 
     public TimeFormatter() {
     }
 
-    public static String zuluTime(Date time) {
+    public String zuluTime(Date time) {
         sdfZulu.setTimeZone(TimeZone.getTimeZone("UTC"));
         return sdfZulu.format(time);
     }
 
-    public static String localTime(Date time) {
+    public String localTime(Date time) {
         return sdfLocal.format(time);
     }
 
