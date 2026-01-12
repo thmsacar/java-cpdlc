@@ -10,16 +10,16 @@ import org.json.XML;
 public class SimbriefAPI {
 
     private final String urlStr = "https://www.simbrief.com/api/xml.fetcher.php?username=";
-    private String username;
-    private String url;
+    private final String username;
+    private final String url;
 
-    public SimbriefAPI(String username) throws MalformedURLException, URISyntaxException {
+    public SimbriefAPI(String username) {
         this.username = username;
         this.url = urlStr + username;
 
     }
 
-    public SimbriefFlight getFlight() throws IOException, InterruptedException, URISyntaxException {
+    public SimbriefFlight getFlight() throws IOException {
         Scanner sc = new Scanner(new URL(url).openStream()).useDelimiter("\\A");
         String xml = sc.next();
 

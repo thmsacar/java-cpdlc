@@ -12,12 +12,12 @@ public class TimeFormatter {
     public TimeFormatter() {
     }
 
-    public String zuluTime(Date time) {
+    public static String zuluTime(Date time) {
         sdfZulu.setTimeZone(TimeZone.getTimeZone("UTC"));
         return sdfZulu.format(time);
     }
 
-    public String localTime(Date time) {
+    public static String localTime(Date time) {
         return sdfLocal.format(time);
     }
 
