@@ -50,7 +50,7 @@ public class HoppieAPI {
     }
 
     // Java 8 compatible HTTP GET
-    public HoppieResponse sendHttpRequest(String fullUrl) throws IOException {
+    private HoppieResponse sendHttpRequest(String fullUrl) throws IOException {
         URL url = new URL(fullUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
@@ -118,14 +118,22 @@ public class HoppieAPI {
         return list;
     }
 
-    //TODO return AcarsMessage
     //To send a pre-departure clearance request
-    public HoppieResponse sendPDCRequest(String station, Flight flight, String stand, String atis) throws IOException {
-        return this.sendPDCrequestAux(station, flight.getCallsign(), flight.getAircraft(), flight.getOrigin(), flight.getDestination(), stand, atis, flight.getOffBlockTime());
+    public AcarsMessage sendPdcRequest(String station, Flight flight, String stand, String atis) {
+        String pdc = getPdcMessage(
+                station,
+                flight.getCallsign(),
+                flight.getAircraft(),
+                flight.getOrigin(),
+                flight.getDestination(),
+                stand,
+                atis,
+                flight.getOffBlockTime());
+        return sendTelex(station, flight.getCallsign(), pdc);
     }
 
     //This is where the PDC request template is stored
-    private HoppieResponse sendPDCrequestAux(String station, String callsign, String acftType, String origin, String destination, String stand, String atis, String eob) throws IOException {
+    private String  getPdcMessage(String station, String callsign, String acftType, String origin, String destination, String stand, String atis, String eob) {
         String pdc = String.format(PDC_TEMPLATE,
                 callsign,
                 acftType,
@@ -135,14 +143,37 @@ public class HoppieAPI {
                 atis,
                 eob
         );
-        String url = createFullUrl(callsign, station, "telex", pdc);
-        return sendHttpRequest(url);
+        return pdc;
     }
 
-    //TODO return AcarsMessage
-    public HoppieResponse sendTelex(String station, String callsign, String message) throws IOException {
+    public AcarsMessage sendTelex(String station, String callsign, String message) {
         String url = createFullUrl(callsign, station, "telex", message);
-        return sendHttpRequest(url);
+        try{
+            HoppieResponse response = sendHttpRequest(url);
+            if (response.body().trim().startsWith("ok")) {
+                return new AcarsMessage(callsign, "telex", station, message);
+            }else {
+                return new AcarsMessage("system", "ERROR: "+response.body());
+            }
+        } catch (IOException e) {
+            return new AcarsMessage("system", "ERROR: "+e.getMessage());
+        }
+    }
+
+    private AcarsMessage sendCpdlcMessage(String station, String callsign, String rawText) {
+        String url = createFullUrl(callsign, station, "cpdlc", rawText);
+        try {
+            HoppieResponse response = sendHttpRequest(url);
+            if (response.body().trim().startsWith("ok")) {
+                cpdlcCounter++;
+                return new CpdlcMessage(callsign, "cpdlc", station, rawText);
+            }else{
+                return new AcarsMessage("system", "ERROR: "+response.body());
+            }
+        } catch (IOException e) {
+            return new AcarsMessage("system", "ERROR: "+e.getMessage());
+        }
+
     }
 
     public HoppieResponse sendPing(String callsign) throws IOException {
@@ -150,67 +181,128 @@ public class HoppieAPI {
         return sendHttpRequest(url);
     }
 
-    private HoppieResponse cpdlcRequest(String station, String callsign, String text, boolean isReplyRequired) throws IOException {
-        String replyReq = isReplyRequired ? "Y" : "N";
-        String cpdlc = String.format(CPDLC_MSG,
-                    cpdlcCounter,
-                    "",
-                    replyReq,
-                    text
-                );
-//        String cpdlc = "/data2/"+cpdlcCounter+"//"+replyReq+"/"+text;
-        String url = createFullUrl(callsign, station, "cpdlc", cpdlc);
-        HoppieResponse response = sendHttpRequest(url);
-        if (response.statusCode() == 200) {cpdlcCounter++;}
-        return response;
+    public AcarsMessage checkConnection(String callsign) {
+        try {
+            HoppieResponse response = sendPing(callsign);
+            if (response.body().trim().startsWith("ok")) {
+                return new AcarsMessage("system", "Connected as " + callsign);
+            }else{
+                return new AcarsMessage("system", "ERROR: " + response.body());
+            }
+        } catch (IOException e) {
+            return new AcarsMessage("system", "ERROR: " + e.getMessage());
+        }
     }
 
-    private HoppieResponse cpdlcRequest(String station, String callsign, String text, boolean isReplyRequired, int repliedMsg) throws IOException {
+    private AcarsMessage cpdlcRequest(String station, String callsign, String text, boolean isReplyRequired) {
         String replyReq = isReplyRequired ? "Y" : "N";
-        String cpdlc = String.format(CPDLC_MSG,
+        String rawText = String.format(CPDLC_MSG,
+                cpdlcCounter,
+                "",
+                replyReq,
+                text
+        );
+        return sendCpdlcMessage(station, callsign, rawText);
+    }
+
+
+//    private HoppieResponse cpdlcRequest(String station, String callsign, String text, boolean isReplyRequired) throws IOException {
+//        String replyReq = isReplyRequired ? "Y" : "N";
+//        String cpdlc = String.format(CPDLC_MSG,
+//                    cpdlcCounter,
+//                    "",
+//                    replyReq,
+//                    text
+//                );
+////        String cpdlc = "/data2/"+cpdlcCounter+"//"+replyReq+"/"+text;
+//        String url = createFullUrl(callsign, station, "cpdlc", cpdlc);
+//        HoppieResponse response = sendHttpRequest(url);
+//        if (response.statusCode() == 200) {cpdlcCounter++;}
+//        return response;
+//    }
+
+    private AcarsMessage cpdlcRequest(String station, String callsign, String text, boolean isReplyRequired, int repliedMsg) {
+        String replyReq = isReplyRequired ? "Y" : "N";
+        String rawText = String.format(CPDLC_MSG,
                 cpdlcCounter,
                 repliedMsg,
                 replyReq,
                 text
         );
-//        String cpdlc = "/data2/"+cpdlcCounter+"/"+repliedMsg+"/"+replyReq+"/"+text;
-        String url = createFullUrl(callsign, station, "cpdlc", cpdlc);
-        HoppieResponse response = sendHttpRequest(url);
-        if (response.statusCode() == 200) {cpdlcCounter++;}
-        return response;
+        return sendCpdlcMessage(station, callsign, rawText);
     }
 
-    //TODO return AcarsMessage
-    public HoppieResponse sendLogonATC(String station, String callsign, String freeText) throws IOException {
+
+//    private HoppieResponse cpdlcRequest(String station, String callsign, String text, boolean isReplyRequired, int repliedMsg) throws IOException {
+//        String replyReq = isReplyRequired ? "Y" : "N";
+//        String cpdlc = String.format(CPDLC_MSG,
+//                cpdlcCounter,
+//                repliedMsg,
+//                replyReq,
+//                text
+//        );
+////        String cpdlc = "/data2/"+cpdlcCounter+"/"+repliedMsg+"/"+replyReq+"/"+text;
+//        String url = createFullUrl(callsign, station, "cpdlc", cpdlc);
+//        HoppieResponse response = sendHttpRequest(url);
+//        if (response.statusCode() == 200) {cpdlcCounter++;}
+//        return response;
+//    }
+
+    public AcarsMessage sendLogonATC(String station, String callsign, String freeText) {
         if (freeText==null) freeText="";
         String logonMsg = String.format(LOGON_TEMPLATE, freeText);
         return cpdlcRequest(station, callsign, logonMsg, true);
     }
 
 
+    // --- CPDLC Response Methods ---  DEPRECATED
+//    public HoppieResponse wilco(String station, String callsign, int repliedMsg) throws IOException {
+//        return this.cpdlcRequest(station, callsign, "WILCO", false, repliedMsg );
+//    }
+//
+//    public HoppieResponse roger(String station, String callsign, int repliedMsg) throws IOException {
+//        return this.cpdlcRequest(station, callsign, "ROGER", false , repliedMsg);
+//    }
+//
+//    public HoppieResponse affirm(String station, String callsign, int repliedMsg) throws IOException {
+//        return this.cpdlcRequest(station, callsign, "AFFIRM", false, repliedMsg);
+//    }
+//
+//    public HoppieResponse negative(String station, String callsign, int repliedMsg) throws IOException {
+//        return this.cpdlcRequest(station, callsign, "NEGATIVE", false, repliedMsg);
+//    }
+//
+//    public HoppieResponse unable(String station, String callsign, int repliedMsg) throws IOException {
+//        return this.cpdlcRequest(station, callsign, "UNABLE", false, repliedMsg);
+//    }
+//
+//    public HoppieResponse standby(String station, String callsign, int repliedMsg) throws IOException {
+//        return this.cpdlcRequest(station, callsign, "STANDBY", false, repliedMsg);
+//    }
+
     // --- CPDLC Response Methods ---
-    //TODO return AcarsMessage for all of these
-    public HoppieResponse wilco(String station, String callsign, int repliedMsg) throws IOException {
+    public AcarsMessage wilco(String station, String callsign, int repliedMsg) {
         return this.cpdlcRequest(station, callsign, "WILCO", false, repliedMsg );
     }
 
-    public HoppieResponse roger(String station, String callsign, int repliedMsg) throws IOException {
+    public AcarsMessage roger(String station, String callsign, int repliedMsg) {
         return this.cpdlcRequest(station, callsign, "ROGER", false , repliedMsg);
     }
 
-    public HoppieResponse affirm(String station, String callsign, int repliedMsg) throws IOException {
+    public AcarsMessage affirm(String station, String callsign, int repliedMsg) {
         return this.cpdlcRequest(station, callsign, "AFFIRM", false, repliedMsg);
     }
 
-    public HoppieResponse negative(String station, String callsign, int repliedMsg) throws IOException {
+    public AcarsMessage negative(String station, String callsign, int repliedMsg) {
         return this.cpdlcRequest(station, callsign, "NEGATIVE", false, repliedMsg);
     }
 
-    public HoppieResponse unable(String station, String callsign, int repliedMsg) throws IOException {
+    public AcarsMessage unable(String station, String callsign, int repliedMsg) {
         return this.cpdlcRequest(station, callsign, "UNABLE", false, repliedMsg);
     }
 
-    public HoppieResponse standby(String station, String callsign, int repliedMsg) throws IOException {
+    public AcarsMessage standby(String station, String callsign, int repliedMsg) {
         return this.cpdlcRequest(station, callsign, "STANDBY", false, repliedMsg);
     }
+
 }

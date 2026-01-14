@@ -5,9 +5,11 @@ import hoppie.CpdlcMessage;
 import hoppie.HoppieAPI;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.io.IOException;
 import java.time.ZoneOffset;
@@ -114,26 +116,30 @@ public class DashboardPanel extends JPanel {
         cardLayout.show(cardContainer, "LIST");
 
 
-        //TODO acars message ile çözülebilir mi??
-        try {
-            HoppieAPI.HoppieResponse response = hoppieAPI.sendPing(callsign);
-            if (response.body().equalsIgnoreCase("ok")) {
-                addMessage(new AcarsMessage("system", "Connected as " + callsign));
-                setConnectionStatus(true);
-            }else{
-                addMessage(new AcarsMessage("system", "ERROR: " + response.body()));
-                setConnectionStatus(false);
-            }
-        } catch (IOException e) {
-            addMessage(new AcarsMessage("system", "ERROR: " + e));
-            setConnectionStatus(false);
-        }
+//        try {
+//            HoppieAPI.HoppieResponse response = hoppieAPI.sendPing(callsign);
+//            if (response.body().equalsIgnoreCase("ok")) {
+//                addMessage(new AcarsMessage("system", "Connected as " + callsign));
+//                setConnectionStatus(true);
+//            }else{
+//                addMessage(new AcarsMessage("system", "ERROR: " + response.body()));
+//                setConnectionStatus(false);
+//            }
+//        } catch (IOException e) {
+//            addMessage(new AcarsMessage("system", "ERROR: " + e));
+//            setConnectionStatus(false);
+//        }
 
-        changeATSUnit("LTBB");
+        AcarsMessage connectionMsg = hoppieAPI.checkConnection(callsign);
+        if (connectionMsg.getMessage().startsWith("Connected")) {setConnectionStatus(true);}
+        else {setConnectionStatus(false);}
+        addMessage(connectionMsg);
 
-        addMessage(new CpdlcMessage("LTBB", "cpdlc", "THY1GF", "DIRECT ASMAP", 1, -1, "WU"));
-        addMessage(new CpdlcMessage("LTBB", "cpdlc", "THY1GF", "CONTACT LGAA 132.150", 1, -1, "R"));
-        addMessage(new AcarsMessage("THY2GF", "telex", "THY1GF", "HELLO"));
+        changeATSUnit(null);
+
+        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "MAINTAIN @FL370", 1, -1, "WU"));
+        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "CURRENT ATC UNIT@_@CMRM@_@MADRID CTL@CURRENT ATC UNIT@_@CMRM@_@MADRID CTL", 1, -1, "NE"));
+        addMessage(new AcarsMessage("THY2GF", "telex", "RYR2GF", "HELLO"));
 
     }
 
@@ -231,11 +237,14 @@ public class DashboardPanel extends JPanel {
     }
 
     private PilotButton createReturnButton() {
-        PilotButton button = new PilotButton("← RETURN");
-        button.setBorder(BorderFactory.createCompoundBorder(
+        PilotButton button = new PilotButton("← RETURN", false);
+        button.setFont(new Font("Monospaced", Font.BOLD, 12));
+        Border border = BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Color.DARK_GRAY, 1),
                 BorderFactory.createEmptyBorder(5, 10, 5, 10)
-        ));
+        );
+        button.setBorder(border);
+
         button.addActionListener(e -> {
             messageList.clearSelection();
             cardLayout.show(cardContainer, "LIST");
@@ -375,6 +384,7 @@ public class DashboardPanel extends JPanel {
         // Detail text
         detailTextArea = new JTextArea();
         detailTextArea.setEditable(false);
+        detailTextArea.setFocusable(false);
         detailTextArea.setFont(new Font("Monospaced", Font.BOLD, 14));
         p.add(new JScrollPane(detailTextArea), BorderLayout.CENTER);
 
@@ -395,6 +405,8 @@ public class DashboardPanel extends JPanel {
 
         detailTextAreaNoRes = new JTextArea();
         detailTextAreaNoRes.setEditable(false);
+        detailTextAreaNoRes.setFocusable(false);
+
         detailTextAreaNoRes.setFont(new Font("Monospaced", Font.BOLD, 14));
 
         p.add(new JScrollPane(detailTextAreaNoRes), BorderLayout.CENTER);
@@ -559,19 +571,6 @@ public class DashboardPanel extends JPanel {
         }
     }
 
-    //TODO incelenip silinebilir
-//    private void setCPDLCMenuButtons(){
-//        if (!isLoggedOn){
-//            btnLogonATC.setText("ATC LOGON");
-//            disableButton(btnRequest);
-//            disableButton(btnReport);
-//        }else {
-//            btnLogonATC.setText("LOGOFF");
-//            enableButton(btnRequest);
-//            enableButton(btnReport);
-//        }
-//    }
-
     //Disables button interaction and changes color
     private void disableButton(JButton button){
         button.setForeground(DISABLED_BUTTON_COLOR);
@@ -613,32 +612,35 @@ public class DashboardPanel extends JPanel {
         cardLayout.show(cardContainer, "CPDLC");
     }
 
-    //TODO Hoppie response mantığı değişmeli
     private void sendTelex(String station, String message) {
         //Thread for networking
         new Thread(()->{
-            AcarsMessage msg = null;
-            try {
-//                System.out.println("Sending msg: " +station+ "|" +message);
-                HoppieAPI.HoppieResponse response = hoppieAPI.sendTelex(station, callsign, message);
-                if (response.body().equalsIgnoreCase("ok")){
-                    msg = new AcarsMessage(callsign, "telex", station, message);
-//                    System.out.println("SENT" + msg);
-                    setConnectionStatus(true);
-                }else {
-                    msg = new AcarsMessage("system", "ERROR: " + response.body());
-//                    System.out.println("SENT" + msg);
-                    setConnectionStatus(false);
-
-                }
-            } catch (IOException e) {
-                msg = new AcarsMessage("system", "ERROR: " + e.getMessage());
-//                System.out.println("SENT" + msg);
-                setConnectionStatus(false);
-            }finally {
-//                System.out.println("Adding to list");
-                addMessage(msg);
-            }
+            AcarsMessage msg = hoppieAPI.sendTelex(station, callsign, message);
+            if(msg.getType().equalsIgnoreCase("system")) {setConnectionStatus(false);}
+            else {setConnectionStatus(true);}
+            addMessage(msg);
+//            AcarsMessage msg = null;
+//            try {
+////                System.out.println("Sending msg: " +station+ "|" +message);
+//                HoppieAPI.HoppieResponse response = hoppieAPI.sendTelex(station, callsign, message);
+//                if (response.body().equalsIgnoreCase("ok")){
+//                    msg = new AcarsMessage(callsign, "telex", station, message);
+////                    System.out.println("SENT" + msg);
+//                    setConnectionStatus(true);
+//                }else {
+//                    msg = new AcarsMessage("system", "ERROR: " + response.body());
+////                    System.out.println("SENT" + msg);
+//                    setConnectionStatus(false);
+//
+//                }
+//            } catch (IOException e) {
+//                msg = new AcarsMessage("system", "ERROR: " + e.getMessage());
+////                System.out.println("SENT" + msg);
+//                setConnectionStatus(false);
+//            }finally {
+////                System.out.println("Adding to list");
+//                addMessage(msg);
+//            }
         }).start();
     }
 
@@ -678,54 +680,51 @@ public class DashboardPanel extends JPanel {
         }
     }
 
-    //TODO Hoppie response mantığı değişmeli
-    private void sendResponseAndReturn(String response, CpdlcMessage originalMsg) {
-        //Thread for networking
-        new Thread(() -> {
-            AcarsMessage msg;
-            try {
-//                System.out.println("Sending msg: " + originalMsg.getFrom()+ "|" +response);
-                int cpdlcNumber = hoppieAPI.getCpdlcCounter();
-                HoppieAPI.HoppieResponse httpResponse = null;
-                switch (response) {
-                    case "WILCO": httpResponse = hoppieAPI.wilco(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
-                    case "UNABLE": httpResponse = hoppieAPI.unable(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
-                    case "ROGER": httpResponse = hoppieAPI.roger(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
-                    case "STANDBY": httpResponse = hoppieAPI.standby(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
-                    case "AFFIRM": httpResponse = hoppieAPI.affirm(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
-                    case "NEGATIVE": httpResponse = hoppieAPI.negative(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
-                }
+    // !!!--DEPRECATED--!!!
+//    private void sendResponseAndReturn(String response, CpdlcMessage originalMsg) {
+//        //Thread for networking
+//        new Thread(() -> {
+//            AcarsMessage msg;
+//            try {
+////                System.out.println("Sending msg: " + originalMsg.getFrom()+ "|" +response);
+//                int cpdlcNumber = hoppieAPI.getCpdlcCounter();
+//                HoppieAPI.HoppieResponse httpResponse = null;
+//                switch (response) {
+//                    case "WILCO": httpResponse = hoppieAPI.wilco(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
+//                    case "UNABLE": httpResponse = hoppieAPI.unable(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
+//                    case "ROGER": httpResponse = hoppieAPI.roger(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
+//                    case "STANDBY": httpResponse = hoppieAPI.standby(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
+//                    case "AFFIRM": httpResponse = hoppieAPI.affirm(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
+//                    case "NEGATIVE": httpResponse = hoppieAPI.negative(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
+//                }
+//
+//                if (httpResponse.body()!=null && httpResponse.body().trim().equalsIgnoreCase("ok")){
+//                    msg = new CpdlcMessage(this.callsign, "cpdlc", originalMsg.getFrom(), response, cpdlcNumber, originalMsg.getMsgNumber(), "N");
+//                    setConnectionStatus(true);
+//                }else {
+//                    msg = new AcarsMessage("system", "ERROR: " + httpResponse.body());
+//                    setConnectionStatus(false);
+//                }
+//                AcarsMessage finalMsg1 = msg;
+//                SwingUtilities.invokeLater(() -> {
+//                    messageList.clearSelection();
+//                    addMessage(finalMsg1);
+//                    cardLayout.show(cardContainer, "LIST");
+//                });
+//
+//            } catch (Exception ex) {
+//                msg = new AcarsMessage("system", "ERROR: " + ex.getMessage());
+//                setConnectionStatus(false);
+//                AcarsMessage finalMsg = msg;
+//                SwingUtilities.invokeLater(() -> {
+//                    messageList.clearSelection();
+//                    addMessage(finalMsg);
+//                    cardLayout.show(cardContainer, "LIST");
+//                });
+//            }
+//        }).start();
+//    }
 
-                //TODO hoppie response
-                if (httpResponse.body()!=null && httpResponse.body().trim().equalsIgnoreCase("ok")){
-                    msg = new CpdlcMessage(this.callsign, "cpdlc", originalMsg.getFrom(), response, cpdlcNumber, originalMsg.getMsgNumber(), "N");
-                    setConnectionStatus(true);
-                }else {
-                    msg = new AcarsMessage("system", "ERROR: " + httpResponse.body());
-                    setConnectionStatus(false);
-                }
-                AcarsMessage finalMsg1 = msg;
-                SwingUtilities.invokeLater(() -> {
-                    messageList.clearSelection();
-                    addMessage(finalMsg1);
-                    cardLayout.show(cardContainer, "LIST");
-                });
-
-            } catch (Exception ex) {
-                //TODO hoppie response
-                msg = new AcarsMessage("system", "ERROR: " + ex.getMessage());
-                setConnectionStatus(false);
-                AcarsMessage finalMsg = msg;
-                SwingUtilities.invokeLater(() -> {
-                    messageList.clearSelection();
-                    addMessage(finalMsg);
-                    cardLayout.show(cardContainer, "LIST");
-                });
-            }
-        }).start();
-    }
-
-//    TODO HoppieResponse burada incelemek yerine direkt hata mesajı veya normal mesajla AcarsMessage dönse???
 //    private void sendLogonAction(String targetStation, String remarks) {
 //        this.pendingLogonStation = targetStation;
 //
@@ -741,20 +740,34 @@ public class DashboardPanel extends JPanel {
 //        System.out.println("Logon request sent to: " + targetStation + ". Waiting for acceptance...");
 //    }
 
+    private void sendResponseAndReturn(String response, CpdlcMessage originalMsg) {
+        //Thread for networking
+        new Thread(() -> {
+            AcarsMessage acarsMsg = null;
+            switch (response) {
+                case "WILCO": acarsMsg = hoppieAPI.wilco(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
+                case "UNABLE": acarsMsg = hoppieAPI.unable(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
+                case "ROGER": acarsMsg = hoppieAPI.roger(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
+                case "STANDBY": acarsMsg = hoppieAPI.standby(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
+                case "AFFIRM": acarsMsg = hoppieAPI.affirm(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
+                case "NEGATIVE": acarsMsg = hoppieAPI.negative(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
+            }
+            addMessage(acarsMsg);
+        }).start();
+    }
+
     private void startAutoFetch() {
         fetcherService = Executors.newSingleThreadScheduledExecutor();
 
         fetcherService.scheduleAtFixedRate(() -> {
             try {
-//                System.out.println("Fetching data...");
                 List<AcarsMessage> newMessages = hoppieAPI.fetchMessages(this.callsign);
-//                System.out.println("Fetched " + newMessages.size() + " messages");
                 if (!newMessages.isEmpty()) {
                     SwingUtilities.invokeLater(() -> {
                         for (AcarsMessage msg : newMessages) {
                             System.out.println("Adding msg"+msg);
                             //LOGON ACCEPTED
-                            //  TODO Burada ATS unit degisme olayı olacak ama once CPDLC mesajlarının hoppieresponse dönmesi olayını çözmek lazım her yerde kullandık bunu
+                            //  wTODO Burada ATS unit degisme olayı olacak ama once CPDLC mesajlarının hoppieresponse dönmesi olayını çözmek lazım her yerde kullandık bunu
 //                            if(msg.getMessage().contains("LOGON ACCEPTED")){
 //                                //Change ATS unit
 //                                changeATSUnit(msg.);
@@ -763,16 +776,20 @@ public class DashboardPanel extends JPanel {
                             addMessage(msg);
                         }
                         messageList.setSelectedIndex(0);
-//                        handleMessageSelection(messageList.getSelectedValue());
+                        //TODO play notificationu alert new messages icine mi koysam?
                         SoundManager.playNotification();
                         alertNewMessage();
 //                        System.out.println(newMessages.size() + " new messages received");
                     });
                 }
-                callsignLabel.setForeground(Color.GREEN);
+                setConnectionStatus(true);
             } catch (Exception e) {
-                addMessage(new AcarsMessage("system", "ERROR: " + e.getMessage()));
-                callsignLabel.setForeground(Color.RED);
+                String msg = "ERROR: " + e.getMessage();
+                if (!messageModel.get(0).getMessage().equalsIgnoreCase(msg)) {
+                    addMessage(new AcarsMessage("system", msg));
+                    //TODO warning sound
+                }
+                setConnectionStatus(false);
             }
         }, 0, 40, TimeUnit.SECONDS);
     }
@@ -808,6 +825,9 @@ public class DashboardPanel extends JPanel {
         }
     }
 
+    //TODO
+    private void warningNewMessage() {};
+
     private void setConnectionStatus(boolean isConnected){
         if (isConnected) {callsignLabel.setForeground(Color.GREEN);}
         else {callsignLabel.setForeground(Color.RED);}
@@ -823,8 +843,10 @@ public class DashboardPanel extends JPanel {
         return text;
     }
 
-    public void addMessage(AcarsMessage message) {
-        SwingUtilities.invokeLater(() -> messageModel.add(0, message));
+    private void addMessage(AcarsMessage message) {
+        SwingUtilities.invokeLater(() -> {
+            if (message!=null) messageModel.add(0, message);
+        });
 
     }
 }

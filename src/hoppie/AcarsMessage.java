@@ -89,11 +89,11 @@ public class AcarsMessage {
             } else {
                 contact = "FROM " + this.getFrom() ;
             }
-//            entry = TimeFormatter.zuluTime(this.getTimestamp());
             if ("telex".equalsIgnoreCase(this.getType())) {
                 entry += " TELEX " + contact + ": \n" + this.getMessage();
             } else if ("cpdlc".equalsIgnoreCase(this.getType())) {
-                entry += " CPDLC " + contact + ": \n" + this.getMessage();
+                String msg = this.getMessage().replace("@","\n"); //@ should be replaced by newline
+                entry += " CPDLC " + contact + ": \n" + msg;
             }
         }
         return entry;

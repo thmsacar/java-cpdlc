@@ -71,9 +71,10 @@ public class LoginPanel extends JPanel {
             String callsign = callsignField.getText().trim();
             String hoppieID = hoppieField.getText().trim();
 
+
             //Check hoppie connection
             try {
-                HoppieAPI.HoppieResponse response = checkHoppieIP(callsign, hoppieID);
+                HoppieAPI.HoppieResponse response = checkHoppieID(callsign, hoppieID);
                 if (response.body().trim().equalsIgnoreCase("ok")) client.showDashboard(callsign, hoppieID);
                 else {
                     JOptionPane.showMessageDialog(
@@ -92,7 +93,7 @@ public class LoginPanel extends JPanel {
 
     }
 
-    private HoppieAPI.HoppieResponse checkHoppieIP(String callsign, String hoppieID) throws IOException {
+    private HoppieAPI.HoppieResponse checkHoppieID(String callsign, String hoppieID) throws IOException {
         HoppieAPI api = new HoppieAPI(hoppieID);
         return api.sendPing(callsign);
     }
