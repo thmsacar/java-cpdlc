@@ -12,6 +12,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -776,8 +777,6 @@ public class DashboardPanel extends JPanel {
                             addMessage(msg);
                         }
                         messageList.setSelectedIndex(0);
-                        //TODO play notificationu alert new messages icine mi koysam?
-                        SoundManager.playNotification();
                         alertNewMessage();
 //                        System.out.println(newMessages.size() + " new messages received");
                     });
@@ -802,6 +801,7 @@ public class DashboardPanel extends JPanel {
     }
 
     private void alertNewMessage() {
+        SoundManager.playNotification();
         JFrame frame = client.frame;
         if (frame != null) {
             if (!frame.isActive()) {
@@ -810,12 +810,10 @@ public class DashboardPanel extends JPanel {
                     try {
                         Class<?> appClass = Class.forName("com.apple.eawt.Application");
                         Object application = appClass.getMethod("getApplication").invoke(null);
-                        //TODO requestUserAttention method ile ilgili bi problem var??
-                        appClass.getMethod("requestUserAttention", int.class).invoke(application, 1);
-                        appClass.getMethod("setDockIconBadge", String.class).invoke(application, "!");
-
+                        appClass.getMethod("requestUserAttention", boolean.class).invoke(application, true);
                     } catch (Exception e) {
                         frame.toFront();
+                        frame.requestFocus();
                     }
                 } else {
                     frame.toFront();
