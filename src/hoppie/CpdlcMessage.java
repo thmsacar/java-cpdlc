@@ -30,10 +30,6 @@ public class CpdlcMessage extends AcarsMessage {
             // parts[4] = "WU" (Response Type/Requirement)
             // parts[5] = "TEST" (Actual Message)
 
-            for (String part : parts) {
-                System.out.println("-"+part+"-");
-            }
-
             this.msgNumber = Integer.parseInt(parts[2]);
             this.responseNumber = parts[3].isEmpty() ? -1 : Integer.parseInt(parts[3]);
             this.responseType = parts[4];

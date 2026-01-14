@@ -9,10 +9,7 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
-import java.io.IOException;
-import java.lang.reflect.Method;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -111,36 +108,22 @@ public class DashboardPanel extends JPanel {
         cardContainer.add(createDetailNoResponseCard(), "DETAIL_NO_RES");
         cardContainer.add(createTelexCard(), "TELEX");
         cardContainer.add(createCpdlcCard(), "CPDLC");
+        cardContainer.add(createLogonCard(), "LOGON_FORM");
 
         add(cardContainer, BorderLayout.CENTER);
 
         cardLayout.show(cardContainer, "LIST");
 
-
-//        try {
-//            HoppieAPI.HoppieResponse response = hoppieAPI.sendPing(callsign);
-//            if (response.body().equalsIgnoreCase("ok")) {
-//                addMessage(new AcarsMessage("system", "Connected as " + callsign));
-//                setConnectionStatus(true);
-//            }else{
-//                addMessage(new AcarsMessage("system", "ERROR: " + response.body()));
-//                setConnectionStatus(false);
-//            }
-//        } catch (IOException e) {
-//            addMessage(new AcarsMessage("system", "ERROR: " + e));
-//            setConnectionStatus(false);
-//        }
-
         AcarsMessage connectionMsg = hoppieAPI.checkConnection(callsign);
-        if (connectionMsg.getMessage().startsWith("Connected")) {setConnectionStatus(true);}
-        else {setConnectionStatus(false);}
+        setConnectionStatus(connectionMsg.getMessage().startsWith("Connected"));
         addMessage(connectionMsg);
 
         changeATSUnit(null);
 
-        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "MAINTAIN @FL370", 1, -1, "WU"));
-        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "CURRENT ATC UNIT@_@CMRM@_@MADRID CTL@CURRENT ATC UNIT@_@CMRM@_@MADRID CTL", 1, -1, "NE"));
-        addMessage(new AcarsMessage("THY2GF", "telex", "RYR2GF", "HELLO"));
+
+//        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "MAINTAIN @FL370", 1, -1, "WU"));
+//        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "CURRENT ATC UNIT@_@CMRM@_@MADRID CTL@CURRENT ATC UNIT@_@CMRM@_@MADRID CTL", 1, -1, "NE"));
+//        addMessage(new AcarsMessage("THY2GF", "telex", "RYR2GF", "HELLO"));
 
     }
 
@@ -237,8 +220,9 @@ public class DashboardPanel extends JPanel {
         updateMenuState();
     }
 
-    private PilotButton createReturnButton() {
-        PilotButton button = new PilotButton("← RETURN", false);
+    private PilotButton createReturnButton(String returnTo) {
+        PilotButton button = new PilotButton("← RETURN");
+        button.addColorChangerOnPress();
         button.setFont(new Font("Monospaced", Font.BOLD, 12));
         Border border = BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Color.DARK_GRAY, 1),
@@ -248,7 +232,7 @@ public class DashboardPanel extends JPanel {
 
         button.addActionListener(e -> {
             messageList.clearSelection();
-            cardLayout.show(cardContainer, "LIST");
+            cardLayout.show(cardContainer, returnTo);
         });
         return button;
     }
@@ -379,7 +363,7 @@ public class DashboardPanel extends JPanel {
         JPanel p = new JPanel(new BorderLayout(0, 10));
 
         // Return
-        PilotButton returnBtn = createReturnButton();
+        PilotButton returnBtn = createReturnButton("LIST");
         p.add(returnBtn, BorderLayout.NORTH);
 
         // Detail text
@@ -388,6 +372,8 @@ public class DashboardPanel extends JPanel {
         detailTextArea.setFocusable(false);
         detailTextArea.setFont(new Font("Monospaced", Font.BOLD, 14));
         p.add(new JScrollPane(detailTextArea), BorderLayout.CENTER);
+
+        //TODO scroll pane olayina scroll bar ekle
 
         // Response
         responsePanel = createResponsePanel();
@@ -401,7 +387,7 @@ public class DashboardPanel extends JPanel {
         JPanel p = new JPanel(new BorderLayout(0, 10));
 
         // Return button
-        PilotButton returnBtn = createReturnButton();
+        PilotButton returnBtn = createReturnButton("LIST");
         p.add(returnBtn, BorderLayout.NORTH);
 
         detailTextAreaNoRes = new JTextArea();
@@ -423,7 +409,7 @@ public class DashboardPanel extends JPanel {
 //       | BUTTON
 
         // RETURN
-        PilotButton returnBtn = createReturnButton();
+        PilotButton returnBtn = createReturnButton("LIST");
         p.add(returnBtn, BorderLayout.NORTH);
 
         // FORM AREA
@@ -490,10 +476,95 @@ public class DashboardPanel extends JPanel {
 
         sendBtn.addActionListener(e -> {
             if(!stationField.getText().trim().isEmpty() && !messageArea.getText().trim().isEmpty()) {
-                sendTelex(stationField.getText(), messageArea.getText());
+                sendTelex(stationField.getText().trim(), messageArea.getText().trim());
                 stationField.setText("");
                 messageArea.setText("");
                 cardLayout.show(cardContainer, "LIST");
+            }
+        });
+
+        return p;
+    }
+
+    private JPanel createLogonCard(){
+        JPanel p = new JPanel(new BorderLayout(0, 10));
+
+//       | RETURN
+//       | FORM
+//       | BUTTON
+
+        // RETURN
+        PilotButton returnBtn = createReturnButton("CPDLC");
+        p.add(returnBtn, BorderLayout.NORTH);
+
+        // FORM AREA
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(0, 5, 5, 5);
+
+        // --- Left side (station) ---
+        JPanel stationContainer = new JPanel(new BorderLayout(0, 5));
+        JLabel stationLabel = new JLabel("STATION");
+        stationLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
+        JTextField stationField = new JTextField(15); //field for 15 chars
+        stationField.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        stationField.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+        stationField.setPreferredSize(new Dimension(200, 30));
+        stationField.setMinimumSize(stationField.getPreferredSize());
+
+
+        ((AbstractDocument) stationField.getDocument())
+                .setDocumentFilter(new UppercaseFilter());
+
+        stationContainer.add(stationLabel, BorderLayout.NORTH);
+        stationContainer.add(stationField, BorderLayout.CENTER);
+
+        gbc.gridx = 0;
+        gbc.weightx = 0;
+        gbc.weighty = 0;
+        gbc.anchor = GridBagConstraints.NORTH;
+        formPanel.add(stationContainer, gbc);
+
+        // --- Right side (message) ---
+        gbc.fill = GridBagConstraints.BOTH;
+
+        JPanel messageContainer = new JPanel(new BorderLayout(0, 5));
+        JLabel textLabel = new JLabel("REMARKS");
+        textLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
+        JTextArea messageArea = new JTextArea();
+        messageArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        messageArea.setLineWrap(true);
+
+        ((AbstractDocument) messageArea.getDocument())
+                .setDocumentFilter(new UppercaseFilter());
+
+        JScrollPane scrollPane = new JScrollPane(messageArea);
+        scrollPane.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+
+        messageContainer.add(textLabel, BorderLayout.NORTH);
+        messageContainer.add(scrollPane, BorderLayout.CENTER);
+
+        gbc.gridx = 1;
+        gbc.weightx = 1;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.CENTER;
+        formPanel.add(messageContainer, gbc);
+
+        p.add(formPanel, BorderLayout.CENTER);
+
+        // BUTTON
+        PilotButton sendBtn = new PilotButton("SEND LOGON");
+        sendBtn.setPreferredSize(new Dimension(0, 40));
+        sendBtn.setCustomColor(new Color(140, 80, 160), Color.WHITE);
+        p.add(sendBtn, BorderLayout.SOUTH);
+
+        sendBtn.addActionListener(e -> {
+            if(!stationField.getText().trim().isEmpty()) {
+                sendLogonAction(stationField.getText().trim(), messageArea.getText().trim());
+                stationField.setText("");
+                messageArea.setText("");
+                cardLayout.show(cardContainer, "CPDLC");
             }
         });
 
@@ -507,7 +578,7 @@ public class DashboardPanel extends JPanel {
 //       | MENU
 
         // RETURN
-        PilotButton returnBtn = createReturnButton();
+        PilotButton returnBtn = createReturnButton("LIST");
         p.add(returnBtn, BorderLayout.NORTH);
 
         // FORM AREA
@@ -530,6 +601,16 @@ public class DashboardPanel extends JPanel {
         btnRequest = createCpdlcMenuButton("REQUEST");
         btnReport = createCpdlcMenuButton("REPORT");
 
+        btnLogonATC.addActionListener(e -> {
+            if (!isLoggedOn) {
+                // Bağlı değilsek Formu aç (Station sormak için)
+                cardLayout.show(cardContainer, "LOGON_FORM");
+            } else {
+                // Bağlıysak Logoff paketi gönder
+                sendLogoffAction();
+            }
+        });
+
         updateMenuState();
 
         cpdlcMenu.add(btnClearance);
@@ -551,24 +632,28 @@ public class DashboardPanel extends JPanel {
         return btn;
     }
 
+
+
     //Updates to the relevant menu state according to ATC LOGON status (isLoggedOn)
     private void updateMenuState() {
         if (isLoggedOn) { //We are connected to an ATC
             //Change to LOGOFF button
             btnLogonATC.setText("LOGOFF " + currentATS);
-            btnLogonATC.setForeground(Color.RED);
+            btnLogonATC.setForeground(RED_RESPONSE);
 
             //These button only works if logged on to ATC
             enableButton(btnRequest);
             enableButton(btnReport);
         } else { //We are not connected to an ATC
             //Change to LOGON button
+            btnLogonATC.setForeground(new Color(180, 100, 200));
             btnLogonATC.setText("ATC LOGON");
-            btnLogonATC.setForeground(Color.MAGENTA);
 
-            //These button only works if logged on to ATC
+
             disableButton(btnRequest);
             disableButton(btnReport);
+            //These button only works if logged on to ATC
+
         }
     }
 
@@ -617,31 +702,8 @@ public class DashboardPanel extends JPanel {
         //Thread for networking
         new Thread(()->{
             AcarsMessage msg = hoppieAPI.sendTelex(station, callsign, message);
-            if(msg.getType().equalsIgnoreCase("system")) {setConnectionStatus(false);}
-            else {setConnectionStatus(true);}
+            setConnectionStatus(!msg.getType().equalsIgnoreCase("system"));
             addMessage(msg);
-//            AcarsMessage msg = null;
-//            try {
-////                System.out.println("Sending msg: " +station+ "|" +message);
-//                HoppieAPI.HoppieResponse response = hoppieAPI.sendTelex(station, callsign, message);
-//                if (response.body().equalsIgnoreCase("ok")){
-//                    msg = new AcarsMessage(callsign, "telex", station, message);
-////                    System.out.println("SENT" + msg);
-//                    setConnectionStatus(true);
-//                }else {
-//                    msg = new AcarsMessage("system", "ERROR: " + response.body());
-////                    System.out.println("SENT" + msg);
-//                    setConnectionStatus(false);
-//
-//                }
-//            } catch (IOException e) {
-//                msg = new AcarsMessage("system", "ERROR: " + e.getMessage());
-////                System.out.println("SENT" + msg);
-//                setConnectionStatus(false);
-//            }finally {
-////                System.out.println("Adding to list");
-//                addMessage(msg);
-//            }
         }).start();
     }
 
@@ -681,65 +743,25 @@ public class DashboardPanel extends JPanel {
         }
     }
 
-    // !!!--DEPRECATED--!!!
-//    private void sendResponseAndReturn(String response, CpdlcMessage originalMsg) {
-//        //Thread for networking
-//        new Thread(() -> {
-//            AcarsMessage msg;
-//            try {
-////                System.out.println("Sending msg: " + originalMsg.getFrom()+ "|" +response);
-//                int cpdlcNumber = hoppieAPI.getCpdlcCounter();
-//                HoppieAPI.HoppieResponse httpResponse = null;
-//                switch (response) {
-//                    case "WILCO": httpResponse = hoppieAPI.wilco(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
-//                    case "UNABLE": httpResponse = hoppieAPI.unable(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
-//                    case "ROGER": httpResponse = hoppieAPI.roger(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
-//                    case "STANDBY": httpResponse = hoppieAPI.standby(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
-//                    case "AFFIRM": httpResponse = hoppieAPI.affirm(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
-//                    case "NEGATIVE": httpResponse = hoppieAPI.negative(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
-//                }
-//
-//                if (httpResponse.body()!=null && httpResponse.body().trim().equalsIgnoreCase("ok")){
-//                    msg = new CpdlcMessage(this.callsign, "cpdlc", originalMsg.getFrom(), response, cpdlcNumber, originalMsg.getMsgNumber(), "N");
-//                    setConnectionStatus(true);
-//                }else {
-//                    msg = new AcarsMessage("system", "ERROR: " + httpResponse.body());
-//                    setConnectionStatus(false);
-//                }
-//                AcarsMessage finalMsg1 = msg;
-//                SwingUtilities.invokeLater(() -> {
-//                    messageList.clearSelection();
-//                    addMessage(finalMsg1);
-//                    cardLayout.show(cardContainer, "LIST");
-//                });
-//
-//            } catch (Exception ex) {
-//                msg = new AcarsMessage("system", "ERROR: " + ex.getMessage());
-//                setConnectionStatus(false);
-//                AcarsMessage finalMsg = msg;
-//                SwingUtilities.invokeLater(() -> {
-//                    messageList.clearSelection();
-//                    addMessage(finalMsg);
-//                    cardLayout.show(cardContainer, "LIST");
-//                });
-//            }
-//        }).start();
-//    }
+    private void sendLogonAction(String targetStation, String remarks) {
+        AcarsMessage msg = hoppieAPI.sendLogonATC(targetStation, callsign, remarks);
+        if (!msg.getType().equalsIgnoreCase("system")) {
+            this.pendingLogonStation = targetStation.trim();
+            setConnectionStatus(true);
+        }
+        addMessage(msg);
 
-//    private void sendLogonAction(String targetStation, String remarks) {
-//        this.pendingLogonStation = targetStation;
-//
-//        try {
-//            HoppieAPI.HoppieResponse response = hoppieAPI.sendLogonATC(targetStation, callsign, remarks);
-//            if (response.body().trim().equalsIgnoreCase("ok")){
-//                addMessage(new AcarsMessage(this.callsign, "cpdlc", ));
-//            }
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-//
-//        System.out.println("Logon request sent to: " + targetStation + ". Waiting for acceptance...");
-//    }
+        System.out.println("Logon request sent to: " + targetStation + ". Waiting for acceptance...");
+    }
+
+    private void sendLogoffAction() {
+        AcarsMessage msg = hoppieAPI.sendLogoffATC(currentATS, callsign);
+        if (!msg.getType().equalsIgnoreCase("system")) {
+            changeATSUnit(null);
+            setConnectionStatus(true);
+        }
+        addMessage(msg);
+    }
 
     private void sendResponseAndReturn(String response, CpdlcMessage originalMsg) {
         //Thread for networking
@@ -757,39 +779,48 @@ public class DashboardPanel extends JPanel {
         }).start();
     }
 
+    private void checkLogonAccepted(AcarsMessage msg) {
+        String sender = msg.getFrom(); // ATS sending
+        String text = msg.getMessage();
+        if (text.contains("LOGON ACCEPTED") && sender.equalsIgnoreCase(pendingLogonStation)) {
+            changeATSUnit(pendingLogonStation);
+            pendingLogonStation = "";
+        }
+    }
+
     private void startAutoFetch() {
         fetcherService = Executors.newSingleThreadScheduledExecutor();
-
         fetcherService.scheduleAtFixedRate(() -> {
-            try {
-                List<AcarsMessage> newMessages = hoppieAPI.fetchMessages(this.callsign);
-                if (!newMessages.isEmpty()) {
-                    SwingUtilities.invokeLater(() -> {
-                        for (AcarsMessage msg : newMessages) {
-                            System.out.println("Adding msg"+msg);
-                            //LOGON ACCEPTED
-                            //  wTODO Burada ATS unit degisme olayı olacak ama once CPDLC mesajlarının hoppieresponse dönmesi olayını çözmek lazım her yerde kullandık bunu
-//                            if(msg.getMessage().contains("LOGON ACCEPTED")){
-//                                //Change ATS unit
-//                                changeATSUnit(msg.);
-//
-//                            }
-                            addMessage(msg);
+            List<AcarsMessage> newMessages = hoppieAPI.fetchMessages(this.callsign);
+            if (!newMessages.isEmpty()) {
+                SwingUtilities.invokeLater(() -> {
+                    boolean soundPlayed = false;
+                    for (AcarsMessage msg : newMessages) {
+                        AcarsMessage lastMsg = messageModel.get(0);
+                        //If a system (trouble) message has already been added to list and notified, there is no need to repeat it.
+                        if(msg.getType().equalsIgnoreCase("system") && msg.getMessage().equalsIgnoreCase(lastMsg.getMessage())) {
+                            continue;
                         }
+                        System.out.println("Adding msg "+msg);
+                        checkLogonAccepted(msg);
+                        addMessage(msg);
+                        setConnectionStatus(!msg.getType().equalsIgnoreCase("system"));
+                        if (!soundPlayed) {
+                            if (msg.getType().equalsIgnoreCase("system")) {
+                                SoundManager.playWarning();
+                                alertNewMessage(); // Request focus
+                            } else {
+                                SoundManager.playNotification();
+                                alertNewMessage();
+                            }
+                            soundPlayed = true; // Sound already played for this batch
+                        }
+                    }
+                    if (!messageModel.isEmpty()) {
                         messageList.setSelectedIndex(0);
-                        alertNewMessage();
-//                        System.out.println(newMessages.size() + " new messages received");
-                    });
-                }
-                setConnectionStatus(true);
-            } catch (Exception e) {
-                String msg = "ERROR: " + e.getMessage();
-                if (!messageModel.get(0).getMessage().equalsIgnoreCase(msg)) {
-                    addMessage(new AcarsMessage("system", msg));
-                    //TODO warning sound
-                }
-                setConnectionStatus(false);
-            }
+                    }
+                });
+            }else {setConnectionStatus(true);} //If no messages are returned that means fetching was successful
         }, 0, 40, TimeUnit.SECONDS);
     }
 
@@ -801,7 +832,6 @@ public class DashboardPanel extends JPanel {
     }
 
     private void alertNewMessage() {
-        SoundManager.playNotification();
         JFrame frame = client.frame;
         if (frame != null) {
             if (!frame.isActive()) {
@@ -822,9 +852,6 @@ public class DashboardPanel extends JPanel {
             }
         }
     }
-
-    //TODO
-    private void warningNewMessage() {};
 
     private void setConnectionStatus(boolean isConnected){
         if (isConnected) {callsignLabel.setForeground(Color.GREEN);}

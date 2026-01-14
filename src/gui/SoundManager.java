@@ -5,9 +5,16 @@ import javax.sound.sampled.*;
 import java.net.URL;
 public class SoundManager {
     public static void playNotification() {
+        playSound("msg_notification.wav");
+    }
+
+    public static void playWarning() {
+        playSound("msg_warning.wav");
+    }
+
+    public static void playSound(String fileName) {
         try {
-            // Use class loader for Java 8
-            URL soundFile = SoundManager.class.getResource("/resources/sounds/msg_alert.wav");
+            URL soundFile = SoundManager.class.getResource("/resources/sounds/"+fileName);
 
             if (soundFile == null) {
                 System.err.println("Sound file couldnt find! Check the path Class.SoundManager");
@@ -23,4 +30,8 @@ public class SoundManager {
             e.printStackTrace();
         }
     }
+
+
+
+
 }

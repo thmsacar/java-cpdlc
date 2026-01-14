@@ -18,6 +18,8 @@ public class HoppieAPI {
     private final String PDC_TEMPLATE = "REQUEST PREDEP CLEARANCE %s %s TO %s AT %s STAND %s ATIS %s EOB %s";
     //remarks(free text)
     private final String LOGON_TEMPLATE = "REQUEST LOGON %s";
+    private static final String LOGOFF_TEMPLATE = "LOGOFF";
+
     //request
 
     ///data2/msgNo/repliedNo/isReplyRequired/messageTxt
@@ -71,10 +73,6 @@ public class HoppieAPI {
         return new HoppieResponse(status, body);
     }
 
-    public int getCpdlcCounter() {
-        return cpdlcCounter;
-    }
-
     private String createFullUrl(String from, String to, String type, String packet) {
         // Replace spaces with '+' (URL encoding)
         String safePacket = packet.replace(" ", "+");
@@ -95,12 +93,21 @@ public class HoppieAPI {
     }
 
     //This method should be used when fetching messages to GUI
-    public List<AcarsMessage> fetchMessages(String callsign) throws IOException, RuntimeException {
-        HoppieResponse response = pollRequest(callsign);
-        if(!response.body().trim().startsWith("ok")) {
-            throw new RuntimeException("Could not fetch messages.");
-        }
+    public List<AcarsMessage> fetchMessages(String callsign) {
+        HoppieResponse response;
         List<AcarsMessage> list = new ArrayList<>();
+
+        try {
+            response = pollRequest(callsign);
+        } catch (IOException e) {
+            list.add(new AcarsMessage("system", "ERROR: "+e.getMessage()));
+            return list;
+        }
+
+        if(!response.body().trim().startsWith("ok")) {
+            list.add(new AcarsMessage("system", "ERROR: "+response.body()));
+            return list;
+        }
 
         Pattern p = Pattern.compile("\\{(\\S+)\\s+(\\S+)\\s+\\{([\\s\\S]*?)\\}\\}");
         Matcher m = p.matcher(response.body());
@@ -115,13 +122,13 @@ public class HoppieAPI {
                 list.add(new AcarsMessage(from, type, callsign, message));
             }
         }
+
         return list;
     }
 
     //To send a pre-departure clearance request
     public AcarsMessage sendPdcRequest(String station, Flight flight, String stand, String atis) {
         String pdc = getPdcMessage(
-                station,
                 flight.getCallsign(),
                 flight.getAircraft(),
                 flight.getOrigin(),
@@ -133,8 +140,8 @@ public class HoppieAPI {
     }
 
     //This is where the PDC request template is stored
-    private String  getPdcMessage(String station, String callsign, String acftType, String origin, String destination, String stand, String atis, String eob) {
-        String pdc = String.format(PDC_TEMPLATE,
+    private String  getPdcMessage(String callsign, String acftType, String origin, String destination, String stand, String atis, String eob) {
+        return String.format(PDC_TEMPLATE,
                 callsign,
                 acftType,
                 destination,
@@ -143,7 +150,6 @@ public class HoppieAPI {
                 atis,
                 eob
         );
-        return pdc;
     }
 
     public AcarsMessage sendTelex(String station, String callsign, String message) {
@@ -254,6 +260,9 @@ public class HoppieAPI {
         return cpdlcRequest(station, callsign, logonMsg, true);
     }
 
+    public AcarsMessage sendLogoffATC(String station, String callsign) {
+        return cpdlcRequest(station, callsign, LOGOFF_TEMPLATE, false);
+    }
 
     // --- CPDLC Response Methods ---  DEPRECATED
 //    public HoppieResponse wilco(String station, String callsign, int repliedMsg) throws IOException {
