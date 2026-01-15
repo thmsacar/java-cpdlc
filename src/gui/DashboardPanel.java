@@ -1,8 +1,10 @@
 package gui;
 
+import flight.Flight;
 import hoppie.AcarsMessage;
 import hoppie.CpdlcMessage;
 import hoppie.HoppieAPI;
+import simbrief.SimbriefAPI;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -10,6 +12,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.HierarchyEvent;
+import java.io.IOException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -17,6 +20,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.prefs.Preferences;
 
 public class DashboardPanel extends JPanel {
 
@@ -72,6 +76,15 @@ public class DashboardPanel extends JPanel {
     private PilotButton btnRequest;
     private PilotButton btnReport;
 
+    //PDC Form text fields
+    private JTextField stationField;
+    private JTextField atisField;
+    private JTextField typeField;
+    private JTextField depField;
+    private JTextField destField;
+    private JTextField standField;
+
+    private Preferences prefs = Preferences.userNodeForPackage(DashboardPanel.class);
 
     public DashboardPanel(String callsign, String hoppieID, Client client) {
         this.callsign = callsign;
@@ -109,6 +122,8 @@ public class DashboardPanel extends JPanel {
         cardContainer.add(createTelexCard(), "TELEX");
         cardContainer.add(createCpdlcCard(), "CPDLC");
         cardContainer.add(createLogonCard(), "LOGON_FORM");
+        cardContainer.add(createClearenceCard(), "CLEARANCE");
+        cardContainer.add(createPDCCard(), "PDC");
 
         add(cardContainer, BorderLayout.CENTER);
 
@@ -120,7 +135,7 @@ public class DashboardPanel extends JPanel {
 
         changeATSUnit(null);
 
-
+//
 //        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "MAINTAIN @FL370", 1, -1, "WU"));
 //        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "CURRENT ATC UNIT@_@CMRM@_@MADRID CTL@CURRENT ATC UNIT@_@CMRM@_@MADRID CTL", 1, -1, "NE"));
 //        addMessage(new AcarsMessage("THY2GF", "telex", "RYR2GF", "HELLO"));
@@ -237,6 +252,15 @@ public class DashboardPanel extends JPanel {
         return button;
     }
 
+    private JScrollPane createScrollPane(Component c) {
+        JScrollPane scrollPane = new JScrollPane(c);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.getVerticalScrollBar().setUI(new ModernScrollBarUI());
+        scrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(8, 0));
+        return scrollPane;
+    }
+
     private JPanel createResponsePanel() {
         JPanel panel = new JPanel(new GridLayout(1,3, 5, 0));
         panel.setPreferredSize(new Dimension(0, 40));
@@ -299,6 +323,8 @@ public class DashboardPanel extends JPanel {
         return panel;
     }
 
+    //---CARDS---
+
     private JPanel createListCard() {
         JPanel p = new JPanel(new BorderLayout());
         messageModel = new DefaultListModel<>();
@@ -345,11 +371,14 @@ public class DashboardPanel extends JPanel {
         });
 
         //Scroll pane
-        JScrollPane scrollPane = new JScrollPane(messageList);
-        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.getVerticalScrollBar().setUI(new ModernScrollBarUI());
-        scrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(8, 0));
+//        JScrollPane scrollPane = new JScrollPane(messageList);
+//        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+//        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+//        scrollPane.getVerticalScrollBar().setUI(new ModernScrollBarUI());
+//        scrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(8, 0));
+
+        JScrollPane scrollPane = createScrollPane(messageList);
+
 
 //        scrollPane.setBorder(BorderFactory.createEmptyBorder());
 //        scrollPane.setBackground(new Color(30, 30, 30));
@@ -371,7 +400,12 @@ public class DashboardPanel extends JPanel {
         detailTextArea.setEditable(false);
         detailTextArea.setFocusable(false);
         detailTextArea.setFont(new Font("Monospaced", Font.BOLD, 14));
-        p.add(new JScrollPane(detailTextArea), BorderLayout.CENTER);
+
+        JScrollPane scrollPane = createScrollPane(detailTextArea);
+        p.add(scrollPane, BorderLayout.CENTER);
+
+
+//        p.add(new JScrollPane(detailTextArea), BorderLayout.CENTER);
 
         //TODO scroll pane olayina scroll bar ekle
 
@@ -396,7 +430,10 @@ public class DashboardPanel extends JPanel {
 
         detailTextAreaNoRes.setFont(new Font("Monospaced", Font.BOLD, 14));
 
-        p.add(new JScrollPane(detailTextAreaNoRes), BorderLayout.CENTER);
+        JScrollPane scrollPane = createScrollPane(detailTextAreaNoRes);
+        p.add(scrollPane, BorderLayout.CENTER);
+
+//        p.add(new JScrollPane(detailTextAreaNoRes), BorderLayout.CENTER);
 
         return p;
     }
@@ -448,6 +485,7 @@ public class DashboardPanel extends JPanel {
         JLabel textLabel = new JLabel("MESSAGE");
         textLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
         JTextArea messageArea = new JTextArea();
+
         messageArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
         messageArea.setLineWrap(true);
 
@@ -588,6 +626,138 @@ public class DashboardPanel extends JPanel {
         return p;
     }
 
+    private JPanel createClearenceCard() {
+        JPanel p = new JPanel(new BorderLayout(0, 10));
+
+        PilotButton returnBtn = createReturnButton("CPDLC");
+        p.add(returnBtn, BorderLayout.NORTH);
+
+        JPanel clearenceMenu = new JPanel(new GridLayout(1, 2, 20, 20));
+        clearenceMenu.setBackground(new Color(30, 30, 30));
+        clearenceMenu.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color.DARK_GRAY, 1),
+                BorderFactory.createEmptyBorder(50, 20, 50, 20)
+        ));
+
+        PilotButton btnDepartureClx = createCpdlcMenuButton("DEPARTURE CLX");
+        PilotButton btnOceanicClx = createCpdlcMenuButton("OCEANIC CLX");
+
+        btnDepartureClx.addActionListener(e -> handleDepartureForm());
+
+        //Disable oceanic button to add as a future feature
+        disableButton(btnOceanicClx);
+
+        clearenceMenu.add(btnDepartureClx);
+        clearenceMenu.add(btnOceanicClx);
+
+
+        p.add(clearenceMenu, BorderLayout.CENTER);
+
+        return p;
+    }
+
+    private JPanel createPDCCard(){
+        JPanel p = new JPanel(new BorderLayout(0, 10));
+
+//       | RETURN
+//       | FORM
+//       | BUTTON
+
+        //RETURN
+        PilotButton returnBtn = createReturnButton("CLEARANCE");
+        p.add(returnBtn, BorderLayout.NORTH);
+
+        //FORM
+        JPanel formArea = createPDCFormArea();
+        formArea.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+
+        JScrollPane scrollPane = createScrollPane(formArea);
+        p.add(scrollPane, BorderLayout.CENTER);
+
+        // BUTTON
+        PilotButton requestBtn = new PilotButton("REQUEST CLEARANCE");
+        requestBtn.setPreferredSize(new Dimension(0, 40));
+        requestBtn.setCustomColor(new Color(0, 100, 150), Color.WHITE);
+        p.add(requestBtn, BorderLayout.SOUTH);
+
+        requestBtn.addActionListener(e -> sendPDCRequest());
+
+        return p;
+    }
+
+    private JPanel createPDCFormArea() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.weightx = 1.0;
+
+        // --- Simbrief ID & Fetch Button ---
+        JPanel simbriefRow = new JPanel(new BorderLayout(5, 0));
+        simbriefRow.setOpaque(false);
+        JTextField simbriefField = createStyledTextField("");
+        PilotButton fetchBtn = new PilotButton("FETCH");
+        fetchBtn.setPreferredSize(new Dimension(80, 30));
+        fetchBtn.addActionListener(e -> {
+            prefs.put("lastSimbriefID", simbriefField.getText());
+            fetchFromSimbrief(simbriefField.getText());
+        });
+        simbriefField.setText(prefs.get("lastSimbriefID", ""));
+
+
+        simbriefRow.add(simbriefField, BorderLayout.CENTER);
+        simbriefRow.add(fetchBtn, BorderLayout.EAST);
+
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        panel.add(createLabeledComponent("SIMBRIEF ID", simbriefRow), gbc);
+
+        // --- Station & Callsign ---
+        gbc.gridwidth = 1; gbc.gridy = 1;
+        panel.add(createLabeledComponent("STATION", stationField = createStyledTextField("")), gbc);
+        gbc.gridx = 1;
+        panel.add(createLabeledComponent("ATIS", atisField = createStyledTextField("")), gbc);
+
+        // --- Departure & Destination ---
+        gbc.gridx = 0; gbc.gridy = 2;
+        panel.add(createLabeledComponent("DEPARTURE", depField = createStyledTextField("")), gbc);
+        gbc.gridx = 1;
+        panel.add(createLabeledComponent("DESTINATION", destField = createStyledTextField("")), gbc);
+
+        // --- Aircraft Type & Stand ---
+        gbc.gridx = 0; gbc.gridy = 3;
+        panel.add(createLabeledComponent("ACFT TYPE", typeField = createStyledTextField("")), gbc);
+        gbc.gridx = 1;
+        panel.add(createLabeledComponent("STAND / GATE", standField = createStyledTextField("")), gbc);
+
+        return panel;
+    }
+
+    private JPanel createLabeledComponent(String labelText, JComponent component) {
+        JPanel container = new JPanel(new BorderLayout(0, 3));
+        container.setOpaque(false);
+
+        JLabel label = new JLabel(labelText);
+        label.setFont(new Font("Monospaced", Font.BOLD, 12));
+        label.setForeground(Color.LIGHT_GRAY);
+
+        container.add(label, BorderLayout.NORTH);
+        container.add(component, BorderLayout.CENTER);
+        return container;
+    }
+
+    private JTextField createStyledTextField(String placeholder) {
+        JTextField field = new JTextField();
+        field.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(Color.DARK_GRAY),
+                    BorderFactory.createEmptyBorder(0, 5, 0, 5)
+                ));
+        field.setPreferredSize(new Dimension(0, 30));
+
+        ((AbstractDocument) field.getDocument()).setDocumentFilter(new UppercaseFilter());
+        return field;
+    }
+
     private JPanel createCpdlcMenuPanel(){
         JPanel cpdlcMenu = new JPanel(new GridLayout(2, 2, 20, 20)); // 2x2 Izgara
         cpdlcMenu.setBackground(new Color(30, 30, 30));
@@ -601,15 +771,8 @@ public class DashboardPanel extends JPanel {
         btnRequest = createCpdlcMenuButton("REQUEST");
         btnReport = createCpdlcMenuButton("REPORT");
 
-        btnLogonATC.addActionListener(e -> {
-            if (!isLoggedOn) {
-                // Bağlı değilsek Formu aç (Station sormak için)
-                cardLayout.show(cardContainer, "LOGON_FORM");
-            } else {
-                // Bağlıysak Logoff paketi gönder
-                sendLogoffAction();
-            }
-        });
+        btnLogonATC.addActionListener(e -> handleLogonATC());
+        btnClearance.addActionListener(e -> handleClearence());
 
         updateMenuState();
 
@@ -631,8 +794,6 @@ public class DashboardPanel extends JPanel {
         ));
         return btn;
     }
-
-
 
     //Updates to the relevant menu state according to ATC LOGON status (isLoggedOn)
     private void updateMenuState() {
@@ -669,6 +830,7 @@ public class DashboardPanel extends JPanel {
         button.setEnabled(true);
     }
 
+    //To call when clicked DISCONNECT button
     private void handleDisconnect(Client client) {
 
         //Warning window
@@ -686,16 +848,37 @@ public class DashboardPanel extends JPanel {
         }
     }
 
+    //To call when clicked TELEX button
     private void handleTelex() {
         // Telex button
         cardLayout.show(cardContainer, "TELEX");
 //        System.out.println("Loading telex menu...");
     }
 
+    //To call when clicked CPDLC button
     private void handleCpdlc() {
         // CPDLC button
-        System.out.println("Loading CPDLC menu...");
         cardLayout.show(cardContainer, "CPDLC");
+    }
+
+    //To call when clicked ATC LOGON button
+    private void handleLogonATC() {
+        if (!isLoggedOn) {
+            // If not logged to ATC show form (get the station)
+            cardLayout.show(cardContainer, "LOGON_FORM");
+        } else {
+            // If logged to ATC then logoff
+            sendLogoffAction();
+        }
+    }
+
+    //To call when clicked PDC/CLX button
+    private void handleClearence() {
+        cardLayout.show(cardContainer, "CLEARANCE");
+    }
+
+    private void handleDepartureForm(){
+        cardLayout.show(cardContainer, "PDC");
     }
 
     private void sendTelex(String station, String message) {
@@ -741,6 +924,44 @@ public class DashboardPanel extends JPanel {
             detailTextAreaNoRes.setText(selected.getDetailFormat(this.callsign));
             cardLayout.show(cardContainer, "DETAIL_NO_RES");
         }
+    }
+
+    private void sendPDCRequest() {
+        //Fields to check
+        JTextField[] fields = {stationField, atisField, typeField, depField, destField, standField};
+        String[] names = {"STATION", "ATIS", "ACFT TYPE", "DEP", "DEST", "STAND"};
+
+        // Check if fields empty
+        for (int i = 0; i < fields.length; i++) {
+            if (fields[i].getText().trim().isEmpty()) {
+                fields[i].setBorder(BorderFactory.createLineBorder(Color.RED));
+                fields[i].requestFocus();
+                return;
+            }
+            fields[i].setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+        }
+
+        String station = stationField.getText().trim();
+        String origin = depField.getText().trim();
+        String destination = destField.getText().trim();
+        String type = typeField.getText().trim();
+        String stand = standField.getText().trim();
+        String atis = atisField.getText().trim();
+
+        System.out.println("======= PDC REQUEST DEBUG =======");
+        System.out.println("STATION    : " + stationField.getText().trim());
+        System.out.println("ATIS       : " + atisField.getText().trim());
+        System.out.println("ACFT TYPE  : " + typeField.getText().trim());
+        System.out.println("DEP / DEST : " + depField.getText().trim() + " / " + destField.getText().trim());
+        System.out.println("STAND      : " + standField.getText().trim());
+
+        System.out.println("=================================");
+
+        Flight flight = new Flight(callsign, origin, destination, type);
+        AcarsMessage msg = hoppieAPI.sendPdcRequest(station, flight, stand, atis);
+        addMessage(msg);
+        if(msg.getType().equalsIgnoreCase("system")) messageList.setSelectedIndex(0);
+        cardLayout.show(cardContainer, "LIST");
     }
 
     private void sendLogonAction(String targetStation, String remarks) {
@@ -829,6 +1050,24 @@ public class DashboardPanel extends JPanel {
             System.out.println("Stopping fetcher...");
             fetcherService.shutdownNow();
         }
+    }
+
+    private void fetchFromSimbrief(String simbriefID){
+        System.out.println("Fetching " + simbriefID);
+        if (simbriefID.trim().isEmpty()) return;
+        new Thread(() -> {
+            SimbriefAPI simbriefAPI = new SimbriefAPI(simbriefID);
+            try {
+                Flight flight = simbriefAPI.getFlight();
+                System.out.println(flight);
+                depField.setText(flight.getOrigin());
+                destField.setText(flight.getDestination());
+                typeField.setText(flight.getAircraft());
+            } catch (IOException e) {
+                addMessage(new AcarsMessage("system", "ERROR: "+e.getMessage()));
+                messageList.setSelectedIndex(0);
+            }
+        }).start();
     }
 
     private void alertNewMessage() {

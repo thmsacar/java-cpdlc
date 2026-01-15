@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.*;
 import java.util.Scanner;
 
+import flight.Flight;
 import org.json.JSONObject;
 import org.json.XML;
 
@@ -19,7 +20,7 @@ public class SimbriefAPI {
 
     }
 
-    public SimbriefFlight getFlight() throws IOException {
+    public Flight getFlight() throws IOException {
         Scanner sc = new Scanner(new URL(url).openStream()).useDelimiter("\\A");
         String xml = sc.next();
 
@@ -41,13 +42,12 @@ public class SimbriefAPI {
                 .getJSONObject("aircraft")
                 .getString("icao_code");
 
-        Integer offBlockTime = json.getJSONObject("OFP")
-                .getJSONObject("times")
-                .getInt("est_out");
+//        Integer offBlockTime = json.getJSONObject("OFP")
+//                .getJSONObject("times")
+//                .getInt("est_out");
 
 
-        return new SimbriefFlight(callsign, origin, destination, aircraft, offBlockTime);
-
+        return new Flight(callsign, origin, destination, aircraft);
 
     }
 

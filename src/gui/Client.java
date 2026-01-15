@@ -32,11 +32,15 @@ public class Client {
         UIManager.put("nimbusSelectedText", new java.awt.Color(255,255,255));
         UIManager.put("nimbusSelectionBackground", new java.awt.Color(60,63,65));
         UIManager.put("text", new java.awt.Color(230,230,230));
+        UIManager.put("DefaultLookup.setUIDefault", Boolean.TRUE);
+        UIManager.put("Button.focus", new Color(0, 0, 0, 0));
+        UIManager.put("TextField.focus", new Color(0, 0, 0, 0));
+        UIManager.put("Component.focusColor", new Color(0, 0, 0, 0));
 
         frame = new JFrame("CPDLC Client");
         setAppIcon(frame);
-        frame.setSize(650, 330);
-        frame.setMinimumSize(new Dimension(650, 330));
+        frame.setSize(650, 400);
+        frame.setMinimumSize(new Dimension(650, 400));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         frame.setContentPane(new LoginPanel(this));

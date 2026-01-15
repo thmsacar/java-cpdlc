@@ -8,28 +8,14 @@ public class Flight {
     private String origin;
     private String destination;
     private String aircraft;
-    private Date offBlockTime;
-    private final TimeFormatter timeFormatter;
 
 
-    public Flight(String callsign, String origin, String destination, String aircraft, Integer offBlockTime) {
+    public Flight(String callsign, String origin, String destination, String aircraft) {
         this.callsign = callsign;
         this.origin = origin;
         this.destination = destination;
         this.aircraft = aircraft;
 
-        long timeStampSec = offBlockTime;
-        this.offBlockTime = new Date(timeStampSec * 1000L);
-        this.timeFormatter = new TimeFormatter();
-    }
-
-
-    public String getOffBlockTime() {
-        return timeFormatter.zuluTime(offBlockTime);
-    }
-
-    public String getLocalOffBlockTime() {
-        return timeFormatter.localTime(offBlockTime);
     }
 
     public String getDestination() {
@@ -48,10 +34,6 @@ public class Flight {
         return callsign;
     }
 
-    public void setOffBlockTime(Date offBlockTime) {
-        this.offBlockTime = offBlockTime;
-    }
-
     public void setAircraft(String aircraft) {
         this.aircraft = aircraft;
     }
@@ -66,5 +48,15 @@ public class Flight {
 
     public void setCallsign(String callsign) {
         this.callsign = callsign;
+    }
+
+    @Override
+    public String toString() {
+        return "Flight{" +
+                "callsign='" + callsign + '\'' +
+                ", origin='" + origin + '\'' +
+                ", destination='" + destination + '\'' +
+                ", aircraft='" + aircraft + '\'' +
+                '}';
     }
 }
