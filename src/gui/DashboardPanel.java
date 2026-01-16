@@ -948,14 +948,14 @@ public class DashboardPanel extends JPanel {
         String stand = standField.getText().trim();
         String atis = atisField.getText().trim();
 
-        System.out.println("======= PDC REQUEST DEBUG =======");
-        System.out.println("STATION    : " + stationField.getText().trim());
-        System.out.println("ATIS       : " + atisField.getText().trim());
-        System.out.println("ACFT TYPE  : " + typeField.getText().trim());
-        System.out.println("DEP / DEST : " + depField.getText().trim() + " / " + destField.getText().trim());
-        System.out.println("STAND      : " + standField.getText().trim());
-
-        System.out.println("=================================");
+    //        System.out.println("======= PDC REQUEST DEBUG =======");
+    //        System.out.println("STATION    : " + stationField.getText().trim());
+    //        System.out.println("ATIS       : " + atisField.getText().trim());
+    //        System.out.println("ACFT TYPE  : " + typeField.getText().trim());
+    //        System.out.println("DEP / DEST : " + depField.getText().trim() + " / " + destField.getText().trim());
+    //        System.out.println("STAND      : " + standField.getText().trim());
+    //
+    //        System.out.println("=================================");
 
         Flight flight = new Flight(callsign, origin, destination, type);
         AcarsMessage msg = hoppieAPI.sendPdcRequest(station, flight, stand, atis);
@@ -997,6 +997,8 @@ public class DashboardPanel extends JPanel {
                 case "NEGATIVE": acarsMsg = hoppieAPI.negative(originalMsg.getFrom(), this.callsign, originalMsg.getMsgNumber()); break;
             }
             addMessage(acarsMsg);
+            messageList.clearSelection();
+            cardLayout.show(cardContainer, "LIST");
         }).start();
     }
 

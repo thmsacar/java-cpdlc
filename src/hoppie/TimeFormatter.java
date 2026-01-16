@@ -1,4 +1,4 @@
-package flight;
+package hoppie;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
