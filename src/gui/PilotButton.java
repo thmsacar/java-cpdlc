@@ -25,8 +25,8 @@ public class PilotButton extends JButton {
         setBackground(originalColor);
         setForeground(Color.WHITE);
 
-        setFont(new Font("Monospaced", Font.BOLD, 14));
-
+//        setFont(new Font("Roboto", Font.BOLD, 14));
+        setFont(FontManager.BOLD.deriveFont(14f));
 
         setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
 
@@ -81,6 +81,7 @@ public class PilotButton extends JButton {
     protected void paintComponent(Graphics g) {
         g.setColor(getBackground());
         g.fillRect(0, 0, getWidth(), getHeight());
+
         //Click effect
         if (getModel().isPressed()) {
             Graphics2D g2 = (Graphics2D) g.create();

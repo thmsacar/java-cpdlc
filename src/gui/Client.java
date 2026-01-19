@@ -37,6 +37,8 @@ public class Client {
         UIManager.put("TextField.focus", new Color(0, 0, 0, 0));
         UIManager.put("Component.focusColor", new Color(0, 0, 0, 0));
 
+        FontManager.loadFonts();
+
         frame = new JFrame("CPDLC Client");
         setAppIcon(frame);
         frame.setSize(650, 400);

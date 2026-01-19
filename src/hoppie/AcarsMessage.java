@@ -1,6 +1,7 @@
 package hoppie;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,28 +53,34 @@ public class AcarsMessage {
         this.message = message;
     }
 
-    public String getListFormat(String callsign){
+    public HashMap<String, String> getListFormat(String callsign){
         String entry;
+        String symbol;
         if ("system".equalsIgnoreCase(this.getType())) {
             entry = "SYSTEM: " + this.getMessage();
+            symbol = " ";
         } else {
             String contact;
-            String arrow;
             if (this.getFrom().equalsIgnoreCase(callsign)) {
                 contact = "TO " + this.getTo();
-                arrow = "\\u2B08 ";
+                symbol = "\\u2B08";
             } else {
                 contact = "FROM " + this.getFrom();
-                arrow = "\\u2B0A ";
+                symbol = "\\u2B0A";
             }
-            entry = arrow + TimeFormatter.zuluTime(this.getTimestamp());
+//            entry = symbol + TimeFormatter.zuluTime(this.getTimestamp());
+            entry = TimeFormatter.zuluTime(this.getTimestamp());
             if ("telex".equalsIgnoreCase(this.getType())) {
-                entry += " TELEX " + contact;// + ": " + this.getMessage();
+                entry += " TELEX " + contact ;// + ": " + this.getMessage();
             } else if ("cpdlc".equalsIgnoreCase(this.getType())) {
-                entry += " CPDLC " + contact;// + ": " + this.getMessage();
+                entry += " CPDLC " + contact ;// + ": " + this.getMessage();
             }
         }
-        return decodeUnicode(entry);
+        HashMap<String, String> map = new HashMap<>();
+        map.put("entry", entry);
+        map.put("symbol", decodeUnicode(symbol));
+//        return decodeUnicode(entry);
+        return map;
     }
 
     public String getDetailFormat(String callsign){

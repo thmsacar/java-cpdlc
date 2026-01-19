@@ -23,6 +23,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
 
 public class DashboardPanel extends JPanel {
+    
+    private static final String UI_FONT = "Roboto Mono";
 
     private static final int LIST_CHARACTER_LIMIT = 70;
     private static final Color GREEN_RESPONSE = new Color(0, 150, 0);
@@ -135,10 +137,11 @@ public class DashboardPanel extends JPanel {
 
         changeATSUnit(null);
 
-//
-//        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "MAINTAIN @FL370", 1, -1, "WU"));
-//        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "CURRENT ATC UNIT@_@CMRM@_@MADRID CTL@CURRENT ATC UNIT@_@CMRM@_@MADRID CTL", 1, -1, "NE"));
-//        addMessage(new AcarsMessage("THY2GF", "telex", "RYR2GF", "HELLO"));
+//CLD 1614 260119 LTAC PDC 001 @THY1GF@ CLRD TO @LTFM@ OFF @03C@ VIA @YAVRU1T@ SQUAWK @6445@ NEXT FREQ @129.425@ ATIS @B@, @QNH 1023@ DEP FREQ @129.425@ CLIMB VIA SID TO ALTITUDE @FL140@ IF YOU REQ. RWY CHG. CALL @129.425@ BEFORE ACCEPTING VIA DCL.
+        addMessage(new CpdlcMessage("LTXX", "cpdlc", "RYR2GF", "CLD 1614 260119 LTAC PDC 001 @THY1GF@ CLRD TO @LTFM@ OFF @03C@ VIA @YAVRU1T@ SQUAWK @6445@ NEXT FREQ @129.425@ ATIS @B@, @QNH 1023@ DEP FREQ @129.425@ CLIMB VIA SID TO ALTITUDE @FL140@ IF YOU REQ. RWY CHG. CALL @129.425@ BEFORE ACCEPTING VIA DCL.", 1, -1, "WU"));
+        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "MAINTAIN @FL370", 1, -1, "WU"));
+        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "CURRENT ATC UNIT@_@CMRM@_@MADRID CTL@CURRENT ATC UNIT@_@CMRM@_@MADRID CTL", 1, -1, "NE"));
+        addMessage(new AcarsMessage("THY2GF", "telex", "RYR2GF", "HELLO"));
 
     }
 
@@ -187,7 +190,7 @@ public class DashboardPanel extends JPanel {
 
         JLabel zuluLabel = new JLabel("00:00Z", SwingConstants.CENTER);
         zuluLabel.setForeground(Color.WHITE);
-        zuluLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
+        zuluLabel.setFont(new Font(UI_FONT, Font.BOLD, 14));
         clockBox.add(zuluLabel, BorderLayout.CENTER);
         p.add(clockBox, gbc);
 
@@ -211,12 +214,12 @@ public class DashboardPanel extends JPanel {
         //Callsign
         callsignLabel = new JLabel(this.callsign, SwingConstants.RIGHT);
         callsignLabel.setForeground(Color.GREEN); // Uçak kokpiti ekranı rengi
-        callsignLabel.setFont(new Font("Monospaced", Font.BOLD, 16));
+        callsignLabel.setFont(new Font(UI_FONT, Font.BOLD, 16));
 
         //Current ATS
         atsLabel = new JLabel("ATS: " + currentATS, SwingConstants.RIGHT);
         atsLabel.setForeground(Color.CYAN);
-        atsLabel.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        atsLabel.setFont(new Font(UI_FONT, Font.PLAIN, 12));
 
         infoBox.add(callsignLabel);
         infoBox.add(atsLabel);
@@ -329,37 +332,80 @@ public class DashboardPanel extends JPanel {
         JPanel p = new JPanel(new BorderLayout());
         messageModel = new DefaultListModel<>();
         messageList = new JList<>(messageModel);
-        messageList.setFont(new Font("Monospaced", Font.PLAIN, 14));
 
         //List renderer
         messageList.setCellRenderer(new DefaultListCellRenderer() {
+
+            private final JPanel rendererPanel = new JPanel(new BorderLayout(10, 0));
+            private final JLabel arrowLabel = new JLabel();
+            private final JLabel textLabel = new JLabel();
+
+            {
+                rendererPanel.add(arrowLabel, BorderLayout.WEST);
+                rendererPanel.add(textLabel, BorderLayout.CENTER);
+
+                arrowLabel.setFont(new Font("Monospaced", Font.BOLD, 20));
+                textLabel.setFont(FontManager.REGULAR.deriveFont(14f));
+
+                rendererPanel.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createMatteBorder(0, 0, 1, 0, Color.DARK_GRAY),
+                        BorderFactory.createEmptyBorder(10, 10, 10, 10)
+                ));
+            }
+
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                           boolean isSelected, boolean cellHasFocus) {
 
-                JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-
                 if (value instanceof AcarsMessage) {
                     AcarsMessage msg = (AcarsMessage) value;
-                    String rawLine = msg.getListFormat(callsign);
-                    label.setText(formatListLine(rawLine));
+                    String symbol = msg.getListFormat(callsign).get("symbol");
+                    String entry = msg.getListFormat(callsign).get("entry");
+                    arrowLabel.setText(symbol);
+                    textLabel.setText(entry);
                 }
 
-                //Line border
-                label.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createMatteBorder(0, 0, 1, 0, Color.DARK_GRAY), // Alt çizgi
-                        BorderFactory.createEmptyBorder(10, 10, 10, 10)               // Yazı etrafındaki boşluk
-                ));
 
-                //List when selected
                 if (isSelected) {
-                    label.setBackground(new Color(45, 45, 45));
+                    rendererPanel.setOpaque(true);
+                    rendererPanel.setBackground(new Color(45 , 45, 45));
                 } else {
-                    label.setBackground(list.getBackground());
+                    rendererPanel.setOpaque(false);
+                    rendererPanel.setBackground(list.getBackground());
+
                 }
 
-                return label;
+                return rendererPanel;
             }
+
+//            @Override
+//            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+//                                                          boolean isSelected, boolean cellHasFocus) {
+//
+//                JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+//
+//                if (value instanceof AcarsMessage) {
+//                    AcarsMessage msg = (AcarsMessage) value;
+//                    String symbol = msg.getListFormat(callsign).get("symbol");
+//                    String entry = msg.getListFormat(callsign).get("entry");
+//                    label.setText(formatListLine(entry));
+//                }
+//
+//                //Line border
+//                label.setBorder(BorderFactory.createCompoundBorder(
+//                        BorderFactory.createMatteBorder(0, 0, 1, 0, Color.DARK_GRAY), // Alt çizgi
+//                        BorderFactory.createEmptyBorder(10, 10, 10, 10)               // Yazı etrafındaki boşluk
+//                ));
+//
+//                //List when selected
+//                if (isSelected) {
+//                    label.setBackground(new Color(45, 45, 45));
+//                } else {
+//                    label.setBackground(list.getBackground());
+//                }
+//
+//                return label;
+//            }
         });
 
 
@@ -399,7 +445,7 @@ public class DashboardPanel extends JPanel {
         detailTextArea = new JTextArea();
         detailTextArea.setEditable(false);
         detailTextArea.setFocusable(false);
-        detailTextArea.setFont(new Font("Monospaced", Font.BOLD, 14));
+        detailTextArea.setFont(new Font(UI_FONT, Font.BOLD, 14));
 
         JScrollPane scrollPane = createScrollPane(detailTextArea);
         p.add(scrollPane, BorderLayout.CENTER);
@@ -428,7 +474,7 @@ public class DashboardPanel extends JPanel {
         detailTextAreaNoRes.setEditable(false);
         detailTextAreaNoRes.setFocusable(false);
 
-        detailTextAreaNoRes.setFont(new Font("Monospaced", Font.BOLD, 14));
+        detailTextAreaNoRes.setFont(new Font(UI_FONT, Font.BOLD, 14));
 
         JScrollPane scrollPane = createScrollPane(detailTextAreaNoRes);
         p.add(scrollPane, BorderLayout.CENTER);
@@ -458,9 +504,9 @@ public class DashboardPanel extends JPanel {
         // --- Left side (station) ---
         JPanel stationContainer = new JPanel(new BorderLayout(0, 5));
         JLabel stationLabel = new JLabel("STATION");
-        stationLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
+        stationLabel.setFont(new Font(UI_FONT, Font.BOLD, 14));
         JTextField stationField = new JTextField(15); //field for 15 chars
-        stationField.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        stationField.setFont(new Font(UI_FONT, Font.PLAIN, 14));
         stationField.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
         stationField.setPreferredSize(new Dimension(200, 30));
         stationField.setMinimumSize(stationField.getPreferredSize());
@@ -483,10 +529,10 @@ public class DashboardPanel extends JPanel {
 
         JPanel messageContainer = new JPanel(new BorderLayout(0, 5));
         JLabel textLabel = new JLabel("MESSAGE");
-        textLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
+        textLabel.setFont(new Font(UI_FONT, Font.BOLD, 14));
         JTextArea messageArea = new JTextArea();
 
-        messageArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        messageArea.setFont(new Font(UI_FONT, Font.PLAIN, 14));
         messageArea.setLineWrap(true);
 
         ((AbstractDocument) messageArea.getDocument())
@@ -544,9 +590,9 @@ public class DashboardPanel extends JPanel {
         // --- Left side (station) ---
         JPanel stationContainer = new JPanel(new BorderLayout(0, 5));
         JLabel stationLabel = new JLabel("STATION");
-        stationLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
+        stationLabel.setFont(new Font(UI_FONT, Font.BOLD, 14));
         JTextField stationField = new JTextField(15); //field for 15 chars
-        stationField.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        stationField.setFont(new Font(UI_FONT, Font.PLAIN, 14));
         stationField.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
         stationField.setPreferredSize(new Dimension(200, 30));
         stationField.setMinimumSize(stationField.getPreferredSize());
@@ -569,9 +615,9 @@ public class DashboardPanel extends JPanel {
 
         JPanel messageContainer = new JPanel(new BorderLayout(0, 5));
         JLabel textLabel = new JLabel("REMARKS");
-        textLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
+        textLabel.setFont(new Font(UI_FONT, Font.BOLD, 14));
         JTextArea messageArea = new JTextArea();
-        messageArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        messageArea.setFont(new Font(UI_FONT, Font.PLAIN, 14));
         messageArea.setLineWrap(true);
 
         ((AbstractDocument) messageArea.getDocument())
@@ -737,7 +783,7 @@ public class DashboardPanel extends JPanel {
         container.setOpaque(false);
 
         JLabel label = new JLabel(labelText);
-        label.setFont(new Font("Monospaced", Font.BOLD, 12));
+        label.setFont(new Font(UI_FONT, Font.BOLD, 12));
         label.setForeground(Color.LIGHT_GRAY);
 
         container.add(label, BorderLayout.NORTH);
@@ -747,7 +793,7 @@ public class DashboardPanel extends JPanel {
 
     private JTextField createStyledTextField(String placeholder) {
         JTextField field = new JTextField();
-        field.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        field.setFont(new Font(UI_FONT, Font.PLAIN, 14));
         field.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createLineBorder(Color.DARK_GRAY),
                     BorderFactory.createEmptyBorder(0, 5, 0, 5)
@@ -786,7 +832,7 @@ public class DashboardPanel extends JPanel {
 
     private PilotButton createCpdlcMenuButton(String text) {
         PilotButton btn = new PilotButton(text);
-        btn.setFont(new Font("Monospaced", Font.BOLD, 14));
+        btn.setFont(new Font(UI_FONT, Font.BOLD, 14));
         btn.setFocusPainted(false);
         btn.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Color.DARK_GRAY, 1),
