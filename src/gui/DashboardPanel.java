@@ -85,6 +85,7 @@ public class DashboardPanel extends JPanel {
     private JTextField depField;
     private JTextField destField;
     private JTextField standField;
+    private JTextField pdcRemarkField;
 
     private Preferences prefs = Preferences.userNodeForPackage(DashboardPanel.class);
 
@@ -775,6 +776,9 @@ public class DashboardPanel extends JPanel {
         gbc.gridx = 1;
         panel.add(createLabeledComponent("STAND / GATE", standField = createStyledTextField("")), gbc);
 
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
+        panel.add(createLabeledComponent("REMARKS", pdcRemarkField = createStyledTextField("")), gbc);
+
         return panel;
     }
 
@@ -993,6 +997,7 @@ public class DashboardPanel extends JPanel {
         String type = typeField.getText().trim();
         String stand = standField.getText().trim();
         String atis = atisField.getText().trim();
+        String remarks = pdcRemarkField.getText().trim();
 
     //        System.out.println("======= PDC REQUEST DEBUG =======");
     //        System.out.println("STATION    : " + stationField.getText().trim());
@@ -1004,7 +1009,7 @@ public class DashboardPanel extends JPanel {
     //        System.out.println("=================================");
 
         Flight flight = new Flight(callsign, origin, destination, type);
-        AcarsMessage msg = hoppieAPI.sendPdcRequest(station, flight, stand, atis);
+        AcarsMessage msg = hoppieAPI.sendPdcRequest(station, flight, stand, atis, remarks);
         addMessage(msg);
         if(msg.getType().equalsIgnoreCase("system")) messageList.setSelectedIndex(0);
         cardLayout.show(cardContainer, "LIST");

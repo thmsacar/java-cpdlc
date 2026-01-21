@@ -14,8 +14,8 @@ import java.util.stream.Collectors;
 
 public class HoppieAPI {
 
-    //callsign, acftType, destination, origin, stand, atis, eob
-    private final String PDC_TEMPLATE = "REQUEST PREDEP CLEARANCE %s %s TO %s AT %s STAND %s ATIS %s";
+    //callsign, acftType, destination, origin, stand, atis, eob, remarks
+    private final String PDC_TEMPLATE = "REQUEST PREDEP CLEARANCE %s %s TO %s AT %s STAND %s ATIS %s %s";
     //remarks(free text)
     private final String LOGON_TEMPLATE = "REQUEST LOGON %s";
     private static final String LOGOFF_TEMPLATE = "LOGOFF";
@@ -127,26 +127,28 @@ public class HoppieAPI {
     }
 
     //To send a pre-departure clearance request
-    public AcarsMessage sendPdcRequest(String station, Flight flight, String stand, String atis) {
+    public AcarsMessage sendPdcRequest(String station, Flight flight, String stand, String atis, String remarks) {
         String pdc = getPdcMessage(
                 flight.getCallsign(),
                 flight.getAircraft(),
                 flight.getOrigin(),
                 flight.getDestination(),
                 stand,
-                atis);
+                atis,
+                remarks);
         return sendTelex(station, flight.getCallsign(), pdc);
     }
 
     //This is where the PDC request template is stored
-    private String  getPdcMessage(String callsign, String acftType, String origin, String destination, String stand, String atis) {
+    private String  getPdcMessage(String callsign, String acftType, String origin, String destination, String stand, String atis, String remarks) {
         return String.format(PDC_TEMPLATE,
                 callsign,
                 acftType,
                 destination,
                 origin,
                 stand,
-                atis
+                atis,
+                remarks
         );
     }
 
