@@ -9,6 +9,10 @@ import java.awt.*;
 
 import static gui.DashboardPanel.UI_FONT;
 
+
+//TODO make this one abstract and create different RequestForms ex: RequestDirectForm
+//then override createRequestField
+//createRequestField in this class can be abstract
 public class RequestForm extends JPanel{
 
     private String requestText;

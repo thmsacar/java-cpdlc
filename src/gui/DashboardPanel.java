@@ -142,13 +142,13 @@ public class DashboardPanel extends JPanel {
         setConnectionStatus(connectionMsg.getMessage().startsWith("Connected"));
         addMessage(connectionMsg);
 
-        changeATSUnit("TEST");
+        changeATSUnit(null);
 
 //CLD 1614 260119 LTAC PDC 001 @THY1GF@ CLRD TO @LTFM@ OFF @03C@ VIA @YAVRU1T@ SQUAWK @6445@ NEXT FREQ @129.425@ ATIS @B@, @QNH 1023@ DEP FREQ @129.425@ CLIMB VIA SID TO ALTITUDE @FL140@ IF YOU REQ. RWY CHG. CALL @129.425@ BEFORE ACCEPTING VIA DCL.
-        addMessage(new CpdlcMessage("LTXX", "cpdlc", "RYR2GF", "CLD 1614 260119 LTAC PDC 001 @THY1GF@ CLRD TO @LTFM@ OFF @03C@ VIA @YAVRU1T@ SQUAWK @6445@ NEXT FREQ @129.425@ ATIS @B@, @QNH 1023@ DEP FREQ @129.425@ CLIMB VIA SID TO ALTITUDE @FL140@ IF YOU REQ. RWY CHG. CALL @129.425@ BEFORE ACCEPTING VIA DCL.", 1, -1, "WU"));
-        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "MAINTAIN @FL370", 1, -1, "WU"));
-        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "CURRENT ATC UNIT@_@CMRM@_@MADRID CTL@CURRENT ATC UNIT@_@CMRM@_@MADRID CTL", 1, -1, "NE"));
-        addMessage(new AcarsMessage("THY2GF", "telex", "RYR2GF", "HELLO"));
+//        addMessage(new CpdlcMessage("LTXX", "cpdlc", "RYR2GF", "CLD 1614 260119 LTAC PDC 001 @THY1GF@ CLRD TO @LTFM@ OFF @03C@ VIA @YAVRU1T@ SQUAWK @6445@ NEXT FREQ @129.425@ ATIS @B@, @QNH 1023@ DEP FREQ @129.425@ CLIMB VIA SID TO ALTITUDE @FL140@ IF YOU REQ. RWY CHG. CALL @129.425@ BEFORE ACCEPTING VIA DCL.", 1, -1, "WU"));
+//        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "MAINTAIN @FL370", 1, -1, "WU"));
+//        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "CURRENT ATC UNIT@_@CMRM@_@MADRID CTL@CURRENT ATC UNIT@_@CMRM@_@MADRID CTL", 1, -1, "NE"));
+//        addMessage(new AcarsMessage("THY2GF", "telex", "RYR2GF", "HELLO"));
 
     }
 
