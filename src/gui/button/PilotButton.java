@@ -1,4 +1,6 @@
-package gui;
+package gui.button;
+import gui.FontManager;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;

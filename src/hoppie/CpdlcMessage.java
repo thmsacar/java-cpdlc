@@ -18,7 +18,6 @@ public class CpdlcMessage extends AcarsMessage {
         this.responseType = responseType;
     }
 
-
     public void parseCpdlcContent(String rawContent) {
         // rawContent = "/data2/3//WU/TEST"
         if (rawContent.startsWith("/data2/")) {

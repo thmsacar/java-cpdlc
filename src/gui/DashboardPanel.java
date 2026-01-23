@@ -1,6 +1,8 @@
 package gui;
 
 import flight.Flight;
+import gui.button.PilotButton;
+import gui.request.RequestForm;
 import hoppie.AcarsMessage;
 import hoppie.CpdlcMessage;
 import hoppie.HoppieAPI;
@@ -24,7 +26,7 @@ import java.util.prefs.Preferences;
 
 public class DashboardPanel extends JPanel {
     
-    private static final String UI_FONT = "Roboto Mono";
+    public static final String UI_FONT = "Roboto Mono";
 
     private static final int LIST_CHARACTER_LIMIT = 70;
     private static final Color GREEN_RESPONSE = new Color(0, 150, 0);
@@ -127,6 +129,10 @@ public class DashboardPanel extends JPanel {
         cardContainer.add(createLogonCard(), "LOGON_FORM");
         cardContainer.add(createClearenceCard(), "CLEARANCE");
         cardContainer.add(createPDCCard(), "PDC");
+        cardContainer.add(createRequestMenuCard(), "REQUEST");
+        cardContainer.add(createRequestDirectPanel(), "REQUEST_DIRECT_TO");
+        cardContainer.add(createRequestSpeedPanel(), "REQUEST_SPEED");
+        cardContainer.add(createRequestLevelPanel(), "REQUEST_LEVEL");
 
         add(cardContainer, BorderLayout.CENTER);
 
@@ -136,7 +142,7 @@ public class DashboardPanel extends JPanel {
         setConnectionStatus(connectionMsg.getMessage().startsWith("Connected"));
         addMessage(connectionMsg);
 
-        changeATSUnit(null);
+        changeATSUnit("TEST");
 
 //CLD 1614 260119 LTAC PDC 001 @THY1GF@ CLRD TO @LTFM@ OFF @03C@ VIA @YAVRU1T@ SQUAWK @6445@ NEXT FREQ @129.425@ ATIS @B@, @QNH 1023@ DEP FREQ @129.425@ CLIMB VIA SID TO ALTITUDE @FL140@ IF YOU REQ. RWY CHG. CALL @129.425@ BEFORE ACCEPTING VIA DCL.
         addMessage(new CpdlcMessage("LTXX", "cpdlc", "RYR2GF", "CLD 1614 260119 LTAC PDC 001 @THY1GF@ CLRD TO @LTFM@ OFF @03C@ VIA @YAVRU1T@ SQUAWK @6445@ NEXT FREQ @129.425@ ATIS @B@, @QNH 1023@ DEP FREQ @129.425@ CLIMB VIA SID TO ALTITUDE @FL140@ IF YOU REQ. RWY CHG. CALL @129.425@ BEFORE ACCEPTING VIA DCL.", 1, -1, "WU"));
@@ -808,6 +814,81 @@ public class DashboardPanel extends JPanel {
         return field;
     }
 
+    public JPanel createRequestDirectPanel() {
+        JPanel p = new JPanel(new BorderLayout(0, 10));
+
+        // --- RETURN ---
+        PilotButton returnBtn = createReturnButton("REQUEST"); // Mevcut metodun
+        p.add(returnBtn, BorderLayout.NORTH);
+
+        // --- FORM AREA ---
+        RequestForm formPanel = new RequestForm("DIRECT TO (FIX)");
+        p.add(formPanel, BorderLayout.CENTER);
+
+        // --- SEND BUTTON ---
+        PilotButton sendBtn = new PilotButton("REQUEST DIRECT");
+        sendBtn.setPreferredSize(new Dimension(0, 40));
+        sendBtn.setCustomColor(new Color(60, 120, 60), Color.WHITE);
+        sendBtn.addActionListener(e -> {
+            System.out.println(formPanel.getRequestText());
+            System.out.println(formPanel.getDueText());
+        });
+        p.add(sendBtn, BorderLayout.SOUTH);
+
+        return p;
+    }
+
+    public JPanel createRequestSpeedPanel() {
+        JPanel p = new JPanel(new BorderLayout(0, 10));
+
+        // --- RETURN ---
+        PilotButton returnBtn = createReturnButton("REQUEST"); // Mevcut metodun
+        p.add(returnBtn, BorderLayout.NORTH);
+
+        // --- FORM AREA ---
+        RequestForm formPanel = new RequestForm("REQUEST SPEED");
+        p.add(formPanel, BorderLayout.CENTER);
+
+        // --- SEND BUTTON ---
+        PilotButton sendBtn = new PilotButton("REQUEST SPEED");
+        sendBtn.setPreferredSize(new Dimension(0, 40));
+        sendBtn.setCustomColor(new Color(60, 120, 60), Color.WHITE);
+        sendBtn.addActionListener(e -> {
+            System.out.println(formPanel.getRequestText());
+            System.out.println(formPanel.getDueText());
+        });
+        p.add(sendBtn, BorderLayout.SOUTH);
+
+        return p;
+    }
+
+    public JPanel createRequestLevelPanel() {
+        JPanel p = new JPanel(new BorderLayout(0, 10));
+
+        // --- RETURN ---
+        PilotButton returnBtn = createReturnButton("REQUEST"); // Mevcut metodun
+        p.add(returnBtn, BorderLayout.NORTH);
+
+        // --- FORM AREA ---
+        RequestForm formPanel = new RequestForm("REQUEST LEVEL");
+        p.add(formPanel, BorderLayout.CENTER);
+
+        // --- SEND BUTTON ---
+        PilotButton sendBtn = new PilotButton("REQUEST LEVEL");
+        sendBtn.setPreferredSize(new Dimension(0, 40));
+        sendBtn.setCustomColor(new Color(60, 120, 60), Color.WHITE);
+        sendBtn.addActionListener(e -> {
+            System.out.println(formPanel.getRequestText());
+            System.out.println(formPanel.getDueText());
+        });
+        p.add(sendBtn, BorderLayout.SOUTH);
+
+        return p;
+    }
+
+
+
+
     private JPanel createCpdlcMenuPanel(){
         JPanel cpdlcMenu = new JPanel(new GridLayout(2, 2, 20, 20)); // 2x2 Izgara
         cpdlcMenu.setBackground(new Color(30, 30, 30));
@@ -823,6 +904,7 @@ public class DashboardPanel extends JPanel {
 
         btnLogonATC.addActionListener(e -> handleLogonATC());
         btnClearance.addActionListener(e -> handleClearence());
+        btnRequest.addActionListener(e -> handleRequestButton());
 
         updateMenuState();
 
@@ -844,6 +926,47 @@ public class DashboardPanel extends JPanel {
         ));
         return btn;
     }
+
+    private JPanel createRequestMenuCard(){
+        JPanel p = new JPanel(new BorderLayout(0, 10));
+
+        PilotButton returnBtn = createReturnButton("CPDLC");
+        p.add(returnBtn, BorderLayout.NORTH);
+
+        JPanel requestMenu = createRequestButtonsPanel();
+
+        p.add(requestMenu, BorderLayout.CENTER);
+
+        return p;
+    }
+
+    private JPanel createRequestButtonsPanel(){
+        JPanel requestMenu = new JPanel(new GridLayout(2, 2, 20, 20)); // 2x2 Izgara
+        requestMenu.setBackground(new Color(30, 30, 30));
+        requestMenu.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color.DARK_GRAY, 1),
+                BorderFactory.createEmptyBorder(20  , 20, 20, 20)
+        ));
+
+        PilotButton reqDirect = createCpdlcMenuButton("DIRECT");
+        PilotButton reqLevel = createCpdlcMenuButton("LEVEL");
+        PilotButton reqSpeed = createCpdlcMenuButton("SPEED");
+        PilotButton reqWhen = createCpdlcMenuButton("WHEN CAN WE");
+
+        reqDirect.addActionListener(e -> cardLayout.show(cardContainer, "REQUEST_DIRECT_TO"));
+        reqLevel.addActionListener(e -> cardLayout.show(cardContainer, "REQUEST_LEVEL"));
+        reqSpeed.addActionListener(e -> cardLayout.show(cardContainer, "REQUEST_SPEED"));
+
+        updateMenuState();
+
+        requestMenu.add(reqDirect);
+        requestMenu.add(reqLevel);
+        requestMenu.add(reqSpeed);
+        requestMenu.add(reqWhen);
+
+        return requestMenu;
+    }
+
 
     //Updates to the relevant menu state according to ATC LOGON status (isLoggedOn)
     private void updateMenuState() {
@@ -927,9 +1050,15 @@ public class DashboardPanel extends JPanel {
         cardLayout.show(cardContainer, "CLEARANCE");
     }
 
+
+    private void handleRequestButton(){
+        cardLayout.show(cardContainer, "REQUEST");
+    }
+
     private void handleDepartureForm(){
         cardLayout.show(cardContainer, "PDC");
     }
+
 
     private void sendTelex(String station, String message) {
         //Thread for networking

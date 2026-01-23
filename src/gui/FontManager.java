@@ -22,7 +22,7 @@ public class FontManager {
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
             return font;
         } catch (Exception e) {
-            System.err.println("Font yüklenemedi: " + path);
+            System.err.println("Font couldn't be loaded: " + path);
             return new Font("Monospaced", Font.PLAIN, 12);
         }
     }

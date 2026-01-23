@@ -85,7 +85,8 @@ public class LoginPanel extends JPanel {
                     );
                 }
             } catch (IOException ex) {
-                JOptionPane.showMessageDialog(null, "Network Error: " + ex.getMessage());            }
+                JOptionPane.showMessageDialog(null, "Network Error: " + ex.getMessage());
+            }
 
         });
 
