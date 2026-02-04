@@ -2,7 +2,11 @@ package gui;
 
 import flight.Flight;
 import gui.button.PilotButton;
+import gui.button.ReturnButton;
+import gui.request.RequestDirectForm;
 import gui.request.RequestForm;
+import gui.request.RequestLevelForm;
+import gui.request.RequestSpeedForm;
 import hoppie.AcarsMessage;
 import hoppie.CpdlcMessage;
 import hoppie.HoppieAPI;
@@ -142,7 +146,7 @@ public class DashboardPanel extends JPanel {
         setConnectionStatus(connectionMsg.getMessage().startsWith("Connected"));
         addMessage(connectionMsg);
 
-        changeATSUnit(null);
+        changeATSUnit("TEST");
 
 //CLD 1614 260119 LTAC PDC 001 @THY1GF@ CLRD TO @LTFM@ OFF @03C@ VIA @YAVRU1T@ SQUAWK @6445@ NEXT FREQ @129.425@ ATIS @B@, @QNH 1023@ DEP FREQ @129.425@ CLIMB VIA SID TO ALTITUDE @FL140@ IF YOU REQ. RWY CHG. CALL @129.425@ BEFORE ACCEPTING VIA DCL.
 //        addMessage(new CpdlcMessage("LTXX", "cpdlc", "RYR2GF", "CLD 1614 260119 LTAC PDC 001 @THY1GF@ CLRD TO @LTFM@ OFF @03C@ VIA @YAVRU1T@ SQUAWK @6445@ NEXT FREQ @129.425@ ATIS @B@, @QNH 1023@ DEP FREQ @129.425@ CLIMB VIA SID TO ALTITUDE @FL140@ IF YOU REQ. RWY CHG. CALL @129.425@ BEFORE ACCEPTING VIA DCL.", 1, -1, "WU"));
@@ -246,14 +250,7 @@ public class DashboardPanel extends JPanel {
     }
 
     private PilotButton createReturnButton(String returnTo) {
-        PilotButton button = new PilotButton("← RETURN");
-        button.addColorChangerOnPress();
-        button.setFont(new Font("Monospaced", Font.BOLD, 12));
-        Border border = BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.DARK_GRAY, 1),
-                BorderFactory.createEmptyBorder(5, 10, 5, 10)
-        );
-        button.setBorder(border);
+        PilotButton button = new ReturnButton();
 
         button.addActionListener(e -> {
             messageList.clearSelection();
@@ -514,8 +511,10 @@ public class DashboardPanel extends JPanel {
         stationLabel.setFont(new Font(UI_FONT, Font.BOLD, 14));
         JTextField stationField = new JTextField(15); //field for 15 chars
         stationField.setFont(new Font(UI_FONT, Font.PLAIN, 14));
-        stationField.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
-        stationField.setPreferredSize(new Dimension(200, 30));
+        stationField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color.DARK_GRAY),
+                BorderFactory.createEmptyBorder(0, 5, 0, 5)
+        ));        stationField.setPreferredSize(new Dimension(200, 30));
         stationField.setMinimumSize(stationField.getPreferredSize());
 
 
@@ -814,7 +813,7 @@ public class DashboardPanel extends JPanel {
         return field;
     }
 
-    public JPanel createRequestDirectPanel() {
+    private JPanel createRequestDirectPanel() {
         JPanel p = new JPanel(new BorderLayout(0, 10));
 
         // --- RETURN ---
@@ -822,7 +821,7 @@ public class DashboardPanel extends JPanel {
         p.add(returnBtn, BorderLayout.NORTH);
 
         // --- FORM AREA ---
-        RequestForm formPanel = new RequestForm("DIRECT TO (FIX)");
+        RequestForm formPanel = new RequestDirectForm();
         p.add(formPanel, BorderLayout.CENTER);
 
         // --- SEND BUTTON ---
@@ -838,7 +837,7 @@ public class DashboardPanel extends JPanel {
         return p;
     }
 
-    public JPanel createRequestSpeedPanel() {
+    private JPanel createRequestSpeedPanel() {
         JPanel p = new JPanel(new BorderLayout(0, 10));
 
         // --- RETURN ---
@@ -846,7 +845,7 @@ public class DashboardPanel extends JPanel {
         p.add(returnBtn, BorderLayout.NORTH);
 
         // --- FORM AREA ---
-        RequestForm formPanel = new RequestForm("REQUEST SPEED");
+        RequestForm formPanel = new RequestSpeedForm();
         p.add(formPanel, BorderLayout.CENTER);
 
         // --- SEND BUTTON ---
@@ -862,7 +861,7 @@ public class DashboardPanel extends JPanel {
         return p;
     }
 
-    public JPanel createRequestLevelPanel() {
+    private JPanel createRequestLevelPanel() {
         JPanel p = new JPanel(new BorderLayout(0, 10));
 
         // --- RETURN ---
@@ -870,7 +869,7 @@ public class DashboardPanel extends JPanel {
         p.add(returnBtn, BorderLayout.NORTH);
 
         // --- FORM AREA ---
-        RequestForm formPanel = new RequestForm("REQUEST LEVEL");
+        RequestForm formPanel = new RequestLevelForm();
         p.add(formPanel, BorderLayout.CENTER);
 
         // --- SEND BUTTON ---
