@@ -72,6 +72,7 @@ public abstract class RequestForm extends JPanel{
         buttonGroup.add(weatherOpt, BorderLayout.CENTER);
         buttonGroup.add(freeTextOpt, BorderLayout.SOUTH);
 
+
         dueContainer.add(dueLabel, BorderLayout.NORTH);
         dueContainer.add(buttonGroup, BorderLayout.CENTER);
 
@@ -91,7 +92,6 @@ public abstract class RequestForm extends JPanel{
                 BorderFactory.createEmptyBorder(0, 5, 0, 5)
         ));
         ((AbstractDocument) remarkField.getDocument()).setDocumentFilter(new UppercaseFilter());
-        remarkField.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
         gbc.gridy = 2; gbc.gridx=0;
         this.add(remarkField, gbc);
 
@@ -176,6 +176,12 @@ public abstract class RequestForm extends JPanel{
                 BorderFactory.createEmptyBorder(0, 5, 0, 5)
         ));
         ((AbstractDocument) reqField.getDocument()).setDocumentFilter(new UppercaseFilter());
+    }
+
+    public void clean(){
+        reqField.setText("");
+        remarkField.setText("");
+        dueGroup.clearSelection();
     }
 
 

@@ -314,4 +314,8 @@ public class HoppieAPI {
         return this.cpdlcRequest(station, callsign, "STANDBY", false, repliedMsg);
     }
 
+    public AcarsMessage request(String station, String callsign, String text) {
+        return this.cpdlcRequest(station, callsign, text, true);
+    }
+
 }

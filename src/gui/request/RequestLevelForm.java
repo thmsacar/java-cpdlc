@@ -28,4 +28,11 @@ public class RequestLevelForm extends RequestForm {
 
     }
 
+    @Override
+    public String getRequestText() {
+        String level = super.getRequestText();
+        if (level == null || level.isEmpty()) return "";
+        return String.format("REQUEST LEVEL %s", level);
+    }
+
 }

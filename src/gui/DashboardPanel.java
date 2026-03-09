@@ -146,13 +146,13 @@ public class DashboardPanel extends JPanel {
         setConnectionStatus(connectionMsg.getMessage().startsWith("Connected"));
         addMessage(connectionMsg);
 
-        changeATSUnit("TEST");
+        changeATSUnit("LTXX");
 
 //CLD 1614 260119 LTAC PDC 001 @THY1GF@ CLRD TO @LTFM@ OFF @03C@ VIA @YAVRU1T@ SQUAWK @6445@ NEXT FREQ @129.425@ ATIS @B@, @QNH 1023@ DEP FREQ @129.425@ CLIMB VIA SID TO ALTITUDE @FL140@ IF YOU REQ. RWY CHG. CALL @129.425@ BEFORE ACCEPTING VIA DCL.
-//        addMessage(new CpdlcMessage("LTXX", "cpdlc", "RYR2GF", "CLD 1614 260119 LTAC PDC 001 @THY1GF@ CLRD TO @LTFM@ OFF @03C@ VIA @YAVRU1T@ SQUAWK @6445@ NEXT FREQ @129.425@ ATIS @B@, @QNH 1023@ DEP FREQ @129.425@ CLIMB VIA SID TO ALTITUDE @FL140@ IF YOU REQ. RWY CHG. CALL @129.425@ BEFORE ACCEPTING VIA DCL.", 1, -1, "WU"));
+        addMessage(new CpdlcMessage("LTXX", "cpdlc", "RYR2GF", "CLD 1614 260119 LTAC PDC 001 @THY1GF@ CLRD TO @LTFM@ OFF @03C@ VIA @YAVRU1T@ SQUAWK @6445@ NEXT FREQ @129.425@ ATIS @B@, @QNH 1023@ DEP FREQ @129.425@ CLIMB VIA SID TO ALTITUDE @FL140@ IF YOU REQ. RWY CHG. CALL @129.425@ BEFORE ACCEPTING VIA DCL.", 1, -1, "WU"));
 //        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "MAINTAIN @FL370", 1, -1, "WU"));
 //        addMessage(new CpdlcMessage("CMRM", "cpdlc", "RYR2GF", "CURRENT ATC UNIT@_@CMRM@_@MADRID CTL@CURRENT ATC UNIT@_@CMRM@_@MADRID CTL", 1, -1, "NE"));
-//        addMessage(new AcarsMessage("THY2GF", "telex", "RYR2GF", "HELLO"));
+        addMessage(new AcarsMessage("THY2GF", "telex", "RYR2GF", "HELLO"));
 
     }
 
@@ -822,6 +822,7 @@ public class DashboardPanel extends JPanel {
 
         // --- FORM AREA ---
         RequestForm formPanel = new RequestDirectForm();
+        returnBtn.addActionListener(e -> {formPanel.clean();});
         p.add(formPanel, BorderLayout.CENTER);
 
         // --- SEND BUTTON ---
@@ -829,8 +830,15 @@ public class DashboardPanel extends JPanel {
         sendBtn.setPreferredSize(new Dimension(0, 40));
         sendBtn.setCustomColor(new Color(60, 120, 60), Color.WHITE);
         sendBtn.addActionListener(e -> {
-            System.out.println(formPanel.getRequestText());
-            System.out.println(formPanel.getDueText());
+            String reqText = formPanel.getRequestText();
+            if(reqText != null && !reqText.isEmpty()) {
+                String dueText = formPanel.getDueText();
+                reqText += " "  + dueText;
+                sendRequest(reqText);
+                formPanel.clean();
+                cardLayout.show(cardContainer, "LIST");
+
+            }
         });
         p.add(sendBtn, BorderLayout.SOUTH);
 
@@ -846,6 +854,7 @@ public class DashboardPanel extends JPanel {
 
         // --- FORM AREA ---
         RequestForm formPanel = new RequestSpeedForm();
+        returnBtn.addActionListener(e -> {formPanel.clean();});
         p.add(formPanel, BorderLayout.CENTER);
 
         // --- SEND BUTTON ---
@@ -853,8 +862,15 @@ public class DashboardPanel extends JPanel {
         sendBtn.setPreferredSize(new Dimension(0, 40));
         sendBtn.setCustomColor(new Color(60, 120, 60), Color.WHITE);
         sendBtn.addActionListener(e -> {
-            System.out.println(formPanel.getRequestText());
-            System.out.println(formPanel.getDueText());
+            String reqText = formPanel.getRequestText();
+            if(reqText != null && !reqText.isEmpty()) {
+                String dueText = formPanel.getDueText();
+                reqText += " "  + dueText;
+                sendRequest(reqText);
+                formPanel.clean();
+                cardLayout.show(cardContainer, "LIST");
+
+            }
         });
         p.add(sendBtn, BorderLayout.SOUTH);
 
@@ -870,6 +886,7 @@ public class DashboardPanel extends JPanel {
 
         // --- FORM AREA ---
         RequestForm formPanel = new RequestLevelForm();
+        returnBtn.addActionListener(e -> {formPanel.clean();});
         p.add(formPanel, BorderLayout.CENTER);
 
         // --- SEND BUTTON ---
@@ -877,8 +894,15 @@ public class DashboardPanel extends JPanel {
         sendBtn.setPreferredSize(new Dimension(0, 40));
         sendBtn.setCustomColor(new Color(60, 120, 60), Color.WHITE);
         sendBtn.addActionListener(e -> {
-            System.out.println(formPanel.getRequestText());
-            System.out.println(formPanel.getDueText());
+            String reqText = formPanel.getRequestText();
+            if(reqText != null && !reqText.isEmpty()) {
+                String dueText = formPanel.getDueText();
+                reqText += " "  + dueText;
+                sendRequest(reqText);
+                formPanel.clean();
+                cardLayout.show(cardContainer, "LIST");
+
+            }
         });
         p.add(sendBtn, BorderLayout.SOUTH);
 
@@ -951,6 +975,8 @@ public class DashboardPanel extends JPanel {
         PilotButton reqLevel = createCpdlcMenuButton("LEVEL");
         PilotButton reqSpeed = createCpdlcMenuButton("SPEED");
         PilotButton reqWhen = createCpdlcMenuButton("WHEN CAN WE");
+        disableButton(reqWhen);
+
 
         reqDirect.addActionListener(e -> cardLayout.show(cardContainer, "REQUEST_DIRECT_TO"));
         reqLevel.addActionListener(e -> cardLayout.show(cardContainer, "REQUEST_LEVEL"));
@@ -976,7 +1002,7 @@ public class DashboardPanel extends JPanel {
 
             //These button only works if logged on to ATC
             enableButton(btnRequest);
-            enableButton(btnReport);
+//            enableButton(btnReport);
         } else { //We are not connected to an ATC
             //Change to LOGON button
             btnLogonATC.setForeground(new Color(180, 100, 200));
@@ -1063,6 +1089,15 @@ public class DashboardPanel extends JPanel {
         //Thread for networking
         new Thread(()->{
             AcarsMessage msg = hoppieAPI.sendTelex(station, callsign, message);
+            setConnectionStatus(!msg.getType().equalsIgnoreCase("system"));
+            addMessage(msg);
+        }).start();
+    }
+
+    private void sendRequest(String message) {
+        //Thread for networking
+        new Thread(()->{
+            AcarsMessage msg = hoppieAPI.request(currentATS, callsign, message);
             setConnectionStatus(!msg.getType().equalsIgnoreCase("system"));
             addMessage(msg);
         }).start();

@@ -25,4 +25,11 @@ public class RequestDirectForm extends RequestForm{
 
         return reqContainer;
     }
+
+    @Override
+    public String getRequestText() {
+        String level = super.getRequestText();
+        if (level == null || level.isEmpty()) return "";
+        return String.format("REQUEST DIRECT TO %s", level);
+    }
 }

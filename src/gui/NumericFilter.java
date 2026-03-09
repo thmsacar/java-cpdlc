@@ -9,7 +9,8 @@ public class NumericFilter extends DocumentFilter {
     public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
             throws BadLocationException {
         if (string == null) return;
-        if (isNumeric(string)) {
+        int total = fb.getDocument().getLength() + string.length();
+        if (isNumeric(string) && total <= 3) {
             super.insertString(fb, offset, string, attr);
         }
     }
@@ -18,7 +19,8 @@ public class NumericFilter extends DocumentFilter {
     public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
             throws BadLocationException {
         if (text == null) return;
-        if (isNumeric(text)) {
+        int total = fb.getDocument().getLength() - length + text.length();
+        if (isNumeric(text) && total <= 3) {
             super.replace(fb, offset, length, text, attrs);
         }
     }
