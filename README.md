@@ -5,7 +5,6 @@ It is written on Java so you can use it on any platform (Windows/Linux/macOS).
 ![Screenshot of the Java CPDLC](src/resources/images/screenshot.png)
 
 ## Notes
-- For any feedback please contact me with mail: thmsacar@gmail.com
 - Currently, CPDLC reports cannot be sent as I have not yet implemented this feature totally. However, all other types of messages can be fetched and replied. Requests can be sent without problem.
 ## Important Note on Java 8
 - Java CPDLC is coded on Java 8 (Java SDK 1.8) as I wanted it to be compatible on as many machine as possible. Therefore, it does not use HTTP Client, which was released after Java 11. Take this into account during compilation.
