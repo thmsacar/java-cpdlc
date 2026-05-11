@@ -9,7 +9,13 @@ It is written on Java so you can use it on any platform (Windows/Linux/macOS).
 ## Important Note on Java 8
 - Java CPDLC is coded on Java 8 (Java SDK 1.8) as I wanted it to be compatible on as many machine as possible. Therefore, it does not use HTTP Client, which was released after Java 11. Take this into account during compilation.
 
-## Building & Running
+## ⚡ Quick Start (For Non-Developers)
+If you don't want to deal with coding or building, just download the pre-compiled version:
+1. Go to the **Releases** section on the right.
+2. Download the latest `.jar` file.
+3. **Double-click** to run (Make sure you have Java 8 or higher installed).
+
+## 🔨 Building & Running
 The project uses **Maven** for the build process, so no manual library downloads are required. Make sure Maven is installed on your system
 
 1. **Compile:** Open your terminal in the **main project folder** (where the `pom.xml` file is located) and run:
@@ -18,7 +24,7 @@ The project uses **Maven** for the build process, so no manual library downloads
 2. **Run:** After the build is complete, you can find the executable JAR file in the target folder. You can launch the application by double-clicking the JAR file or using the following command: 
    ```bash
    java -jar target/java-cpdlc-1.0-SNAPSHOT.jar
-
+   ```
    
 ## Usage
 1. Once compiled and run, you should have a login page. You need to put in your callsign and Hoppie ID. Click SAVE button
