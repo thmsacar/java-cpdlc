@@ -12,7 +12,7 @@ It is written on Java so you can use it on any platform (Windows/Linux/macOS).
 ## ⚡ Quick Start (For Non-Developers)
 If you don't want to deal with coding or building, just download the pre-compiled version:
 1. Go to the **Releases** section on the right.
-2. Download the latest `.jar` file.
+2. Download the latest release.
 3. **Double-click** to run (Make sure you have Java 8 or higher installed).
 
 ## 🔨 Building & Running
