@@ -5,12 +5,18 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 
 public class NumericFilter extends DocumentFilter {
+    private final int maxCharacters;
+
+    public NumericFilter(int maxCharacters) {
+        this.maxCharacters = maxCharacters;
+    }
+
     @Override
     public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
             throws BadLocationException {
         if (string == null) return;
         int total = fb.getDocument().getLength() + string.length();
-        if (isNumeric(string) && total <= 3) {
+        if (isNumeric(string) && total <= maxCharacters) {
             super.insertString(fb, offset, string, attr);
         }
     }
@@ -20,7 +26,7 @@ public class NumericFilter extends DocumentFilter {
             throws BadLocationException {
         if (text == null) return;
         int total = fb.getDocument().getLength() - length + text.length();
-        if (isNumeric(text) && total <= 3) {
+        if (isNumeric(text) && total <= maxCharacters) {
             super.replace(fb, offset, length, text, attrs);
         }
     }

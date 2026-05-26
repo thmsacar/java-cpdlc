@@ -53,6 +53,11 @@ public class AcarsMessage {
         this.message = message;
     }
 
+    /**
+     * Formats the message for display in the main message list.
+     * @param callsign The aircraft callsign to determine if TO or FROM.
+     * @return A map containing the formatted entry and the direction symbol.
+     */
     public HashMap<String, String> getListFormat(String callsign){
         String entry;
         String symbol;

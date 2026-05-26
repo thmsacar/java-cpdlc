@@ -46,7 +46,7 @@ public class RequestSpeedForm extends RequestForm {
         fieldContainer.add(mach, gbc);
 
         gbc.gridx = 2;
-        ((AbstractDocument) reqField.getDocument()).setDocumentFilter(new NumericFilter());
+        ((AbstractDocument) reqField.getDocument()).setDocumentFilter(new NumericFilter(3));
         fieldContainer.add(reqField, gbc);
 
         reqContainer.add(reqLabel, BorderLayout.NORTH);

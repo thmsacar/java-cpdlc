@@ -21,7 +21,7 @@ public class RequestLevelForm extends RequestForm {
         reqLabel.setFont(new Font(UI_FONT, Font.BOLD, 14));
 
         reqContainer.add(reqLabel, BorderLayout.NORTH);
-        ((AbstractDocument) reqField.getDocument()).setDocumentFilter(new NumericFilter());
+        ((AbstractDocument) reqField.getDocument()).setDocumentFilter(new NumericFilter(3));
         reqContainer.add(reqField, BorderLayout.CENTER);
 
         return reqContainer;

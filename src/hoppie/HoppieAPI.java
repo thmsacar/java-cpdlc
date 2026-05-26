@@ -12,6 +12,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * Client for the Hoppie ACARS network.
+ * Handles the low-level HTTP communication with the Hoppie server.
+ */
 public class HoppieAPI {
 
     //callsign, acftType, destination, origin, stand, atis, eob, remarks
@@ -44,6 +48,10 @@ public class HoppieAPI {
         public String body() { return body; }
     }
 
+    /**
+     * Constructs a new HoppieAPI client.
+     * @param logon The user's Hoppie ID.
+     */
     public HoppieAPI(String logon) {
         this.logon = logon;
         this.cpdlcCounter = 1;
@@ -92,7 +100,11 @@ public class HoppieAPI {
         return sendHttpRequest(url);
     }
 
-    //This method should be used when fetching messages to GUI
+    /**
+     * Fetches unread messages for the given callsign from the Hoppie network.
+     * @param callsign The aircraft callsign.
+     * @return A list of received AcarsMessages.
+     */
     public List<AcarsMessage> fetchMessages(String callsign) {
         HoppieResponse response;
         List<AcarsMessage> list = new ArrayList<>();
@@ -126,7 +138,9 @@ public class HoppieAPI {
         return list;
     }
 
-    //To send a pre-departure clearance request
+    /**
+     * Sends a Pre-Departure Clearance (PDC) request.
+     */
     public AcarsMessage sendPdcRequest(String station, Flight flight, String stand, String atis, String remarks) {
         String pdc = getPdcMessage(
                 flight.getCallsign(),
@@ -152,6 +166,13 @@ public class HoppieAPI {
         );
     }
 
+    /**
+     * Sends a telex message to a specific station.
+     * @param station The recipient station callsign.
+     * @param callsign The sender's callsign.
+     * @param message The message content.
+     * @return The resulting AcarsMessage or an error system message.
+     */
     public AcarsMessage sendTelex(String station, String callsign, String message) {
         String url = createFullUrl(callsign, station, "telex", message);
         try{
@@ -211,22 +232,6 @@ public class HoppieAPI {
         return sendCpdlcMessage(station, callsign, rawText);
     }
 
-
-//    private HoppieResponse cpdlcRequest(String station, String callsign, String text, boolean isReplyRequired) throws IOException {
-//        String replyReq = isReplyRequired ? "Y" : "N";
-//        String cpdlc = String.format(CPDLC_MSG,
-//                    cpdlcCounter,
-//                    "",
-//                    replyReq,
-//                    text
-//                );
-////        String cpdlc = "/data2/"+cpdlcCounter+"//"+replyReq+"/"+text;
-//        String url = createFullUrl(callsign, station, "cpdlc", cpdlc);
-//        HoppieResponse response = sendHttpRequest(url);
-//        if (response.statusCode() == 200) {cpdlcCounter++;}
-//        return response;
-//    }
-
     private AcarsMessage cpdlcRequest(String station, String callsign, String text, boolean isReplyRequired, int repliedMsg) {
         String replyReq = isReplyRequired ? "Y" : "N";
         String rawText = String.format(CPDLC_MSG,
@@ -238,22 +243,6 @@ public class HoppieAPI {
         return sendCpdlcMessage(station, callsign, rawText);
     }
 
-
-//    private HoppieResponse cpdlcRequest(String station, String callsign, String text, boolean isReplyRequired, int repliedMsg) throws IOException {
-//        String replyReq = isReplyRequired ? "Y" : "N";
-//        String cpdlc = String.format(CPDLC_MSG,
-//                cpdlcCounter,
-//                repliedMsg,
-//                replyReq,
-//                text
-//        );
-////        String cpdlc = "/data2/"+cpdlcCounter+"/"+repliedMsg+"/"+replyReq+"/"+text;
-//        String url = createFullUrl(callsign, station, "cpdlc", cpdlc);
-//        HoppieResponse response = sendHttpRequest(url);
-//        if (response.statusCode() == 200) {cpdlcCounter++;}
-//        return response;
-//    }
-
     public AcarsMessage sendLogonATC(String station, String callsign, String freeText) {
         if (freeText==null) freeText="";
         String logonMsg = String.format(LOGON_TEMPLATE, freeText);
@@ -263,31 +252,6 @@ public class HoppieAPI {
     public AcarsMessage sendLogoffATC(String station, String callsign) {
         return cpdlcRequest(station, callsign, LOGOFF_TEMPLATE, false);
     }
-
-    // --- CPDLC Response Methods ---  DEPRECATED
-//    public HoppieResponse wilco(String station, String callsign, int repliedMsg) throws IOException {
-//        return this.cpdlcRequest(station, callsign, "WILCO", false, repliedMsg );
-//    }
-//
-//    public HoppieResponse roger(String station, String callsign, int repliedMsg) throws IOException {
-//        return this.cpdlcRequest(station, callsign, "ROGER", false , repliedMsg);
-//    }
-//
-//    public HoppieResponse affirm(String station, String callsign, int repliedMsg) throws IOException {
-//        return this.cpdlcRequest(station, callsign, "AFFIRM", false, repliedMsg);
-//    }
-//
-//    public HoppieResponse negative(String station, String callsign, int repliedMsg) throws IOException {
-//        return this.cpdlcRequest(station, callsign, "NEGATIVE", false, repliedMsg);
-//    }
-//
-//    public HoppieResponse unable(String station, String callsign, int repliedMsg) throws IOException {
-//        return this.cpdlcRequest(station, callsign, "UNABLE", false, repliedMsg);
-//    }
-//
-//    public HoppieResponse standby(String station, String callsign, int repliedMsg) throws IOException {
-//        return this.cpdlcRequest(station, callsign, "STANDBY", false, repliedMsg);
-//    }
 
     // --- CPDLC Response Methods ---
     public AcarsMessage wilco(String station, String callsign, int repliedMsg) {
@@ -314,8 +278,26 @@ public class HoppieAPI {
         return this.cpdlcRequest(station, callsign, "STANDBY", false, repliedMsg);
     }
 
+    /**
+     * Sends a CPDLC request message that requires a reply.
+     * @param station The recipient ATS unit.
+     * @param callsign The sender's callsign.
+     * @param text The message text.
+     * @return The resulting CPDLC message.
+     */
     public AcarsMessage request(String station, String callsign, String text) {
         return this.cpdlcRequest(station, callsign, text, true);
+    }
+
+    /**
+     * Sends a CPDLC report message that does not require a reply.
+     * @param station The recipient ATS unit.
+     * @param callsign The sender's callsign.
+     * @param text The message text.
+     * @return The resulting CPDLC message.
+     */
+    public AcarsMessage report(String station, String callsign, String text) {
+        return this.cpdlcRequest(station, callsign, text, false);
     }
 
 }

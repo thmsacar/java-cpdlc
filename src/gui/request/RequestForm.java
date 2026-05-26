@@ -1,6 +1,6 @@
 package gui.request;
 
-import gui.SquareIcon;
+import gui.GuiUtils;
 import gui.UppercaseFilter;
 
 import javax.swing.*;
@@ -13,17 +13,15 @@ import static gui.DashboardPanel.UI_FONT;
 //TODO make this one abstract and create different RequestForms ex: RequestDirectForm
 //then override createRequestField
 //createRequestField in this class can be abstract
+/**
+ * Abstract base class for all CPDLC request forms.
+ * Manages the "DUE TO" logic and common field styling.
+ */
 public abstract class RequestForm extends JPanel{
 
     protected String requestText;
-
     protected JTextField reqField;
-    private JTextField remarkField;
-
-    private ButtonGroup dueGroup;
-    private JRadioButton perfOpt;
-    private JRadioButton weatherOpt;
-    private JRadioButton freeTextOpt;
+    private DueToPanel dueToPanel;
 
 
     public RequestForm(String requestText){
@@ -47,73 +45,23 @@ public abstract class RequestForm extends JPanel{
         this.add(reqContainer, gbc);
 
 
-        // 2. DUE TO OPTIONS
-        JPanel dueContainer = new JPanel(new BorderLayout(0, 5));
-        JLabel dueLabel = new JLabel("DUE TO");
-        dueLabel.setFont(new Font(UI_FONT, Font.BOLD, 14));
-
-        // Radio buttons
-        perfOpt = new JRadioButton("PERFORMANCE");
-        perfOpt.setActionCommand("PERFORMANCE");
-        weatherOpt = new JRadioButton("WEATHER");
-        weatherOpt.setActionCommand("WEATHER");
-        freeTextOpt = new JRadioButton("FREE TEXT:");
-        freeTextOpt.setActionCommand("FREE TEXT");
-
-        // Style
-        styleDueOption(perfOpt);
-        styleDueOption(weatherOpt);
-        styleDueOption(freeTextOpt);
-
-        dueGroup = new ButtonGroup();
-        dueGroup.add(perfOpt); dueGroup.add(weatherOpt); dueGroup.add(freeTextOpt);
-        JPanel buttonGroup = new JPanel(new BorderLayout(15, 10));
-        buttonGroup.add(perfOpt, BorderLayout.WEST);
-        buttonGroup.add(weatherOpt, BorderLayout.CENTER);
-        buttonGroup.add(freeTextOpt, BorderLayout.SOUTH);
-
-
-        dueContainer.add(dueLabel, BorderLayout.NORTH);
-        dueContainer.add(buttonGroup, BorderLayout.CENTER);
-
-        gbc.gridy = 1; gbc.weightx = 2.0;
-        this.add(dueContainer, gbc);
-
-
-
-        // 3. FREE TEXT AREA
-        remarkField = new JTextField();
-        remarkField.setFont(new Font(UI_FONT, Font.PLAIN, 14));
-        remarkField.setPreferredSize(new Dimension(200, 30));
-        remarkField.setMinimumSize(remarkField.getPreferredSize());
-        remarkField.setEnabled(false); // Enable only when free text selected
-        remarkField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.DARK_GRAY),
-                BorderFactory.createEmptyBorder(0, 5, 0, 5)
-        ));
-        ((AbstractDocument) remarkField.getDocument()).setDocumentFilter(new UppercaseFilter());
-        gbc.gridy = 2; gbc.gridx=0;
-        this.add(remarkField, gbc);
-
-        freeTextOpt.addActionListener(e -> remarkField.setEnabled(true));
-        perfOpt.addActionListener(e -> { remarkField.setEnabled(false); remarkField.setText(""); });
-        weatherOpt.addActionListener(e -> { remarkField.setEnabled(false); remarkField.setText(""); });
+        // 2. DUE TO PANEL
+        dueToPanel = new DueToPanel();
+        dueToPanel.setOpaque(false);
+        gbc.gridy = 1;
+        this.add(dueToPanel, gbc);
 
     }
 
     // Styling radio buttons in DUE TO options
     protected void styleDueOption(JRadioButton rb) {
-        rb.setOpaque(false);
-        rb.setFont(new Font(UI_FONT, Font.PLAIN, 13));
-        rb.setForeground(Color.LIGHT_GRAY);
-        rb.setFocusPainted(false);
-
-        //Square radio
-        rb.setIcon(new SquareIcon(false));
-        rb.setSelectedIcon(new SquareIcon(true));
-        rb.setRolloverIcon(new SquareIcon(false));
+        gui.GuiUtils.styleRadioButton(rb);
     }
 
+    /**
+     * Constructs the primary request text.
+     * @return The formatted request string.
+     */
     public String getRequestText(){
         String reqText = reqField.getText().trim().toUpperCase();
         if(reqText.isEmpty()){
@@ -131,20 +79,17 @@ public abstract class RequestForm extends JPanel{
         return reqText;
     }
 
+    /**
+     * Constructs the "DUE TO" part of the message.
+     * @return The formatted due-to string.
+     */
     public String getDueText(){
-        String dueText = "";
-        ButtonModel selection = dueGroup.getSelection();
-        if(selection == null){return dueText;}
-        if (selection.getActionCommand().equals("PERFORMANCE")) {
-            dueText = "DUE TO PERFORMANCE";
-        } else if (selection.getActionCommand().equals("WEATHER")) {
-            dueText = "DUE TO WEATHER";
-        } else if (selection.getActionCommand().equals("FREE TEXT")) {
-            dueText = "DUE TO " + remarkField.getText().trim();
-        }
-        return dueText;
+        return dueToPanel.getDueText();
     }
 
+    /**
+     * Creates the specific input fields for the request type.
+     */
     public abstract JPanel createRequestField();
 
 //    public abstract JPanel createRequestField(){
@@ -178,10 +123,12 @@ public abstract class RequestForm extends JPanel{
         ((AbstractDocument) reqField.getDocument()).setDocumentFilter(new UppercaseFilter());
     }
 
+    /**
+     * Clears all fields in the form.
+     */
     public void clean(){
         reqField.setText("");
-        remarkField.setText("");
-        dueGroup.clearSelection();
+        dueToPanel.clean();
     }
 
 

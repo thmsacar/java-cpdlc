@@ -8,6 +8,7 @@ import java.net.URL;
 public class Client {
 
     protected JFrame frame;
+    private service.CpdlcService currentService;
 
 
     public Client() {
@@ -81,12 +82,21 @@ public class Client {
     }
 
     public void showDashboard(String callsign, String hoppieID) {
-        frame.setContentPane(new DashboardPanel(callsign, hoppieID, this));
+        if (currentService != null) {
+            currentService.stop();
+        }
+        currentService = new service.CpdlcService(callsign, hoppieID);
+        currentService.start();
+        frame.setContentPane(new DashboardPanel(currentService, this));
         frame.revalidate();
         frame.repaint();
     }
 
     public void showLogin() {
+        if (currentService != null) {
+            currentService.stop();
+            currentService = null;
+        }
         frame.setContentPane(new LoginPanel(this));
         frame.revalidate();
         frame.repaint();
