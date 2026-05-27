@@ -59,30 +59,25 @@ jobs:
       run: |
         MAIN_JAR=$(ls target/*.jar | head -n 1)
         jpackage \
-          --name "JavaCPDLC-v${{ env.VERSION }}" \
+          --name "JavaCPDLC" \
           --input target/ \
           --main-jar $(basename $MAIN_JAR) \
           --type ${{ matrix.pkg_type }} \
           --icon src/resources/icon.${{ matrix.icon_ext }} \
           --app-version ${{ env.VERSION == 'draft' && '1.0.0' || env.VERSION }}
 
-    - name: Prepare Artifact Path
-      id: prepare_artifact
+    - name: Prepare JAR for Release
       shell: bash
       run: |
         cp target/*.jar JavaCPDLC-v${{ env.VERSION }}.jar
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          echo "ARTIFACT_PATH=JavaCPDLC-v${{ env.VERSION }}.exe" >> $GITHUB_ENV
-        else
-          echo "ARTIFACT_PATH=JavaCPDLC-v${{ env.VERSION }}.dmg" >> $GITHUB_ENV
-        fi
 
     - name: Create or Update Release
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          ${{ env.ARTIFACT_PATH }}
-          JavaCPDLC-v${{ env.VERSION }}.jar
+          *.exe
+          *.dmg
+          *.jar
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
