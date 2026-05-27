@@ -60,7 +60,7 @@ jobs:
         MAIN_JAR=$(ls target/*.jar | head -n 1)
         EXTRA_OPTS=""
         if [ "${{ matrix.os }}" == "windows-latest" ]; then
-          EXTRA_OPTS="--win-shortcut --win-menu --win-dir-chooser --win-menu-group \"JavaCPDLC\""
+          EXTRA_OPTS="--win-shortcut --win-menu --win-dir-chooser --win-menu-group JavaCPDLC"
         fi
         jpackage \
           --name "JavaCPDLC" \
