@@ -15,6 +15,7 @@ jobs:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false # Biri patlarsa diğeri iptal olmasın, devam etsin!
       matrix:
         include:
           - os: windows-latest
@@ -37,6 +38,13 @@ jobs:
     - name: Build with Maven
       run: mvn clean package
 
+    - name: Clean Extra Jars
+      shell: bash
+      run: |
+        rm -f target/original-*.jar
+        rm -f target/*-shaded.jar
+        # Klasörde tek bir jar kalmasını garanti ediyoruz ki jpackage şaşırmasın
+
     - name: Extract Version
       id: get_version
       shell: bash
@@ -45,19 +53,20 @@ jobs:
           echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
         else
           echo "VERSION=draft" >> $GITHUB_ENV
-        end
+        fi
 
     - name: Pack Application with jpackage
       shell: bash
       run: |
+        MAIN_JAR=$(ls target/*.jar | head -n 1)
         jpackage \
           --name "JavaCPDLC-v${{ env.VERSION }}" \
           --input target/ \
-          --main-jar $(basename target/*.jar) \
+          --main-jar $(basename $MAIN_JAR) \
           --type ${{ matrix.pkg_type }} \
           --icon src/main/resources/icon.${{ matrix.icon_ext }} \
           --app-version ${{ env.VERSION == 'draft' && '1.0.0' || env.VERSION }}
-        # NOT: İkon yolunu (src/main/resources/icon.ico ve icon.icns gibi) kendine göre güncelle knk!
+        # UYARI: src/main/resources altında icon.ico ve icon.icns dosyaların mutlaka hazır olsun bilader!
 
     - name: Prepare Artifact Path
       id: prepare_artifact
