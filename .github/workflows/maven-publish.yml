@@ -58,13 +58,18 @@ jobs:
       shell: bash
       run: |
         MAIN_JAR=$(ls target/*.jar | head -n 1)
+        EXTRA_OPTS=""
+        if [ "${{ matrix.os }}" == "windows-latest" ]; then
+          EXTRA_OPTS="--win-shortcut --win-menu --win-dir-chooser --win-menu-group \"JavaCPDLC\""
+        fi
         jpackage \
           --name "JavaCPDLC" \
           --input target/ \
           --main-jar $(basename $MAIN_JAR) \
           --type ${{ matrix.pkg_type }} \
           --icon src/resources/icon.${{ matrix.icon_ext }} \
-          --app-version ${{ env.VERSION == 'draft' && '1.0.0' || env.VERSION }}
+          --app-version ${{ env.VERSION == 'draft' && '1.0.0' || env.VERSION }} \
+          $EXTRA_OPTS
 
     - name: Prepare JAR for Release
       shell: bash
