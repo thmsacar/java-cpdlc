@@ -4,11 +4,6 @@ It is written on Java so you can use it on any platform (Windows/Linux/macOS).
 
 ![Screenshot of the Java CPDLC](src/resources/images/screenshot.png)
 
-## Notes
-- CPDLC reports and "WHEN CAN WE" requests are now fully implemented. You can now send Position, Level, and Speed reports directly from the interface.
-## Important Note on Java 8
-- Java CPDLC is coded on Java 8 (Java SDK 1.8) as I wanted it to be compatible on as many machine as possible. Therefore, it does not use HTTP Client, which was released after Java 11. Take this into account during compilation.
-
 ## ⚡ Quick Start (For Non-Developers)
 If you don't want to deal with coding or building, just download the pre-compiled version:
 1. Go to the **Releases** section on the right.
