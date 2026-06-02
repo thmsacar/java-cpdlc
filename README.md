@@ -14,8 +14,8 @@ If you don't want to deal with coding or building, just download the pre-compile
 1. Go to the **Releases** section on the right.
 2. Download the latest release.
 3. **Double-click** to run (Make sure you have Java 8 or higher installed).
-   a. For Windows: Use the installer to install.
-   b. For macOS: Drag the app to Applications folder.
+   - For Windows: Use the installer to install.
+   - For macOS: Drag the app to Applications folder.
 
 ## 🔨 Building & Running
 The project uses **Maven** for the build process, so no manual library downloads are required. Make sure Maven is installed on your system
