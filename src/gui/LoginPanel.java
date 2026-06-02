@@ -13,7 +13,7 @@ public class LoginPanel extends JPanel {
 
     private final JTextField callsignField = new JTextField(15);
     private final JTextField hoppieField = new JTextField(15);
-    private final PilotButton loginButton = new PilotButton("LOGIN");
+    private final PilotButton loginButton = new PilotButton("CONNECT");
 
     private final Preferences prefs = Preferences.userNodeForPackage(LoginPanel.class);
 
