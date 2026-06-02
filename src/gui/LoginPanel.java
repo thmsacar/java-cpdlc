@@ -1,5 +1,6 @@
 package gui;
 
+import gui.button.PilotButton;
 import hoppie.HoppieAPI;
 
 import javax.swing.*;
@@ -10,16 +11,17 @@ import java.util.prefs.Preferences;
 
 public class LoginPanel extends JPanel {
 
-    private JTextField callsignField = new JTextField(15);
-    private JTextField hoppieField = new JTextField(15);
-    private JButton saveButton = new JButton("SAVE");
+    private final JTextField callsignField = new JTextField(15);
+    private final JTextField hoppieField = new JTextField(15);
+    private final PilotButton loginButton = new PilotButton("LOGIN");
 
-    private Preferences prefs = Preferences.userNodeForPackage(LoginPanel.class);
+    private final Preferences prefs = Preferences.userNodeForPackage(LoginPanel.class);
 
     public LoginPanel(Client client) {
 
         // Init GridBagLayout
         this.setLayout(new GridBagLayout());
+        this.setBackground(new Color(45, 45, 45)); // Match Dashboard background (control)
         GridBagConstraints gbc = new GridBagConstraints();
 
         // Init gbc
@@ -28,15 +30,25 @@ public class LoginPanel extends JPanel {
         gbc.gridx = 0;
 
         // --- Callsign Label ---
-        gbc.gridy = 0; // 0. satır
+        gbc.gridy = 0;
         JLabel callsignLabel = new JLabel("Callsign:");
+        callsignLabel.setForeground(Color.WHITE);
+        callsignLabel.setFont(new Font("Roboto Mono", Font.BOLD, 14));
         add(callsignLabel, gbc);
 
         // --- Callsign Field ---
-        gbc.gridy = 1; // 1. satır
-        Dimension fieldSize = new Dimension(300, 28);
+        gbc.gridy = 1;
+        Dimension fieldSize = new Dimension(300, 35);
         callsignField.setMinimumSize(fieldSize);
         callsignField.setPreferredSize(fieldSize);
+        callsignField.setBackground(new Color(30, 30, 30)); // Match Dashboard light background
+        callsignField.setForeground(Color.WHITE);
+        callsignField.setCaretColor(Color.WHITE);
+        callsignField.setFont(new Font("Roboto Mono", Font.PLAIN, 14));
+        callsignField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color.DARK_GRAY),
+                BorderFactory.createEmptyBorder(0, 10, 0, 10)
+        ));
         add(callsignField, gbc);
 
         // Blank space
@@ -45,18 +57,33 @@ public class LoginPanel extends JPanel {
 
         // --- Hoppie ID Label ---
         gbc.gridy = 3;
-        add(new JLabel("Hoppie ID:"), gbc);
+        JLabel hoppieLabel = new JLabel("Hoppie ID:");
+        hoppieLabel.setForeground(Color.WHITE);
+        hoppieLabel.setFont(new Font("Roboto Mono", Font.BOLD, 14));
+        add(hoppieLabel, gbc);
 
         // --- Hoppie ID Field ---
         gbc.gridy = 4;
         hoppieField.setMinimumSize(fieldSize);
         hoppieField.setPreferredSize(fieldSize);
+        hoppieField.setBackground(new Color(30, 30, 30));
+        hoppieField.setForeground(Color.WHITE);
+        hoppieField.setCaretColor(Color.WHITE);
+        hoppieField.setFont(new Font("Roboto Mono", Font.PLAIN, 14));
+        hoppieField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color.DARK_GRAY),
+                BorderFactory.createEmptyBorder(0, 10, 0, 10)
+        ));
         add(hoppieField, gbc);
 
-        // Save Button
+        // Login Button
         gbc.gridy = 5;
-        gbc.insets = new Insets(20, 5, 5, 5);
-        add(saveButton, gbc);
+        gbc.insets = new Insets(30, 5, 5, 5);
+        loginButton.setPreferredSize(new Dimension(300, 45));
+        loginButton.setCustomColor(Color.darkGray, Color.WHITE); // Match Dashboard buttons
+        loginButton.setFont(new Font("Roboto Mono", Font.BOLD, 15));
+        loginButton.addColorChangerOnPress();
+        add(loginButton, gbc);
 
         hoppieField.getInputMap().put(KeyStroke.getKeyStroke("control V"), "paste");
         hoppieField.getInputMap().put(KeyStroke.getKeyStroke("meta V"), "paste");
@@ -66,7 +93,7 @@ public class LoginPanel extends JPanel {
                 .setDocumentFilter(new UppercaseFilter());
 
         // Action Listener
-        saveButton.addActionListener(e -> {
+        loginButton.addActionListener(e -> {
             saveData();
             String callsign = callsignField.getText().trim();
             String hoppieID = hoppieField.getText().trim();

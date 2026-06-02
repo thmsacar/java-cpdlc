@@ -40,7 +40,7 @@ public class Client {
 
         FontManager.loadFonts();
 
-        frame = new JFrame("CPDLC Client");
+        frame = new JFrame("Java CPDLC");
         setAppIcon(frame);
         frame.setSize(650, 400);
         frame.setMinimumSize(new Dimension(650, 400));
