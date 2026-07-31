@@ -1,12 +1,11 @@
-## In this release
-- Report speed, altitude, position
-- Request when can we
-  features are added
+## Version 1.1.2 Release Notes
 
-Also added installer for Windows and macOS. If you want to use the portable version download .jar file.
+### Features & Fixes in v1.1.2
+- **Unread Messages Indicator**: Introduced unread message tracking for incoming datalink messages with bold text and color-coded indicator dots (`●`):
+  - Cyan accent for CPDLC messages
+  - Soft warm gold accent for TELEX messages
+  - Soft coral accent for SYSTEM messages
+- **Sound Alert Fix**: Resolved a bug where initial connection confirmation played an error warning sound upon connecting.
+- **Message List Interaction**: Improved message selection behavior to update read status upon mouse release.
 
-## Technical updates
-- Documentation: Added Javadocs to core service and API classes.
-- Clean code: Refactored redundancies, significantly reducing code boilerplate.
-
-**Full Changelog**: https://github.com/thmsacar/java-cpdlc/compare/v1.0.0...v1.1.1
+**Full Changelog**: https://github.com/thmsacar/java-cpdlc/compare/v1.1.1...v1.1.2

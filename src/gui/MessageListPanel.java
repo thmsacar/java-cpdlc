@@ -6,6 +6,8 @@ import service.CpdlcService;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -33,9 +35,23 @@ public class MessageListPanel extends JPanel implements CpdlcListener {
         setLayout(new BorderLayout());
         
         messageList.setCellRenderer(new MessageListCellRenderer(service.getCallsign()));
-        messageList.addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                onMessageSelected.accept(messageList.getSelectedValue());
+        messageList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    int index = messageList.locationToIndex(e.getPoint());
+                    if (index >= 0 && index < messageModel.getSize()) {
+                        Rectangle bounds = messageList.getCellBounds(index, index);
+                        if (bounds != null && bounds.contains(e.getPoint())) {
+                            AcarsMessage msg = messageModel.getElementAt(index);
+                            if (msg != null) {
+                                msg.setRead(true);
+                                messageModel.set(index, msg);
+                                onMessageSelected.accept(msg);
+                            }
+                        }
+                    }
+                }
             }
         });
 
@@ -76,20 +92,24 @@ public class MessageListPanel extends JPanel implements CpdlcListener {
 
     private static class MessageListCellRenderer extends DefaultListCellRenderer {
         private final String callsign;
-        private final JPanel rendererPanel = new JPanel(new BorderLayout(10, 0));
+        private final JPanel rendererPanel = new JPanel(new BorderLayout(8, 0));
+        private final JPanel leftBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        private final JLabel unreadDotLabel = new JLabel();
         private final JLabel arrowLabel = new JLabel();
         private final JLabel textLabel = new JLabel();
 
         public MessageListCellRenderer(String callsign) {
             this.callsign = callsign;
-            rendererPanel.add(arrowLabel, BorderLayout.WEST);
+            leftBox.setOpaque(false);
+            leftBox.add(unreadDotLabel);
+            leftBox.add(arrowLabel);
+
+            rendererPanel.add(leftBox, BorderLayout.WEST);
             rendererPanel.add(textLabel, BorderLayout.CENTER);
-            arrowLabel.setFont(new Font("Monospaced", Font.BOLD, 20));
+
+            arrowLabel.setFont(new Font("Monospaced", Font.BOLD, 18));
+            unreadDotLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
             textLabel.setFont(FontManager.REGULAR.deriveFont(14f));
-            rendererPanel.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createMatteBorder(0, 0, 1, 0, Color.DARK_GRAY),
-                    BorderFactory.createEmptyBorder(10, 10, 10, 10)
-            ));
         }
 
         @Override
@@ -100,14 +120,42 @@ public class MessageListPanel extends JPanel implements CpdlcListener {
                 java.util.Map<String, String> format = msg.getListFormat(callsign);
                 arrowLabel.setText(format.get("symbol"));
                 textLabel.setText(format.get("entry"));
-            }
 
-            if (isSelected) {
+                boolean isOutgoing = msg.getFrom().equalsIgnoreCase(callsign);
+                boolean isUnread = !msg.isRead() && !isOutgoing;
+
+                Color indicatorColor;
+                if ("telex".equalsIgnoreCase(msg.getType())) {
+                    indicatorColor = new Color(245, 200, 100); // Soft warm gold/amber
+                } else if ("system".equalsIgnoreCase(msg.getType())) {
+                    indicatorColor = new Color(245, 130, 130); // Soft coral
+                } else {
+                    indicatorColor = Color.CYAN; // CPDLC cyan
+                }
+
+                if (isUnread) {
+                    unreadDotLabel.setText("●");
+                    unreadDotLabel.setForeground(indicatorColor);
+                    arrowLabel.setForeground(indicatorColor);
+                    textLabel.setForeground(Color.WHITE);
+                    textLabel.setFont(FontManager.BOLD.deriveFont(14f));
+
+
+                } else {
+                    unreadDotLabel.setText(" ");
+                    arrowLabel.setForeground(new Color(128, 128, 128));
+                    textLabel.setForeground(new Color(128, 128, 128));
+                    textLabel.setFont(FontManager.REGULAR.deriveFont(14f));
+
+                }
+
                 rendererPanel.setOpaque(true);
-                rendererPanel.setBackground(new Color(45, 45, 45));
-            } else {
-                rendererPanel.setOpaque(false);
-                rendererPanel.setBackground(list.getBackground());
+                rendererPanel.setBackground(isSelected ? new Color(60, 60, 60) : list.getBackground());
+                rendererPanel.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(40, 40, 40)),
+                        BorderFactory.createEmptyBorder(10, 10, 10, 10)
+                ));
+
             }
             return rendererPanel;
         }

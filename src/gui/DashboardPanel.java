@@ -145,6 +145,10 @@ public class DashboardPanel extends JPanel implements CpdlcListener {
 
     private void handleMessageSelection(AcarsMessage selected) {
         if (selected == null) return;
+        selected.setRead(true);
+        if (listPanel != null) {
+            listPanel.repaint();
+        }
         detailPanel.setMessage(selected);
         showCard("DETAIL");
     }
@@ -168,11 +172,14 @@ public class DashboardPanel extends JPanel implements CpdlcListener {
 
         SwingUtilities.invokeLater(() -> {
             if (message.getType().equalsIgnoreCase("system")) {
-                SoundManager.playWarning();
+                if (!message.getMessage().toLowerCase().startsWith("connected as")) {
+                    SoundManager.playWarning();
+                    alertNewMessage();
+                }
             } else {
                 SoundManager.playNotification();
+                alertNewMessage();
             }
-            alertNewMessage();
         });
     }
 

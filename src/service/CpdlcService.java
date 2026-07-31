@@ -56,6 +56,7 @@ public class CpdlcService {
     private void checkInitialConnection() {
         new Thread(() -> {
             AcarsMessage connectionMsg = hoppieAPI.checkConnection(callsign);
+            connectionMsg.setRead(true);
             addMessage(connectionMsg);
             notifyConnectionStatus(!connectionMsg.getMessage().startsWith("ERROR"));
         }).start();
@@ -108,6 +109,7 @@ public class CpdlcService {
     public void sendTelex(String station, String message) {
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.sendTelex(station, callsign, message);
+            msg.setRead(true);
             addMessage(msg);
             notifyConnectionStatus(!msg.getType().equalsIgnoreCase("system"));
         });
@@ -120,6 +122,7 @@ public class CpdlcService {
     public void sendRequest(String message) {
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.request(currentATS, callsign, message);
+            msg.setRead(true);
             addMessage(msg);
             notifyConnectionStatus(!msg.getType().equalsIgnoreCase("system"));
         });
@@ -128,6 +131,7 @@ public class CpdlcService {
     public void sendReport(String message) {
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.report(currentATS, callsign, message);
+            msg.setRead(true);
             addMessage(msg);
             notifyConnectionStatus(!msg.getType().equalsIgnoreCase("system"));
         });
@@ -136,6 +140,7 @@ public class CpdlcService {
     public void sendLogon(String station, String remarks) {
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.sendLogonATC(station, callsign, remarks);
+            msg.setRead(true);
             if (!msg.getType().equalsIgnoreCase("system")) {
                 this.pendingLogonStation = station.trim();
                 notifyConnectionStatus(true);
@@ -147,6 +152,7 @@ public class CpdlcService {
     public void sendLogoff() {
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.sendLogoffATC(currentATS, callsign);
+            msg.setRead(true);
             if (!msg.getType().equalsIgnoreCase("system")) {
                 setCurrentATS(null);
                 notifyConnectionStatus(true);
@@ -158,6 +164,7 @@ public class CpdlcService {
     public void sendPdcRequest(String station, Flight flight, String stand, String atis, String remarks) {
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.sendPdcRequest(station, flight, stand, atis, remarks);
+            msg.setRead(true);
             addMessage(msg);
         });
     }

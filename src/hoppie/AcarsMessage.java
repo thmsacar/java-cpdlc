@@ -12,6 +12,7 @@ public class AcarsMessage {
     private final String type;
     private final String to;
     private String message;
+    private boolean isRead = false;
 
     public AcarsMessage(String from, String type, String to, String message) {
         this.timestamp = new Date();
@@ -19,6 +20,7 @@ public class AcarsMessage {
         this.type = type;
         this.to = to;
         this.message = message;
+        this.isRead = false;
     }
 
     public AcarsMessage(String type, String message) {
@@ -27,6 +29,15 @@ public class AcarsMessage {
         this.timestamp = new Date();
         this.type = type;
         this.message = message;
+        this.isRead = false;
+    }
+
+    public boolean isRead() {
+        return isRead;
+    }
+
+    public void setRead(boolean read) {
+        this.isRead = read;
     }
 
     public Date getTimestamp() {
