@@ -2,7 +2,16 @@
 Java CPDLC is a multi-platform CPDLC Client for HoppieAcars. 
 It is written on Java so you can use it on any platform (Windows/Linux/macOS).
 
-![Screenshot of the Java CPDLC](src/resources/images/screenshot.png)
+<p align="center">
+  <img src="src/resources/images/screenshot1.png" width="90%" alt="Java CPDLC Main View"><br>
+  <sub><b>Click a thumbnail below to open full-resolution screenshot:</b></sub><br><br>
+  <a href="src/resources/images/screenshot1.png"><img src="src/resources/images/screenshot1.png" width="18%" alt="Screenshot 1"></a>
+  <a href="src/resources/images/screenshot2.png"><img src="src/resources/images/screenshot2.png" width="18%" alt="Screenshot 2"></a>
+  <a href="src/resources/images/screenshot3.png"><img src="src/resources/images/screenshot3.png" width="18%" alt="Screenshot 3"></a>
+  <a href="src/resources/images/screenshot4.png"><img src="src/resources/images/screenshot4.png" width="18%" alt="Screenshot 4"></a>
+  <a href="src/resources/images/screenshot5.png"><img src="src/resources/images/screenshot5.png" width="18%" alt="Screenshot 5"></a>
+</p>
+
 
 ## ⚡ Quick Start (For Non-Developers)
 If you don't want to deal with coding or building, just download the pre-compiled version:
@@ -18,6 +27,7 @@ The project uses **Maven** for the build process, so no manual library downloads
 1. **Compile:** Open your terminal in the **main project folder** (where the `pom.xml` file is located) and run:
    ```bash
    mvn clean package
+   ```
 2. **Run:** After the build is complete, you can find the executable JAR file in the target folder. You can launch the application by double-clicking the JAR file or using the following command: 
    ```bash
    java -jar target/java-cpdlc-1.1.jar
@@ -38,4 +48,3 @@ However, any pull requests are still welcome. See below what I am currently work
 #### Features to implement
 - Oceanic Clearance implementation
 - Clean the code and structure
-
