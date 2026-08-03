@@ -85,6 +85,14 @@ public class LoginPanel extends JPanel {
         loginButton.addColorChangerOnPress();
         add(loginButton, gbc);
 
+        // Version Label (low contrast)
+        gbc.gridy = 6;
+        gbc.insets = new Insets(15, 5, 0, 5);
+        JLabel versionLabel = new JLabel("v" + service.UpdateChecker.CURRENT_VERSION, SwingConstants.CENTER);
+        versionLabel.setForeground(new Color(110, 110, 110));
+        versionLabel.setFont(FontManager.REGULAR != null ? FontManager.REGULAR.deriveFont(11f) : new Font("Roboto Mono", Font.PLAIN, 11));
+        add(versionLabel, gbc);
+
         hoppieField.getInputMap().put(KeyStroke.getKeyStroke("control V"), "paste");
         hoppieField.getInputMap().put(KeyStroke.getKeyStroke("meta V"), "paste");
 

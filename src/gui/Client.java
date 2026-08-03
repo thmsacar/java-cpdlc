@@ -49,6 +49,7 @@ public class Client {
         frame.setContentPane(new LoginPanel(this));
         frame.setVisible(true);
 
+        service.UpdateChecker.checkForUpdatesAsync(frame);
     }
 
     public void setAppIcon(JFrame frame) {

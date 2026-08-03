@@ -1,11 +1,7 @@
-## Version 1.1.2 Release Notes
+## Version 1.2.0 Release Notes
 
-### Features & Fixes in v1.1.2
-- **Unread Messages Indicator**: Introduced unread message tracking for incoming datalink messages with bold text and color-coded indicator dots (`●`):
-  - Cyan accent for CPDLC messages
-  - Soft warm gold accent for TELEX messages
-  - Soft coral accent for SYSTEM messages
-- **Sound Alert Fix**: Resolved a bug where initial connection confirmation played an error warning sound upon connecting.
-- **Message List Interaction**: Improved message selection behavior to update read status upon mouse release.
+### Features in v1.2.0
+- **Automatic Update Checker**: Checks GitHub Releases on launch and notifies you if a new update is available.
+- **Version Indicator**: Displayed a subtle current version number on the login screen.
 
-**Full Changelog**: https://github.com/thmsacar/java-cpdlc/compare/v1.1.1...v1.1.2
+**Full Changelog**: https://github.com/thmsacar/java-cpdlc/compare/v1.1.2...v1.2.0
