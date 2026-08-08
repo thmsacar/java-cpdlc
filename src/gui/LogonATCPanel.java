@@ -39,7 +39,10 @@ public class LogonATCPanel extends JPanel {
         stationLabel.setFont(new Font(DashboardPanel.UI_FONT, Font.BOLD, 14));
         JTextField stationField = new JTextField(15);
         stationField.setFont(new Font(DashboardPanel.UI_FONT, Font.PLAIN, 14));
-        stationField.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+        stationField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color.DARK_GRAY),
+                BorderFactory.createEmptyBorder(0, 5, 0, 5)
+        ));
         stationField.setPreferredSize(new Dimension(200, 30));
         ((AbstractDocument) stationField.getDocument()).setDocumentFilter(new UppercaseFilter());
 
