@@ -13,8 +13,8 @@ public class UserPreferencesTest {
 
     @Before
     public void setUp() {
-        // Use an isolated test node so developer's real preferences are never modified
-        testPrefs = Preferences.userNodeForPackage(UserPreferencesTest.class);
+        // Use an isolated root sub-node so the /service package node and developer's real preferences are never touched or deleted
+        testPrefs = Preferences.userRoot().node("java_cpdlc_unit_test_isolated");
         UserPreferences.setPreferencesNode(testPrefs);
     }
 

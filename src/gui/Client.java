@@ -44,7 +44,13 @@ public class Client {
         setAppIcon(frame);
         frame.setSize(650, 400);
         frame.setMinimumSize(new Dimension(650, 400));
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        frame.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                handleWindowClose();
+            }
+        });
 
         frame.setContentPane(new LoginPanel(this));
         frame.setVisible(true);
@@ -101,6 +107,22 @@ public class Client {
         frame.setContentPane(new LoginPanel(this));
         frame.revalidate();
         frame.repaint();
+    }
+
+    public void handleWindowClose() {
+        if (currentService != null) {
+            int confirm = JOptionPane.showConfirmDialog(frame,
+                    "You will disconnect from Hoppie and your received messages will be lost.",
+                    "Warning", JOptionPane.YES_NO_OPTION);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                currentService.stop();
+                currentService = null;
+                System.exit(0);
+            }
+        } else {
+            System.exit(0);
+        }
     }
 
     public static void main(String[] args) {
