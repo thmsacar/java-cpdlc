@@ -1,5 +1,6 @@
 package gui.report;
 
+import gui.GuiUtils;
 import gui.UppercaseFilter;
 
 import javax.swing.*;
@@ -39,7 +40,7 @@ public abstract class ReportForm extends JPanel {
     }
 
     protected void styleRadioButton(JRadioButton rb) {
-        gui.GuiUtils.styleRadioButton(rb);
+        GuiUtils.styleRadioButton(rb);
     }
 
     /**

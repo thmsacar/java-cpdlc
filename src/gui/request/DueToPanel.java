@@ -2,6 +2,7 @@ package gui.request;
 
 import gui.GuiUtils;
 import gui.UppercaseFilter;
+import service.CpdlcMessageFormatter;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -84,7 +85,7 @@ public class DueToPanel extends JPanel {
     public String getDueText() {
         ButtonModel selection = dueGroup.getSelection();
         if (selection == null) return "";
-        return service.CpdlcMessageFormatter.formatDueTo(selection.getActionCommand(), remarkField.getText());
+        return CpdlcMessageFormatter.formatDueTo(selection.getActionCommand(), remarkField.getText());
     }
 
     public void clean() {

@@ -2,6 +2,7 @@ package gui;
 
 import gui.button.PilotButton;
 import service.CpdlcService;
+import service.UpdateChecker;
 import service.UserPreferences;
 
 import javax.swing.*;
@@ -86,7 +87,7 @@ public class LoginPanel extends JPanel {
         // Version Label (low contrast)
         gbc.gridy = 6;
         gbc.insets = new Insets(15, 5, 0, 5);
-        JLabel versionLabel = new JLabel("v" + service.UpdateChecker.CURRENT_VERSION, SwingConstants.CENTER);
+        JLabel versionLabel = new JLabel("v" + UpdateChecker.CURRENT_VERSION, SwingConstants.CENTER);
         versionLabel.setForeground(new Color(110, 110, 110));
         versionLabel.setFont(FontManager.REGULAR != null ? FontManager.REGULAR.deriveFont(11f) : new Font("Roboto Mono", Font.PLAIN, 11));
         add(versionLabel, gbc);

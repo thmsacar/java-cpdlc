@@ -1,6 +1,10 @@
 package gui.report;
 
+import gui.NumericFilter;
+import service.CpdlcMessageFormatter;
+
 import javax.swing.*;
+import javax.swing.text.AbstractDocument;
 import java.awt.*;
 
 public class ReportSpeedForm extends ReportForm {
@@ -35,7 +39,7 @@ public class ReportSpeedForm extends ReportForm {
 
         gbc.gridy = 3;
         speedField = createStyledTextField();
-        ((javax.swing.text.AbstractDocument) speedField.getDocument()).setDocumentFilter(new gui.NumericFilter(3));
+        ((AbstractDocument) speedField.getDocument()).setDocumentFilter(new NumericFilter(3));
         add(speedField, gbc);
 
         gbc.gridy = 4;
@@ -48,7 +52,7 @@ public class ReportSpeedForm extends ReportForm {
     @Override
     public String getReportText() {
         String speed = speedField.getText().trim();
-        return service.CpdlcMessageFormatter.formatSpeedReport(machRadio.isSelected(), speed);
+        return CpdlcMessageFormatter.formatSpeedReport(machRadio.isSelected(), speed);
     }
 
     @Override

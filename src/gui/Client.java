@@ -1,14 +1,19 @@
 package gui;
 
+import service.CpdlcService;
+import service.UpdateChecker;
+
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.lang.reflect.Method;
 import java.net.URL;
 
 public class Client {
 
     protected JFrame frame;
-    private service.CpdlcService currentService;
+    private CpdlcService currentService;
 
 
     public Client() {
@@ -45,9 +50,9 @@ public class Client {
         frame.setSize(650, 400);
         frame.setMinimumSize(new Dimension(650, 400));
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        frame.addWindowListener(new java.awt.event.WindowAdapter() {
+        frame.addWindowListener(new WindowAdapter() {
             @Override
-            public void windowClosing(java.awt.event.WindowEvent e) {
+            public void windowClosing(WindowEvent e) {
                 handleWindowClose();
             }
         });
@@ -55,7 +60,7 @@ public class Client {
         frame.setContentPane(new LoginPanel(this));
         frame.setVisible(true);
 
-        service.UpdateChecker.checkForUpdatesAsync(frame);
+        UpdateChecker.checkForUpdatesAsync(frame);
     }
 
     public void setAppIcon(JFrame frame) {
@@ -92,7 +97,7 @@ public class Client {
         if (currentService != null) {
             currentService.stop();
         }
-        currentService = new service.CpdlcService(callsign, hoppieID);
+        currentService = new CpdlcService(callsign, hoppieID);
         currentService.start();
         frame.setContentPane(new DashboardPanel(currentService, this));
         frame.revalidate();

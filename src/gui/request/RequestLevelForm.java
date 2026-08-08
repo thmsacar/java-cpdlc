@@ -2,6 +2,7 @@ package gui.request;
 
 import gui.NumericFilter;
 import gui.UppercaseFilter;
+import service.CpdlcMessageFormatter;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -32,7 +33,7 @@ public class RequestLevelForm extends RequestForm {
     public String getRequestText() {
         String level = getRawInputText();
         if (level == null || level.isEmpty()) return "";
-        return service.CpdlcMessageFormatter.formatLevelRequest(level, getDueText());
+        return CpdlcMessageFormatter.formatLevelRequest(level, getDueText());
     }
 
 }

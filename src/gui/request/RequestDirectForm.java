@@ -1,6 +1,7 @@
 package gui.request;
 
 import gui.UppercaseFilter;
+import service.CpdlcMessageFormatter;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -30,6 +31,6 @@ public class RequestDirectForm extends RequestForm{
     public String getRequestText() {
         String direct = getRawInputText();
         if (direct == null || direct.isEmpty()) return "";
-        return service.CpdlcMessageFormatter.formatDirectRequest(direct, getDueText());
+        return CpdlcMessageFormatter.formatDirectRequest(direct, getDueText());
     }
 }

@@ -6,6 +6,7 @@ import gui.request.RequestDirectForm;
 import gui.request.RequestForm;
 import gui.request.RequestLevelForm;
 import gui.request.RequestSpeedForm;
+import gui.request.RequestWhenCanWeForm;
 import service.CpdlcService;
 
 import javax.swing.*;
@@ -36,7 +37,7 @@ public class RequestPanel extends JPanel {
         cardContainer.add(createRequestFormPanel("DIRECT TO", new RequestDirectForm()), "DIRECT");
         cardContainer.add(createRequestFormPanel("LEVEL", new RequestLevelForm()), "LEVEL");
         cardContainer.add(createRequestFormPanel("SPEED", new RequestSpeedForm()), "SPEED");
-        cardContainer.add(createRequestFormPanel("WHEN CAN WE EXPECT", new gui.request.RequestWhenCanWeForm()), "WHEN_CAN_WE");
+        cardContainer.add(createRequestFormPanel("WHEN CAN WE EXPECT", new RequestWhenCanWeForm()), "WHEN_CAN_WE");
 
         add(cardContainer, BorderLayout.CENTER);
         cardLayout.show(cardContainer, "MENU");

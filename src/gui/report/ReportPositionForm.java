@@ -1,6 +1,10 @@
 package gui.report;
 
+import gui.NumericFilter;
+import service.CpdlcMessageFormatter;
+
 import javax.swing.*;
+import javax.swing.text.AbstractDocument;
 import java.awt.*;
 
 public class ReportPositionForm extends ReportForm {
@@ -31,7 +35,7 @@ public class ReportPositionForm extends ReportForm {
         gbc.gridy = 2; add(createStyledLabel("TIME (ZULU)"), gbc);
         gbc.insets = new Insets(0, 5, 8, 5);
         gbc.gridy = 3; timeField = createStyledTextField(); 
-        ((javax.swing.text.AbstractDocument) timeField.getDocument()).setDocumentFilter(new gui.NumericFilter(4));
+        ((AbstractDocument) timeField.getDocument()).setDocumentFilter(new NumericFilter(4));
         add(timeField, gbc);
 
         // Thereafter
@@ -54,7 +58,7 @@ public class ReportPositionForm extends ReportForm {
         gbc.gridy = 2; add(createStyledLabel("ETA NEXT"), gbc);
         gbc.insets = new Insets(0, 5, 8, 5);
         gbc.gridy = 3; nextTimeField = createStyledTextField(); 
-        ((javax.swing.text.AbstractDocument) nextTimeField.getDocument()).setDocumentFilter(new gui.NumericFilter(4));
+        ((AbstractDocument) nextTimeField.getDocument()).setDocumentFilter(new NumericFilter(4));
         add(nextTimeField, gbc);
 
         // Level (Moved here)
@@ -62,7 +66,7 @@ public class ReportPositionForm extends ReportForm {
         gbc.gridy = 4; add(createStyledLabel("FL / ALT"), gbc);
         gbc.insets = new Insets(0, 5, 8, 5);
         gbc.gridy = 5; levelField = createStyledTextField(); 
-        ((javax.swing.text.AbstractDocument) levelField.getDocument()).setDocumentFilter(new gui.NumericFilter(5));
+        ((AbstractDocument) levelField.getDocument()).setDocumentFilter(new NumericFilter(5));
         add(levelField, gbc);
 
         // Empty spacer in col 1 to balance
@@ -81,7 +85,7 @@ public class ReportPositionForm extends ReportForm {
         String next = nextPosField.getText().trim();
         String eta = nextTimeField.getText().trim();
 
-        return service.CpdlcMessageFormatter.formatPositionReport(pos, time, level, thereafter, next, eta);
+        return CpdlcMessageFormatter.formatPositionReport(pos, time, level, thereafter, next, eta);
     }
 
     @Override

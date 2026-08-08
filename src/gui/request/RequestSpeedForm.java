@@ -2,6 +2,7 @@ package gui.request;
 
 import gui.NumericFilter;
 import gui.UppercaseFilter;
+import service.CpdlcMessageFormatter;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -61,7 +62,7 @@ public class RequestSpeedForm extends RequestForm {
         if (rawSpeed == null || rawSpeed.isEmpty()) return "";
         ButtonModel bm = group.getSelection();
         String speedType = (bm != null) ? bm.getActionCommand() : "ias";
-        return service.CpdlcMessageFormatter.formatSpeedRequest(speedType, rawSpeed, getDueText());
+        return CpdlcMessageFormatter.formatSpeedRequest(speedType, rawSpeed, getDueText());
     }
 
 }

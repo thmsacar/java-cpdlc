@@ -1,6 +1,10 @@
 package gui.report;
 
+import gui.NumericFilter;
+import service.CpdlcMessageFormatter;
+
 import javax.swing.*;
+import javax.swing.text.AbstractDocument;
 import java.awt.*;
 
 public class ReportLevelForm extends ReportForm {
@@ -47,7 +51,7 @@ public class ReportLevelForm extends ReportForm {
 
         gbc.gridy = 3;
         levelField = createStyledTextField();
-        ((javax.swing.text.AbstractDocument) levelField.getDocument()).setDocumentFilter(new gui.NumericFilter(5));
+        ((AbstractDocument) levelField.getDocument()).setDocumentFilter(new NumericFilter(5));
         add(levelField, gbc);
 
         // Spacer to push everything up
@@ -67,7 +71,7 @@ public class ReportLevelForm extends ReportForm {
         if (reachingBtn.isSelected()) status = "REACHING";
         else if (leavingBtn.isSelected()) status = "LEAVING";
         
-        return service.CpdlcMessageFormatter.formatLevelReport(status, level);
+        return CpdlcMessageFormatter.formatLevelReport(status, level);
     }
 
     @Override

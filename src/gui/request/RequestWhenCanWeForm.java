@@ -1,8 +1,10 @@
 package gui.request;
 
+import gui.GuiUtils;
+import service.CpdlcMessageFormatter;
+
 import javax.swing.*;
 import java.awt.*;
-import gui.GuiUtils;
 
 public class RequestWhenCanWeForm extends RequestForm {
     
@@ -63,7 +65,7 @@ public class RequestWhenCanWeForm extends RequestForm {
         if (val == null || val.isEmpty()) return "";
         ButtonModel bm = typeGroup.getSelection();
         if (bm == null) return "";
-        return service.CpdlcMessageFormatter.formatWhenCanWeExpectRequest(bm.getActionCommand(), val, getDueText());
+        return CpdlcMessageFormatter.formatWhenCanWeExpectRequest(bm.getActionCommand(), val, getDueText());
     }
     
     @Override

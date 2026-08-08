@@ -55,7 +55,7 @@ public abstract class RequestForm extends JPanel{
 
     // Styling radio buttons in DUE TO options
     protected void styleDueOption(JRadioButton rb) {
-        gui.GuiUtils.styleRadioButton(rb);
+        GuiUtils.styleRadioButton(rb);
     }
 
     /**
