@@ -4,17 +4,16 @@ import flight.Flight;
 import gui.button.PilotButton;
 import gui.button.ReturnButton;
 import service.CpdlcService;
+import service.UserPreferences;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
-import java.util.prefs.Preferences;
 
 public class PdcPanel extends JPanel {
 
     private final CpdlcService service;
     private final Runnable onBack;
-    private final Preferences prefs = Preferences.userNodeForPackage(PdcPanel.class);
 
     private JTextField stationField;
     private JTextField atisField;
@@ -65,7 +64,7 @@ public class PdcPanel extends JPanel {
         PilotButton fetchBtn = new PilotButton("FETCH");
         fetchBtn.setPreferredSize(new Dimension(80, 30));
         fetchBtn.addActionListener(e -> {
-            prefs.put("lastSimbriefID", simbriefField.getText());
+            UserPreferences.setLastSimbriefID(simbriefField.getText());
             service.fetchSimbriefData(simbriefField.getText(), new CpdlcService.SimbriefCallback() {
                 @Override
                 public void onSuccess(Flight flight) {
@@ -81,7 +80,7 @@ public class PdcPanel extends JPanel {
                 }
             });
         });
-        simbriefField.setText(prefs.get("lastSimbriefID", ""));
+        simbriefField.setText(UserPreferences.getLastSimbriefID());
         simbriefRow.add(simbriefField, BorderLayout.CENTER);
         simbriefRow.add(fetchBtn, BorderLayout.EAST);
 

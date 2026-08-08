@@ -1,21 +1,19 @@
 package gui;
 
 import gui.button.PilotButton;
-import hoppie.HoppieAPI;
+import service.CpdlcService;
+import service.UserPreferences;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.io.IOException;
-import java.util.prefs.Preferences;
 
 public class LoginPanel extends JPanel {
 
     private final JTextField callsignField = new JTextField(15);
     private final JTextField hoppieField = new JTextField(15);
     private final PilotButton loginButton = new PilotButton("CONNECT");
-
-    private final Preferences prefs = Preferences.userNodeForPackage(LoginPanel.class);
 
     public LoginPanel(Client client) {
 
@@ -109,9 +107,9 @@ public class LoginPanel extends JPanel {
 
             //Check hoppie connection
             try {
-                HoppieAPI.HoppieResponse response = checkHoppieID(callsign, hoppieID);
-                if (response.body().trim().equalsIgnoreCase("ok")) client.showDashboard(callsign, hoppieID);
-                else {
+                if (CpdlcService.validateCredentials(callsign, hoppieID)) {
+                    client.showDashboard(callsign, hoppieID);
+                } else {
                     JOptionPane.showMessageDialog(
                             null,
                             "INVALID LOGON\n\nPlease check your Callsign and Hoppie ID.",
@@ -129,20 +127,15 @@ public class LoginPanel extends JPanel {
 
     }
 
-    private HoppieAPI.HoppieResponse checkHoppieID(String callsign, String hoppieID) throws IOException {
-        HoppieAPI api = new HoppieAPI(hoppieID);
-        return api.sendPing(callsign);
-    }
-
     // Save pref
     private void saveData() {
-        prefs.put("lastCallsign", callsignField.getText());
-        prefs.put("lastHoppieID", hoppieField.getText());
+        UserPreferences.setLastCallsign(callsignField.getText());
+        UserPreferences.setLastHoppieID(hoppieField.getText());
     }
 
     // Load pref
     private void loadSavedData() {
-        callsignField.setText(prefs.get("lastCallsign", ""));
-        hoppieField.setText(prefs.get("lastHoppieID", ""));
+        callsignField.setText(UserPreferences.getLastCallsign());
+        hoppieField.setText(UserPreferences.getLastHoppieID());
     }
 }

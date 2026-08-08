@@ -34,6 +34,12 @@ public class CpdlcService {
         this.hoppieAPI = new HoppieAPI(hoppieID);
     }
 
+    public static boolean validateCredentials(String callsign, String hoppieID) throws IOException {
+        HoppieAPI api = new HoppieAPI(hoppieID);
+        HoppieAPI.HoppieResponse response = api.sendPing(callsign);
+        return response.body().trim().equalsIgnoreCase("ok");
+    }
+
     public void addListener(CpdlcListener listener) {
         listeners.add(listener);
     }
