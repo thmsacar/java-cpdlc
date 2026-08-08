@@ -85,9 +85,8 @@ public class RequestPanel extends JPanel {
         sendBtn.setPreferredSize(new Dimension(0, 40));
         sendBtn.setCustomColor(new Color(60, 120, 60), Color.WHITE);
         sendBtn.addActionListener(e -> {
-            String reqText = form.getRequestText();
-            if (reqText != null && !reqText.isEmpty()) {
-                String fullMsg = reqText + " " + form.getDueText();
+            String fullMsg = form.getRequestText();
+            if (fullMsg != null && !fullMsg.isEmpty()) {
                 service.sendRequest(fullMsg.trim());
                 form.clean();
                 onSend.run();

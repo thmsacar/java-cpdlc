@@ -67,7 +67,7 @@ public class ReportLevelForm extends ReportForm {
         if (reachingBtn.isSelected()) status = "REACHING";
         else if (leavingBtn.isSelected()) status = "LEAVING";
         
-        return status + " LEVEL " + level;
+        return service.CpdlcMessageFormatter.formatLevelReport(status, level);
     }
 
     @Override

@@ -30,9 +30,9 @@ public class RequestLevelForm extends RequestForm {
 
     @Override
     public String getRequestText() {
-        String level = super.getRequestText();
+        String level = getRawInputText();
         if (level == null || level.isEmpty()) return "";
-        return String.format("REQUEST LEVEL %s", level);
+        return service.CpdlcMessageFormatter.formatLevelRequest(level, getDueText());
     }
 
 }

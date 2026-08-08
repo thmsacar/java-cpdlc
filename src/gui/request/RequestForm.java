@@ -59,10 +59,10 @@ public abstract class RequestForm extends JPanel{
     }
 
     /**
-     * Constructs the primary request text.
-     * @return The formatted request string.
+     * Retrieves and validates the raw text input from reqField.
+     * @return Raw input string.
      */
-    public String getRequestText(){
+    public String getRawInputText(){
         String reqText = reqField.getText().trim().toUpperCase();
         if(reqText.isEmpty()){
             reqField.setBorder(BorderFactory.createCompoundBorder(
@@ -77,6 +77,14 @@ public abstract class RequestForm extends JPanel{
             ));
         }
         return reqText;
+    }
+
+    /**
+     * Constructs the primary request text.
+     * @return The formatted request string.
+     */
+    public String getRequestText(){
+        return getRawInputText();
     }
 
     /**

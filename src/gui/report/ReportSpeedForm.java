@@ -48,9 +48,7 @@ public class ReportSpeedForm extends ReportForm {
     @Override
     public String getReportText() {
         String speed = speedField.getText().trim();
-        if (speed.isEmpty()) return null;
-        String type = machRadio.isSelected() ? "M." : "IAS ";
-        return "PRESENT SPEED " + type + speed;
+        return service.CpdlcMessageFormatter.formatSpeedReport(machRadio.isSelected(), speed);
     }
 
     @Override

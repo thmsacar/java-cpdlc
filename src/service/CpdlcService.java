@@ -143,6 +143,41 @@ public class CpdlcService {
         });
     }
 
+    public void sendDirectRequest(String waypoint, String dueToText) {
+        String msg = CpdlcMessageFormatter.formatDirectRequest(waypoint, dueToText);
+        if (!msg.isEmpty()) sendRequest(msg);
+    }
+
+    public void sendLevelRequest(String level, String dueToText) {
+        String msg = CpdlcMessageFormatter.formatLevelRequest(level, dueToText);
+        if (!msg.isEmpty()) sendRequest(msg);
+    }
+
+    public void sendSpeedRequest(String speedType, String speedValue, String dueToText) {
+        String msg = CpdlcMessageFormatter.formatSpeedRequest(speedType, speedValue, dueToText);
+        if (!msg.isEmpty()) sendRequest(msg);
+    }
+
+    public void sendWhenCanWeExpectRequest(String expectType, String value, String dueToText) {
+        String msg = CpdlcMessageFormatter.formatWhenCanWeExpectRequest(expectType, value, dueToText);
+        if (!msg.isEmpty()) sendRequest(msg);
+    }
+
+    public void sendLevelReport(String status, String level) {
+        String msg = CpdlcMessageFormatter.formatLevelReport(status, level);
+        if (msg != null) sendReport(msg);
+    }
+
+    public void sendSpeedReport(boolean isMach, String speedValue) {
+        String msg = CpdlcMessageFormatter.formatSpeedReport(isMach, speedValue);
+        if (msg != null) sendReport(msg);
+    }
+
+    public void sendPositionReport(String pos, String time, String level, String thereafter, String nextPos, String etaNext) {
+        String msg = CpdlcMessageFormatter.formatPositionReport(pos, time, level, thereafter, nextPos, etaNext);
+        if (msg != null) sendReport(msg);
+    }
+
     public void sendLogon(String station, String remarks) {
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.sendLogonATC(station, callsign, remarks);

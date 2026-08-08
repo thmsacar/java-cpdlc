@@ -107,6 +107,7 @@ public class LoginPanel extends JPanel {
 
             //Check hoppie connection
             try {
+
                 if (CpdlcService.validateCredentials(callsign, hoppieID)) {
                     client.showDashboard(callsign, hoppieID);
                 } else {

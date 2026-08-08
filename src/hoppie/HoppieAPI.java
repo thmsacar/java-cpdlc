@@ -121,8 +121,13 @@ public class HoppieAPI {
             return list;
         }
 
+        return parsePollResponseBody(response.body(), callsign);
+    }
+
+    public static List<AcarsMessage> parsePollResponseBody(String body, String callsign) {
+        List<AcarsMessage> list = new ArrayList<>();
         Pattern p = Pattern.compile("\\{(\\S+)\\s+(\\S+)\\s+\\{([\\s\\S]*?)\\}\\}");
-        Matcher m = p.matcher(response.body());
+        Matcher m = p.matcher(body);
 
         while (m.find()) {
             String from = m.group(1).trim();

@@ -81,20 +81,7 @@ public class ReportPositionForm extends ReportForm {
         String next = nextPosField.getText().trim();
         String eta = nextTimeField.getText().trim();
 
-        if (pos.isEmpty() || time.isEmpty() || level.isEmpty()) return null;
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("POSITION ").append(pos).append(" AT ").append(time).append(" LEVEL ").append(level);
-        if (!thereafter.isEmpty()) {
-            sb.append("@THEREAFTER ").append(thereafter);
-        }
-        if (!next.isEmpty()) {
-            sb.append("@ESTIMATING ").append(next);
-            if (!eta.isEmpty()) {
-                sb.append(" AT ").append(eta);
-            }
-        }
-        return sb.toString();
+        return service.CpdlcMessageFormatter.formatPositionReport(pos, time, level, thereafter, next, eta);
     }
 
     @Override

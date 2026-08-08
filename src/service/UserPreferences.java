@@ -4,11 +4,22 @@ import java.util.prefs.Preferences;
 
 public class UserPreferences {
 
-    private static final Preferences prefs = Preferences.userNodeForPackage(UserPreferences.class);
+    private static Preferences prefs = Preferences.userNodeForPackage(UserPreferences.class);
 
     private static final String KEY_CALLSIGN = "lastCallsign";
     private static final String KEY_HOPPIE_ID = "lastHoppieID";
     private static final String KEY_SIMBRIEF_ID = "lastSimbriefID";
+
+    /**
+     * Overrides the Preferences node (used primarily for unit testing so real user preferences are never mutated).
+     */
+    public static void setPreferencesNode(Preferences customPrefs) {
+        if (customPrefs != null) {
+            prefs = customPrefs;
+        } else {
+            prefs = Preferences.userNodeForPackage(UserPreferences.class);
+        }
+    }
 
     public static String getLastCallsign() {
         return prefs.get(KEY_CALLSIGN, "");

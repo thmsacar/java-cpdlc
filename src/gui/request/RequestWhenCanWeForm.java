@@ -59,11 +59,11 @@ public class RequestWhenCanWeForm extends RequestForm {
 
     @Override
     public String getRequestText() {
-        String val = super.getRequestText();
+        String val = getRawInputText();
         if (val == null || val.isEmpty()) return "";
         ButtonModel bm = typeGroup.getSelection();
         if (bm == null) return "";
-        return "WHEN CAN WE EXPECT " + bm.getActionCommand() + " " + val;
+        return service.CpdlcMessageFormatter.formatWhenCanWeExpectRequest(bm.getActionCommand(), val, getDueText());
     }
     
     @Override

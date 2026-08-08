@@ -57,17 +57,11 @@ public class RequestSpeedForm extends RequestForm {
 
     @Override
     public String getRequestText() {
-        String rawSpeed = super.getRequestText();
+        String rawSpeed = getRawInputText();
         if (rawSpeed == null || rawSpeed.isEmpty()) return "";
         ButtonModel bm = group.getSelection();
-        switch (bm.getActionCommand()) {
-            case "ias":
-                return "REQUEST SPEED IAS " + rawSpeed;
-            case "mach":
-                return "REQUEST SPEED M." + rawSpeed;
-            default:
-                return "";
-        }
+        String speedType = (bm != null) ? bm.getActionCommand() : "ias";
+        return service.CpdlcMessageFormatter.formatSpeedRequest(speedType, rawSpeed, getDueText());
     }
 
 }

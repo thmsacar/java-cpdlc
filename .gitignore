@@ -55,7 +55,9 @@ bin/
 
 ### Mac OS ###
 .DS_Store
-/dependency-reduced-pom.xml
-
-RELEASE_CHECKLIST.txt
+### Release Utilities & Binaries ###
+release_utils/
+*.dmg
+*.exe
+*.jar
 

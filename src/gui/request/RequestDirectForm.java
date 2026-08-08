@@ -28,8 +28,8 @@ public class RequestDirectForm extends RequestForm{
 
     @Override
     public String getRequestText() {
-        String level = super.getRequestText();
-        if (level == null || level.isEmpty()) return "";
-        return String.format("REQUEST DIRECT TO %s", level);
+        String direct = getRawInputText();
+        if (direct == null || direct.isEmpty()) return "";
+        return service.CpdlcMessageFormatter.formatDirectRequest(direct, getDueText());
     }
 }

@@ -84,15 +84,7 @@ public class DueToPanel extends JPanel {
     public String getDueText() {
         ButtonModel selection = dueGroup.getSelection();
         if (selection == null) return "";
-        
-        if (selection.getActionCommand().equals("PERFORMANCE")) {
-            return "DUE TO PERFORMANCE";
-        } else if (selection.getActionCommand().equals("WEATHER")) {
-            return "DUE TO WEATHER";
-        } else if (selection.getActionCommand().equals("FREE TEXT")) {
-            return "DUE TO " + remarkField.getText().trim();
-        }
-        return "";
+        return service.CpdlcMessageFormatter.formatDueTo(selection.getActionCommand(), remarkField.getText());
     }
 
     public void clean() {
