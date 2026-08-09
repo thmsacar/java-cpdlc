@@ -1,7 +1,7 @@
-## Version 1.2.0 Release Notes
+## Version 1.3.0 Release Notes
 
-### Features in v1.2.0
-- **Automatic Update Checker**: Checks GitHub Releases on launch and notifies you if a new update is available.
-- **Version Indicator**: Displayed a subtle current version number on the login screen.
+### Features & Enhancements in v1.3.0
+- **Automatic CPDLC Handover & Logoff**: Implemented automatic logoff and handover protocol handling for seamless station transitions.
+- **Redesigned Message List**: Enhanced message list items with station headers, message content previews, direction arrows, and right-aligned Zulu timestamps.
 
-**Full Changelog**: https://github.com/thmsacar/java-cpdlc/compare/v1.1.2...v1.2.0
+**Full Changelog**: https://github.com/thmsacar/java-cpdlc/compare/v1.2.0...v1.3.0

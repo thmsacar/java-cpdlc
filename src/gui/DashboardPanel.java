@@ -175,10 +175,12 @@ public class DashboardPanel extends JPanel implements CpdlcListener {
                 if (!message.getMessage().toLowerCase().startsWith("connected as")) {
                     SoundManager.playWarning();
                     alertNewMessage();
+                    handleMessageSelection(message);
                 }
             } else {
                 SoundManager.playNotification();
                 alertNewMessage();
+                handleMessageSelection(message);
             }
         });
     }
@@ -208,21 +210,42 @@ public class DashboardPanel extends JPanel implements CpdlcListener {
         // Could show a popup or log
     }
 
-    private void alertNewMessage() {
+    @Override
+    public void onAutoLogoff(String station) {
+        SwingUtilities.invokeLater(() -> {
+            alertNewMessage();
+        });
+    }
 
+    @Override
+    public void onAutoHandover(String nextStation) {
+        SwingUtilities.invokeLater(() -> {
+            alertNewMessage();
+        });
+    }
+
+    private void alertNewMessage() {
         JFrame frame = client.frame;
         if (frame != null && !frame.isActive()) {
-            if (System.getProperty("os.name").toLowerCase().contains("mac")) {
-                try {
-                    Class<?> appClass = Class.forName("com.apple.eawt.Application");
-                    Object application = appClass.getMethod("getApplication").invoke(null);
-                    appClass.getMethod("requestUserAttention", boolean.class).invoke(application, true);
-                } catch (Exception e) {
+            try {
+                if (Taskbar.isTaskbarSupported() && Taskbar.getTaskbar().isSupported(Taskbar.Feature.USER_ATTENTION)) {
+                    Taskbar.getTaskbar().requestUserAttention(true, true);
+                }
+            } catch (Throwable ignored) {}
+
+            try {
+                if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+                    try {
+                        Class<?> appClass = Class.forName("com.apple.eawt.Application");
+                        Object application = appClass.getMethod("getApplication").invoke(null);
+                        appClass.getMethod("requestUserAttention", boolean.class).invoke(application, true);
+                    } catch (Throwable t) {
+                        frame.toFront();
+                    }
+                } else {
                     frame.toFront();
                 }
-            } else {
-                frame.toFront();
-            }
+            } catch (Throwable ignored) {}
         }
     }
 }

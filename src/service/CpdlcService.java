@@ -14,8 +14,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CpdlcService {
+
+    private static final Pattern HANDOVER_PATTERN = Pattern.compile("HANDOVER\\s+@?([A-Z0-9]{3,8})", Pattern.CASE_INSENSITIVE);
 
     private final String callsign;
     private final String hoppieID;
@@ -26,6 +30,9 @@ public class CpdlcService {
     private String currentATS;
     private boolean isLoggedOn = false;
     private String pendingLogonStation = "";
+    private boolean isAutoHandoffPending = false;
+    private String previousATS = "";
+    private String nextATS = "";
     private ScheduledExecutorService fetcherService;
 
     public CpdlcService(String callsign, String hoppieID) {
@@ -77,7 +84,6 @@ public class CpdlcService {
                     for (AcarsMessage msg : newMessages) {
                         if (isDuplicateSystemMessage(msg)) continue;
                         
-                        processIncomingMessage(msg);
                         addMessage(msg);
                     }
                     notifyConnectionStatus(true);
@@ -99,11 +105,51 @@ public class CpdlcService {
     }
 
     private void processIncomingMessage(AcarsMessage msg) {
-        String sender = msg.getFrom();
-        String text = msg.getMessage();
-        if (text.contains("LOGON ACCEPTED") && sender.equalsIgnoreCase(pendingLogonStation)) {
+        if (msg == null) return;
+        String sender = msg.getFrom() != null ? msg.getFrom().trim() : "";
+        String text = msg.getMessage() != null ? msg.getMessage() : "";
+        String type = msg.getType() != null ? msg.getType().trim().toUpperCase() : "ACARS";
+
+        boolean isOutgoing = sender.equalsIgnoreCase(callsign);
+        if (isOutgoing || "SYSTEM".equalsIgnoreCase(type)) {
+            return;
+        }
+
+        if (text.contains("LOGON ACCEPTED") && !pendingLogonStation.isEmpty() && sender.equalsIgnoreCase(pendingLogonStation)) {
+            if (isAutoHandoffPending && sender.equalsIgnoreCase(nextATS)) {
+                isAutoHandoffPending = false;
+                if (previousATS != null && !previousATS.isEmpty()) {
+                    sendLogoffToStation(previousATS);
+                }
+                previousATS = "";
+                nextATS = "";
+            }
             setCurrentATS(pendingLogonStation);
             pendingLogonStation = "";
+            return;
+        }
+
+        String upperText = text.toUpperCase();
+        boolean isLogoff = upperText.contains("LOGOFF") || 
+                           upperText.contains("SERVICE TERMINATED") || 
+                           upperText.contains("DISCONNECT");
+
+        Matcher handoverMatcher = HANDOVER_PATTERN.matcher(text);
+        boolean isHandover = handoverMatcher.find();
+
+        if (isLogoff && isLoggedOn()) {
+            String targetStation = sender.isEmpty() ? currentATS : sender;
+            sendLogoff();
+            notifyAutoLogoff(targetStation);
+        } else if (isHandover && isLoggedOn()) {
+            String targetStation = handoverMatcher.group(1).trim().toUpperCase();
+            if (!targetStation.isEmpty() && !targetStation.equalsIgnoreCase(currentATS)) {
+                this.previousATS = currentATS;
+                this.nextATS = targetStation;
+                this.isAutoHandoffPending = true;
+                sendLogon(targetStation, "");
+                notifyAutoHandover(targetStation);
+            }
         }
     }
 
@@ -202,6 +248,16 @@ public class CpdlcService {
         });
     }
 
+    public void sendLogoffToStation(String station) {
+        executeAsync(() -> {
+            if (station != null && !station.trim().isEmpty()) {
+                AcarsMessage msg = hoppieAPI.sendLogoffATC(station.trim(), callsign);
+                msg.setRead(true);
+                addMessage(msg);
+            }
+        });
+    }
+
     public void sendPdcRequest(String station, Flight flight, String stand, String atis, String remarks) {
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.sendPdcRequest(station, flight, stand, atis, remarks);
@@ -252,6 +308,7 @@ public class CpdlcService {
 
     private void addMessage(AcarsMessage message) {
         if (message == null) return;
+        processIncomingMessage(message);
         messages.add(0, message);
         for (CpdlcListener l : listeners) {
             l.onMessageReceived(message);
@@ -279,9 +336,24 @@ public class CpdlcService {
         }
     }
 
-    // Getters
+    private void notifyAutoLogoff(String station) {
+        for (CpdlcListener l : listeners) {
+            l.onAutoLogoff(station);
+        }
+    }
+
+    private void notifyAutoHandover(String nextStation) {
+        for (CpdlcListener l : listeners) {
+            l.onAutoHandover(nextStation);
+        }
+    }
+
+    // Getters / Setters
     public String getCallsign() { return callsign; }
     public String getCurrentATS() { return currentATS; }
+    public String getNextATS() { return nextATS; }
+    public void setNextATS(String nextATS) { this.nextATS = nextATS != null ? nextATS : ""; }
     public boolean isLoggedOn() { return isLoggedOn; }
+    public boolean isConnected() { return fetcherService != null && !fetcherService.isShutdown(); }
     public List<AcarsMessage> getMessages() { return Collections.unmodifiableList(messages); }
 }

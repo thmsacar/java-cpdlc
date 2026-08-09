@@ -96,20 +96,26 @@ public class MessageListPanel extends JPanel implements CpdlcListener {
         private final JPanel leftBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         private final JLabel unreadDotLabel = new JLabel();
         private final JLabel arrowLabel = new JLabel();
-        private final JLabel textLabel = new JLabel();
+        private final JLabel headerLabel = new JLabel();
+        private final JLabel previewLabel = new JLabel();
+        private final JLabel timeLabel = new JLabel();
 
         public MessageListCellRenderer(String callsign) {
             this.callsign = callsign;
             leftBox.setOpaque(false);
             leftBox.add(unreadDotLabel);
             leftBox.add(arrowLabel);
+            leftBox.add(headerLabel);
+            leftBox.add(previewLabel);
 
-            rendererPanel.add(leftBox, BorderLayout.WEST);
-            rendererPanel.add(textLabel, BorderLayout.CENTER);
+            rendererPanel.add(leftBox, BorderLayout.CENTER);
+            rendererPanel.add(timeLabel, BorderLayout.EAST);
 
-            arrowLabel.setFont(new Font("Monospaced", Font.BOLD, 18));
             unreadDotLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
-            textLabel.setFont(FontManager.REGULAR.deriveFont(14f));
+            arrowLabel.setFont(new Font("Monospaced", Font.BOLD, 16));
+            headerLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
+            previewLabel.setFont(FontManager.REGULAR.deriveFont(14f));
+            timeLabel.setFont(new Font("Monospaced", Font.PLAIN, 12));
         }
 
         @Override
@@ -119,34 +125,38 @@ public class MessageListPanel extends JPanel implements CpdlcListener {
                 AcarsMessage msg = (AcarsMessage) value;
                 java.util.Map<String, String> format = msg.getListFormat(callsign);
                 arrowLabel.setText(format.get("symbol"));
-                textLabel.setText(format.get("entry"));
+                headerLabel.setText(format.get("header"));
+                previewLabel.setText(format.get("preview"));
+                timeLabel.setText(format.get("time"));
 
                 boolean isOutgoing = msg.getFrom().equalsIgnoreCase(callsign);
                 boolean isUnread = !msg.isRead() && !isOutgoing;
 
-                Color indicatorColor;
+                Color typeColor;
                 if ("telex".equalsIgnoreCase(msg.getType())) {
-                    indicatorColor = new Color(245, 200, 100); // Soft warm gold/amber
+                    typeColor = new Color(245, 200, 100); // Soft warm gold/amber
                 } else if ("system".equalsIgnoreCase(msg.getType())) {
-                    indicatorColor = new Color(245, 130, 130); // Soft coral
+                    typeColor = new Color(245, 130, 130); // Soft coral
                 } else {
-                    indicatorColor = Color.CYAN; // CPDLC cyan
+                    typeColor = Color.CYAN; // CPDLC cyan
                 }
 
                 if (isUnread) {
                     unreadDotLabel.setText("●");
-                    unreadDotLabel.setForeground(indicatorColor);
-                    arrowLabel.setForeground(indicatorColor);
-                    textLabel.setForeground(Color.WHITE);
-                    textLabel.setFont(FontManager.BOLD.deriveFont(14f));
-
-
+                    unreadDotLabel.setForeground(typeColor);
+                    arrowLabel.setForeground(typeColor);
+                    headerLabel.setForeground(typeColor);
+                    previewLabel.setForeground(Color.WHITE);
+                    previewLabel.setFont(FontManager.BOLD.deriveFont(14f));
+                    timeLabel.setForeground(new Color(220, 220, 220));
                 } else {
                     unreadDotLabel.setText(" ");
+                    unreadDotLabel.setForeground(new Color(128, 128, 128));
                     arrowLabel.setForeground(new Color(128, 128, 128));
-                    textLabel.setForeground(new Color(128, 128, 128));
-                    textLabel.setFont(FontManager.REGULAR.deriveFont(14f));
-
+                    headerLabel.setForeground(isOutgoing ? new Color(170, 170, 170) : typeColor.darker());
+                    previewLabel.setForeground(new Color(180, 180, 180));
+                    previewLabel.setFont(FontManager.REGULAR.deriveFont(14f));
+                    timeLabel.setForeground(new Color(128, 128, 128));
                 }
 
                 rendererPanel.setOpaque(true);

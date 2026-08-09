@@ -9,4 +9,7 @@ public interface CpdlcListener {
     void onConnectionStatusChanged(boolean isConnected);
     void onAtsUnitChanged(String atsUnit);
     void onError(String message);
+
+    default void onAutoLogoff(String station) {}
+    default void onAutoHandover(String nextStation) {}
 }

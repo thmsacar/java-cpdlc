@@ -21,8 +21,10 @@ public class AcarsMessageTest {
         HashMap<String, String> format = msg.getListFormat("KLM123");
 
         assertNotNull(format);
-        assertTrue(format.get("entry").contains("CPDLC TO EHAM_TWR"));
+        assertEquals("(EHAM_TWR)<", format.get("header"));
+        assertEquals("REQUEST LEVEL 350", format.get("preview"));
         assertEquals("⬈", format.get("symbol"));
+        assertNotNull(format.get("time"));
     }
 
     @Test
@@ -31,8 +33,10 @@ public class AcarsMessageTest {
         HashMap<String, String> format = msg.getListFormat("KLM123");
 
         assertNotNull(format);
-        assertTrue(format.get("entry").contains("CPDLC FROM EHAM_TWR"));
+        assertEquals("(EHAM_TWR)>", format.get("header"));
+        assertEquals("CLEARED DIRECT NAVIX", format.get("preview"));
         assertEquals("⬊", format.get("symbol"));
+        assertNotNull(format.get("time"));
     }
 
     @Test

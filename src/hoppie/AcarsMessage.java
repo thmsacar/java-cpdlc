@@ -67,35 +67,42 @@ public class AcarsMessage {
     /**
      * Formats the message for display in the main message list.
      * @param callsign The aircraft callsign to determine if TO or FROM.
-     * @return A map containing the formatted entry and the direction symbol.
+     * @return A map containing header, preview, time, entry, and symbol.
      */
     public HashMap<String, String> getListFormat(String callsign){
-        String entry;
+        String header;
         String symbol;
+        boolean isOutgoing = this.getFrom().equalsIgnoreCase(callsign);
+
         if ("system".equalsIgnoreCase(this.getType())) {
-            entry = "SYSTEM: " + this.getMessage();
+            header = "(SYSTEM)>";
             symbol = " ";
+        } else if (isOutgoing) {
+            header = "(" + (this.getTo() != null ? this.getTo() : "") + ")<";
+            symbol = decodeUnicode("\\u2B08");
         } else {
-            String contact;
-            if (this.getFrom().equalsIgnoreCase(callsign)) {
-                contact = "TO " + this.getTo();
-                symbol = "\\u2B08";
-            } else {
-                contact = "FROM " + this.getFrom();
-                symbol = "\\u2B0A";
-            }
-//            entry = symbol + TimeFormatter.zuluTime(this.getTimestamp());
-            entry = TimeFormatter.zuluTime(this.getTimestamp());
-            if ("telex".equalsIgnoreCase(this.getType())) {
-                entry += " TELEX " + contact ;// + ": " + this.getMessage();
-            } else if ("cpdlc".equalsIgnoreCase(this.getType())) {
-                entry += " CPDLC " + contact ;// + ": " + this.getMessage();
-            }
+            header = "(" + (this.getFrom() != null ? this.getFrom() : "") + ")>";
+            symbol = decodeUnicode("\\u2B0A");
         }
+
+        String rawMsg = this.getMessage() != null ? this.getMessage() : "";
+        String cleanMsg = rawMsg.replace('@', ' ').replace('\n', ' ').replace('\r', ' ').replaceAll("\\s+", " ").trim();
+        String preview;
+        if (cleanMsg.length() > 30) {
+            preview = cleanMsg.substring(0, 30) + "...";
+        } else {
+            preview = cleanMsg;
+        }
+
+        String time = TimeFormatter.zuluTime(this.getTimestamp());
+        String entry = header + (preview.isEmpty() ? "" : " " + preview);
+
         HashMap<String, String> map = new HashMap<>();
+        map.put("header", header);
+        map.put("preview", preview);
+        map.put("time", time);
         map.put("entry", entry);
-        map.put("symbol", decodeUnicode(symbol));
-//        return decodeUnicode(entry);
+        map.put("symbol", symbol);
         return map;
     }
 
