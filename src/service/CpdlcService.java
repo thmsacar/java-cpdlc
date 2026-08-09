@@ -55,6 +55,39 @@ public class CpdlcService {
         listeners.remove(listener);
     }
 
+    /**
+     * Used for adding mockup data, for testing purposes
+     */
+    public void populateMockData() {
+        this.currentATS = "EDGG_CTR";
+        this.isLoggedOn = true;
+
+        AcarsMessage m6 = new AcarsMessage("EHAM_TWR", "cpdlc", callsign, "CLEARED PRE-DEPARTURE ROUTE SPY3A RUNWAY 24");
+        m6.setRead(true);
+
+        AcarsMessage m5 = new AcarsMessage(callsign, "telex", "THY_OPS", "ARRIVED AT GATE E12 FUEL REMAINING 4200KG");
+        m5.setRead(true);
+
+        AcarsMessage m4 = new AcarsMessage("THY_OPS", "telex", callsign, "DISPATCH SHEET UPDATED FOR FLIGHT THY100");
+        m4.setRead(false);
+
+        AcarsMessage m3 = new AcarsMessage(callsign, "cpdlc", "EDGG_CTR", "REQUEST DIRECT TO LOGAN");
+        m3.setRead(true);
+
+        AcarsMessage m2 = new AcarsMessage("EDGG_CTR", "cpdlc", callsign, "CONTACT EDGG ON FREQUENCY 123.450");
+        m2.setRead(false);
+
+        AcarsMessage m1 = new AcarsMessage("EDGG_CTR", "cpdlc", callsign, "CLIMB TO FL370 WHEN READY");
+        m1.setRead(false);
+
+        addMessage(m6);
+        addMessage(m5);
+        addMessage(m4);
+        addMessage(m3);
+        addMessage(m2);
+        addMessage(m1);
+    }
+
     public void start() {
         checkInitialConnection();
         startAutoFetch();
@@ -72,6 +105,7 @@ public class CpdlcService {
             connectionMsg.setRead(true);
             addMessage(connectionMsg);
             notifyConnectionStatus(!connectionMsg.getMessage().startsWith("ERROR"));
+//            populateMockData();
         }).start();
     }
 

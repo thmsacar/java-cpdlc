@@ -175,12 +175,10 @@ public class DashboardPanel extends JPanel implements CpdlcListener {
                 if (!message.getMessage().toLowerCase().startsWith("connected as")) {
                     SoundManager.playWarning();
                     alertNewMessage();
-                    handleMessageSelection(message);
                 }
             } else {
                 SoundManager.playNotification();
                 alertNewMessage();
-                handleMessageSelection(message);
             }
         });
     }

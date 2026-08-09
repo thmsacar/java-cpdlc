@@ -30,7 +30,7 @@ The project uses **Maven** for the build process, so no manual library downloads
    ```
 2. **Run:** After the build is complete, you can find the executable JAR file in the target folder. You can launch the application by double-clicking the JAR file or using the following command: 
    ```bash
-   java -jar target/java-cpdlc-1.1.jar
+   java -jar target/java-cpdlc-1.3.0.jar
    ```
    
 ## Usage
@@ -40,11 +40,23 @@ The project uses **Maven** for the build process, so no manual library downloads
 - If your callsign is in green color, the connection with Hoppie server has established.
 - If any connection problem occurs your callsign will become red.
 
+### Message Color Coding
+- **Blue**: CPDLC messages
+- **Yellow**: Telex messages
+- **Red**: System messages (Mostly related to Hoppie connection )
+
+### Automatic CPDLC Handover & Logoff
+Incoming ATC handover instructions and logoff messages are processed automatically
+- **Handover**: Automatically requests a logon to the next ATS unit and logs off from the previous station once accepted.
+- **Logoff**: Automatically disconnects from the active ATS unit upon receiving a service termination message.
+
+
+
 ## Contribution
 As of now, the code doesn't have javadoc so it's a bit of mess. I will for sure write javadoc and necessary comments to the code. 
 
 However, any pull requests are still welcome. See below what I am currently working on. 
 
 #### Features to implement
+- CDU style new GUI
 - Oceanic Clearance implementation
-- Clean the code and structure
