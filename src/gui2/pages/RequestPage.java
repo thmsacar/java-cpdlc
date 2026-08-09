@@ -112,6 +112,11 @@ public class RequestPage implements CduPage {
                     break;
                 case 3: // LSK 4R: SEND REQ>
                     if (controller.getService() != null && !value.isEmpty()) {
+                        if (!controller.getService().isLoggedOn() || controller.getService().getCurrentATS() == null || controller.getService().getCurrentATS().isEmpty()) {
+                            controller.setStatusMessage("NOT LOGGED ON");
+                            break;
+                        }
+
                         if ("DIRECT".equals(reqType)) {
                             controller.getService().sendDirectRequest(value, dueTo);
                         } else if ("ALTITUDE".equals(reqType)) {

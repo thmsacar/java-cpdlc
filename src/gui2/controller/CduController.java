@@ -3,6 +3,7 @@ package gui2.controller;
 import flight.Flight;
 import gui.SoundManager;
 import gui2.components.CduDisplay;
+import gui2.pages.CduDisconnectPage;
 import gui2.pages.CduLoginPage;
 import gui2.pages.CduPage;
 import gui2.pages.MainMenuPage;
@@ -54,6 +55,9 @@ public class CduController implements CpdlcListener {
 
     public CduController(CduDisplay display) {
         this.display = display;
+        if (this.display != null) {
+            this.display.setOnResizeListener(this::refreshDisplay);
+        }
         loadPreferences();
     }
 
@@ -149,6 +153,17 @@ public class CduController implements CpdlcListener {
         refreshDisplay();
     }
 
+    public void handleWindowClose() {
+        if (service == null) {
+            System.exit(0);
+            return;
+        }
+        if (currentPage instanceof CduDisconnectPage && ((CduDisconnectPage) currentPage).isExitOnDisconnect()) {
+            return;
+        }
+        pushPage(new CduDisconnectPage(true));
+    }
+
     public void showPage(CduPage page) {
         if (page == null) return;
         this.currentPage = page;
@@ -194,6 +209,7 @@ public class CduController implements CpdlcListener {
                 scratchpad = "";
                 break;
             case "SP":
+            case " ":
                 scratchpad += " ";
                 break;
             case "MENU":
@@ -271,7 +287,6 @@ public class CduController implements CpdlcListener {
                         this.nextAts = "";
                     }
                     triggerUserAttention();
-                    pushPage(new MessageDetailPage(message));
                 }
             } else if (isOutgoing) {
                 // Sent message: status bar says CPDLC TO or TELEX TO
@@ -288,7 +303,6 @@ public class CduController implements CpdlcListener {
                 setExecLed(true);
                 statusMessage = (isCpdlc ? "CPDLC FROM " : "TELEX FROM ") + from;
                 triggerUserAttention();
-                pushPage(new MessageDetailPage(message));
             }
         }
         refreshDisplay();
@@ -367,6 +381,7 @@ public class CduController implements CpdlcListener {
     }
 
     // Getters / Setters
+    public CduDisplay getDisplay() { return display; }
     public CpdlcService getService() { return service; }
     public void setService(CpdlcService service) { 
         this.service = service; 
@@ -414,13 +429,13 @@ public class CduController implements CpdlcListener {
 
     public String getMessagesLabel() {
         int unreadCount = service != null ? 
-            (int) service.getMessages().stream().filter(m -> !m.isRead()).count() : 0;
+            (int) service.getMessages().stream().filter(m -> !m.isRead() && (m.getFrom() == null || !m.getFrom().equalsIgnoreCase(callsign))).count() : 0;
         return unreadCount > 0 ? "MESSAGES [" + unreadCount + "]>" : "MESSAGES>";
     }
 
     public CduDisplay.LineItem getMessagesLineItem() {
         int unreadCount = service != null ? 
-            (int) service.getMessages().stream().filter(m -> !m.isRead()).count() : 0;
+            (int) service.getMessages().stream().filter(m -> !m.isRead() && (m.getFrom() == null || !m.getFrom().equalsIgnoreCase(callsign))).count() : 0;
         String label = unreadCount > 0 ? "MESSAGES [" + unreadCount + "]>" : "MESSAGES>";
         CduDisplay.DisplayColor color = unreadCount > 0 ? CduDisplay.DisplayColor.CYAN : CduDisplay.DisplayColor.WHITE;
         return new CduDisplay.LineItem("", label, color);

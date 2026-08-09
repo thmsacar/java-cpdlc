@@ -48,6 +48,7 @@ public class CduDisplay extends JPanel {
     private String rightSubheader = "NDA";
     private String scratchpad = "";
     private String statusText = "ACARS READY";
+    private Runnable onResizeListener;
 
     private final LineItem[] leftLines = new LineItem[6];
     private final LineItem[] rightLines = new LineItem[6];
@@ -56,13 +57,25 @@ public class CduDisplay extends JPanel {
         setOpaque(true);
         setBackground(new Color(5, 7, 10));
         setPreferredSize(new Dimension(380, 300));
-        setMinimumSize(new Dimension(380, 300));
-        setMaximumSize(new Dimension(380, 300));
+        setMinimumSize(new Dimension(280, 250));
 
         for (int i = 0; i < 6; i++) {
             leftLines[i] = new LineItem();
             rightLines[i] = new LineItem();
         }
+
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                if (onResizeListener != null) {
+                    onResizeListener.run();
+                }
+            }
+        });
+    }
+
+    public void setOnResizeListener(Runnable listener) {
+        this.onResizeListener = listener;
     }
 
     public void setHeader(String title, String leftSub, String rightSub) {
@@ -96,6 +109,15 @@ public class CduDisplay extends JPanel {
     public void setStatusText(String text) {
         this.statusText = text != null ? text : "";
         repaint();
+    }
+
+    public int getLineMaxCharCount() {
+        Font fontBold = FontManager.BOLD != null ? FontManager.BOLD : new Font("Monospaced", Font.BOLD, 14);
+        FontMetrics fm = getFontMetrics(fontBold.deriveFont(14f));
+        int availWidth = Math.max(100, getWidth() - 24);
+        int charWidth = fm.charWidth('W');
+        if (charWidth <= 0) charWidth = 10;
+        return Math.max(20, availWidth / charWidth);
     }
 
     @Override

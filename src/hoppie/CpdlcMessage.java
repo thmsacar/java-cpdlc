@@ -5,6 +5,7 @@ public class CpdlcMessage extends AcarsMessage {
     private int msgNumber;
     private int responseNumber;
     private String responseType;
+    private String sentResponse;
 
     public CpdlcMessage(String from, String type, String to, String rawContent) {
         super(from, type, to, rawContent);
@@ -36,7 +37,9 @@ public class CpdlcMessage extends AcarsMessage {
         }
     }
 
-    public String getResponseType() {return responseType; }
+    public String getResponseType() { return responseType; }
     public int getMsgNumber() { return msgNumber; }
-
+    public String getSentResponse() { return sentResponse; }
+    public void setSentResponse(String sentResponse) { this.sentResponse = sentResponse; }
+    public boolean hasBeenReplied() { return sentResponse != null && !sentResponse.isEmpty(); }
 }

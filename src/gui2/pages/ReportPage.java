@@ -143,6 +143,11 @@ public class ReportPage implements CduPage {
                     break;
                 case 4: // LSK 5R: SEND REPORT>
                     if (controller.getService() != null) {
+                        if (!controller.getService().isLoggedOn() || controller.getService().getCurrentATS() == null || controller.getService().getCurrentATS().isEmpty()) {
+                            controller.setStatusMessage("NOT LOGGED ON");
+                            break;
+                        }
+
                         if ("POSITION".equals(reportType)) {
                             if (!position.isEmpty() && !altitude.isEmpty()) {
                                 controller.getService().sendPositionReport(position, time, altitude, thereafter, nextFix, etaNext);

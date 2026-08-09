@@ -206,6 +206,10 @@ public class CpdlcService {
      * @param message The request message content.
      */
     public void sendRequest(String message) {
+        if (currentATS == null || currentATS.trim().isEmpty() || !isLoggedOn) {
+            notifyError("Cannot send request: Not connected to ATC unit.");
+            return;
+        }
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.request(currentATS, callsign, message);
             msg.setRead(true);
@@ -215,6 +219,10 @@ public class CpdlcService {
     }
 
     public void sendReport(String message) {
+        if (currentATS == null || currentATS.trim().isEmpty() || !isLoggedOn) {
+            notifyError("Cannot send report: Not connected to ATC unit.");
+            return;
+        }
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.report(currentATS, callsign, message);
             msg.setRead(true);
@@ -301,6 +309,9 @@ public class CpdlcService {
     }
 
     public void sendResponse(String responseType, CpdlcMessage originalMsg) {
+        if (originalMsg != null) {
+            originalMsg.setSentResponse(responseType);
+        }
         executeAsync(() -> {
             AcarsMessage acarsMsg = null;
             switch (responseType.toUpperCase()) {
@@ -342,6 +353,9 @@ public class CpdlcService {
 
     private void addMessage(AcarsMessage message) {
         if (message == null) return;
+        if (message.getFrom() != null && message.getFrom().equalsIgnoreCase(callsign)) {
+            message.setRead(true);
+        }
         processIncomingMessage(message);
         messages.add(0, message);
         for (CpdlcListener l : listeners) {

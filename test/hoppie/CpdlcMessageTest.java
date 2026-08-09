@@ -35,4 +35,15 @@ public class CpdlcMessageTest {
         assertEquals("NE", msg.getResponseType());
         assertEquals("WILCO", msg.getMessage());
     }
+
+    @Test
+    public void testRepliedState() {
+        CpdlcMessage msg = new CpdlcMessage("EHAM_TWR", "cpdlc", "KLM123", "/data2/3//WU/DESCEND FL100");
+        assertFalse(msg.hasBeenReplied());
+        assertNull(msg.getSentResponse());
+
+        msg.setSentResponse("WILCO");
+        assertTrue(msg.hasBeenReplied());
+        assertEquals("WILCO", msg.getSentResponse());
+    }
 }

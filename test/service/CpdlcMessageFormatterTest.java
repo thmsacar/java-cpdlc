@@ -9,7 +9,7 @@ public class CpdlcMessageFormatterTest {
     public void testFormatDueTo() {
         assertEquals("DUE TO PERFORMANCE", CpdlcMessageFormatter.formatDueTo("PERFORMANCE", ""));
         assertEquals("DUE TO WEATHER", CpdlcMessageFormatter.formatDueTo("WEATHER", null));
-        assertEquals("DUE TO TURBULENCE", CpdlcMessageFormatter.formatDueTo("FREE TEXT", "TURBULENCE"));
+        assertEquals("DUE TO HEAVY TRAFFIC", CpdlcMessageFormatter.formatDueTo("FREE TEXT", "HEAVY TRAFFIC"));
         assertEquals("", CpdlcMessageFormatter.formatDueTo("FREE TEXT", ""));
         assertEquals("", CpdlcMessageFormatter.formatDueTo(null, ""));
     }
@@ -32,7 +32,7 @@ public class CpdlcMessageFormatterTest {
     @Test
     public void testFormatSpeedRequest() {
         assertEquals("REQUEST SPEED IAS 280", CpdlcMessageFormatter.formatSpeedRequest("ias", "280", ""));
-        assertEquals("REQUEST SPEED M.80 DUE TO TURBULENCE", CpdlcMessageFormatter.formatSpeedRequest("mach", "80", "DUE TO TURBULENCE"));
+        assertEquals("REQUEST SPEED M.80 DUE TO WEATHER", CpdlcMessageFormatter.formatSpeedRequest("mach", "80", "DUE TO WEATHER"));
         assertEquals("", CpdlcMessageFormatter.formatSpeedRequest("ias", "", ""));
     }
 

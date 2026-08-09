@@ -11,8 +11,6 @@ import gui2.controller.CduController;
  */
 public class MainMenuPage implements CduPage {
 
-    private boolean isConfirmingDisconnect = false;
-
     @Override
     public String getPageTitle() {
         return "ATC INDEX";
@@ -20,35 +18,22 @@ public class MainMenuPage implements CduPage {
 
     @Override
     public void renderPage(CduDisplay display, CduController controller) {
-        if (isConfirmingDisconnect) {
-            display.setHeader("ATC INDEX", "CONFIRM DISCONNECT", "");
-            display.clearLines();
+        String cs = controller != null ? controller.getCallsign() : "";
+        String headerTitle = (cs != null && !cs.trim().isEmpty()) ? cs.trim().toUpperCase() + " - ATC INDEX" : "ATC INDEX";
 
-            display.setLine(2, 
-                new LineItem("DISCONNECT HOPPIE?", "", DisplayColor.AMBER), 
-                new LineItem("", "", DisplayColor.WHITE)
-            );
-
-            display.setLine(3, 
-                new LineItem("", "<CONFIRM", DisplayColor.AMBER), 
-                new LineItem("", "", DisplayColor.WHITE)
-            );
-
-            display.setLine(5, 
-                new LineItem("", "<CANCEL", DisplayColor.WHITE), 
-                new LineItem("", "", DisplayColor.WHITE)
-            );
-            return;
-        }
-
-        display.setHeader("ATC INDEX", "1/1", "");
+        display.setHeader(headerTitle, "1/1", "");
         display.clearLines();
+
+        boolean isConnectedToAtc = controller.getService() != null 
+            && controller.getService().isLoggedOn() 
+            && controller.getService().getCurrentATS() != null 
+            && !controller.getService().getCurrentATS().trim().isEmpty();
 
         display.setLine(0, new LineItem("", "<ATC LOGON/STATUS", DisplayColor.WHITE), new LineItem("", "", DisplayColor.WHITE));
         display.setLine(1, new LineItem("", "<TELEX", DisplayColor.WHITE), new LineItem("", "", DisplayColor.WHITE));
         display.setLine(2, new LineItem("", "<PDC REQUEST", DisplayColor.WHITE), new LineItem("", "", DisplayColor.WHITE));
-        display.setLine(3, new LineItem("", "<REQUESTS", DisplayColor.WHITE), new LineItem("", "", DisplayColor.WHITE));
-        display.setLine(4, new LineItem("", "<REPORTS", DisplayColor.WHITE), new LineItem("", "", DisplayColor.WHITE));
+        display.setLine(3, isConnectedToAtc ? new LineItem("", "<REQUESTS", DisplayColor.WHITE) : new LineItem("", "", DisplayColor.WHITE), new LineItem("", "", DisplayColor.WHITE));
+        display.setLine(4, isConnectedToAtc ? new LineItem("", "<REPORTS", DisplayColor.WHITE) : new LineItem("", "", DisplayColor.WHITE), new LineItem("", "", DisplayColor.WHITE));
 
         display.setLine(5, 
             new LineItem("", "<DISCONNECT", DisplayColor.AMBER), 
@@ -58,29 +43,19 @@ public class MainMenuPage implements CduPage {
 
     @Override
     public void onLskPressed(int index, boolean isLeft, String scratchpad, CduController controller) {
-        if (isConfirmingDisconnect) {
-            if (isLeft && index == 3) { // LSK 4L: <CONFIRM
-                if (controller.getService() != null) {
-                    controller.getService().stop();
-                    controller.setService(null);
-                }
-                controller.setStatusMessage("DISCONNECTED");
-                controller.showPage(new CduLoginPage());
-            } else if (isLeft && index == 5) { // LSK 6L: <CANCEL
-                isConfirmingDisconnect = false;
-                controller.refreshDisplay();
-            }
-            return;
-        }
+        boolean isConnectedToAtc = controller.getService() != null 
+            && controller.getService().isLoggedOn() 
+            && controller.getService().getCurrentATS() != null 
+            && !controller.getService().getCurrentATS().trim().isEmpty();
 
         if (isLeft) {
             switch (index) {
                 case 0: controller.showPage(new LogonStatusPage()); break;
                 case 1: controller.showPage(new TelexPage()); break;
                 case 2: controller.showPage(new PdcPage()); break;
-                case 3: controller.showPage(new RequestPage()); break;
-                case 4: controller.showPage(new ReportPage()); break;
-                case 5: isConfirmingDisconnect = true; controller.refreshDisplay(); break; // LSK 6L: <DISCONNECT
+                case 3: if (isConnectedToAtc) controller.showPage(new RequestPage()); break;
+                case 4: if (isConnectedToAtc) controller.showPage(new ReportPage()); break;
+                case 5: controller.pushPage(new CduDisconnectPage(false)); break; // LSK 6L: <DISCONNECT (stay open on disconnect)
             }
         } else {
             if (index == 5) { // LSK 6R: MESSAGES

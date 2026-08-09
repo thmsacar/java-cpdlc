@@ -139,6 +139,9 @@ public class CduPanel extends CduBezel {
                 } else if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
                     controller.handleKeyTyped("CLR");
                     return true;
+                } else if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+                    controller.handleKeyTyped("SP");
+                    return true;
                 }
             } else if (e.getID() == KeyEvent.KEY_TYPED) {
                 if (e.isControlDown() || e.isMetaDown()) {
@@ -152,7 +155,10 @@ public class CduPanel extends CduBezel {
                 } else if (c == 127) {
                     controller.handleKeyTyped("DEL");
                     return true;
-                } else if (Character.isLetterOrDigit(c) || c == '/' || c == '.' || c == ' ' || c == '-' || c == '@') {
+                } else if (c == ' ') {
+                    controller.handleKeyTyped("SP");
+                    return true;
+                } else if (Character.isLetterOrDigit(c) || c == '/' || c == '.' || c == '-' || c == '@') {
                     controller.handleKeyTyped(String.valueOf(c));
                     return true;
                 }

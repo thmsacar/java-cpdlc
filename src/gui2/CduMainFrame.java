@@ -26,7 +26,15 @@ public class CduMainFrame extends JFrame {
 
         cduPanel = new CduPanel();
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                if (cduPanel != null && cduPanel.getController() != null) {
+                    cduPanel.getController().handleWindowClose();
+                }
+            }
+        });
         setLayout(new BorderLayout());
         add(cduPanel, BorderLayout.CENTER);
 

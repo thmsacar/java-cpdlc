@@ -44,6 +44,7 @@ public class TelexPanel extends JPanel {
                 BorderFactory.createEmptyBorder(0, 5, 0, 5)
         ));
         stationField.setPreferredSize(new Dimension(200, 30));
+        stationField.setMinimumSize(new Dimension(200, 30));
         ((AbstractDocument) stationField.getDocument()).setDocumentFilter(new UppercaseFilter());
 
         stationContainer.add(stationLabel, BorderLayout.NORTH);

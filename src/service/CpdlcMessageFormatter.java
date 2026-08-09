@@ -19,15 +19,15 @@ CpdlcMessageFormatter {
             return "";
         }
         String type = reasonType.trim().toUpperCase();
-        if ("PERFORMANCE".equals(type)) {
-            return "DUE TO PERFORMANCE";
-        } else if ("WEATHER".equals(type)) {
-            return "DUE TO WEATHER";
-        } else if ("FREE TEXT".equals(type) || "FREETEXT".equals(type)) {
+        if ("FREE TEXT".equals(type) || "FREETEXT".equals(type)) {
             if (freeText == null || freeText.trim().isEmpty()) return "";
-            return "DUE TO " + freeText.trim();
+            type = freeText.trim().toUpperCase();
         }
-        return "";
+        if (type.isEmpty()) return "";
+        if (type.startsWith("DUE TO ")) {
+            return type;
+        }
+        return "DUE TO " + type;
     }
 
     /**
@@ -38,8 +38,9 @@ CpdlcMessageFormatter {
             return "";
         }
         String msg = "REQUEST DIRECT TO " + waypoint.trim();
-        if (dueToText != null && !dueToText.trim().isEmpty()) {
-            msg += " " + dueToText.trim();
+        String due = formatDueTo(dueToText, "");
+        if (!due.isEmpty()) {
+            msg += " " + due;
         }
         return msg;
     }
@@ -52,8 +53,9 @@ CpdlcMessageFormatter {
             return "";
         }
         String msg = "REQUEST LEVEL " + level.trim();
-        if (dueToText != null && !dueToText.trim().isEmpty()) {
-            msg += " " + dueToText.trim();
+        String due = formatDueTo(dueToText, "");
+        if (!due.isEmpty()) {
+            msg += " " + due;
         }
         return msg;
     }
@@ -73,8 +75,9 @@ CpdlcMessageFormatter {
             prefix = "REQUEST SPEED IAS ";
         }
         String msg = prefix + speedValue.trim();
-        if (dueToText != null && !dueToText.trim().isEmpty()) {
-            msg += " " + dueToText.trim();
+        String due = formatDueTo(dueToText, "");
+        if (!due.isEmpty()) {
+            msg += " " + due;
         }
         return msg;
     }
@@ -87,8 +90,9 @@ CpdlcMessageFormatter {
             return "";
         }
         String msg = "WHEN CAN WE EXPECT " + expectType.trim() + " " + value.trim();
-        if (dueToText != null && !dueToText.trim().isEmpty()) {
-            msg += " " + dueToText.trim();
+        String due = formatDueTo(dueToText, "");
+        if (!due.isEmpty()) {
+            msg += " " + due;
         }
         return msg;
     }

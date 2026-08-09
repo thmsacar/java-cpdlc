@@ -76,11 +76,26 @@ public class MessageDetailPanel extends JPanel {
         btn.setBackground(bg);
         btn.addActionListener(e -> {
             if (currentMessage instanceof CpdlcMessage) {
-                service.sendResponse(responseType, (CpdlcMessage) currentMessage);
+                CpdlcMessage cpdlc = (CpdlcMessage) currentMessage;
+                if (cpdlc.hasBeenReplied()) return;
+                service.sendResponse(responseType, cpdlc);
                 onBack.run();
             }
         });
         return btn;
+    }
+
+    private PilotButton getButtonForResponse(String responseType) {
+        if (responseType == null) return null;
+        switch (responseType.toUpperCase()) {
+            case "WILCO": return wilcoBtn;
+            case "UNABLE": return unableBtn;
+            case "STANDBY": return standbyBtn;
+            case "AFFIRM": return affirmBtn;
+            case "NEGATIVE": return negativeBtn;
+            case "ROGER": return rogerBtn;
+            default: return null;
+        }
     }
 
     private AcarsMessage currentMessage;
@@ -100,25 +115,44 @@ public class MessageDetailPanel extends JPanel {
         
         if (isCpdlc && !isOurMessage) {
             CpdlcMessage cpdlc = (CpdlcMessage) message;
-            String resType = cpdlc.getResponseType();
-            
             responsePanel.removeAll();
-            if ("WU".equalsIgnoreCase(resType)) {
-                responsePanel.add(wilcoBtn);
-                responsePanel.add(unableBtn);
-                responsePanel.add(standbyBtn);
-                responsePanel.setVisible(true);
-            } else if ("R".equalsIgnoreCase(resType)) {
-                responsePanel.add(rogerBtn);
-                responsePanel.add(standbyBtn);
-                responsePanel.setVisible(true);
-            } else if ("AN".equalsIgnoreCase(resType)) {
-                responsePanel.add(affirmBtn);
-                responsePanel.add(negativeBtn);
-                responsePanel.add(standbyBtn);
-                responsePanel.setVisible(true);
+
+            if (cpdlc.hasBeenReplied()) {
+                PilotButton chosenBtn = getButtonForResponse(cpdlc.getSentResponse());
+                if (chosenBtn != null) {
+                    chosenBtn.setEnabled(false);
+                    chosenBtn.setCustomColor(new Color(70, 70, 70), Color.LIGHT_GRAY);
+                    responsePanel.add(chosenBtn);
+                    responsePanel.setVisible(true);
+                } else {
+                    responsePanel.setVisible(false);
+                }
             } else {
-                responsePanel.setVisible(false);
+                wilcoBtn.setEnabled(true); wilcoBtn.setCustomColor(GREEN_RESPONSE, Color.WHITE);
+                unableBtn.setEnabled(true); unableBtn.setCustomColor(RED_RESPONSE, Color.WHITE);
+                standbyBtn.setEnabled(true); standbyBtn.setCustomColor(YELLOW_RESPONSE, Color.WHITE);
+                affirmBtn.setEnabled(true); affirmBtn.setCustomColor(GREEN_RESPONSE, Color.WHITE);
+                negativeBtn.setEnabled(true); negativeBtn.setCustomColor(RED_RESPONSE, Color.WHITE);
+                rogerBtn.setEnabled(true); rogerBtn.setCustomColor(BLUE_RESPONSE, Color.WHITE);
+
+                String resType = cpdlc.getResponseType();
+                if ("WU".equalsIgnoreCase(resType)) {
+                    responsePanel.add(wilcoBtn);
+                    responsePanel.add(unableBtn);
+                    responsePanel.add(standbyBtn);
+                    responsePanel.setVisible(true);
+                } else if ("R".equalsIgnoreCase(resType)) {
+                    responsePanel.add(rogerBtn);
+                    responsePanel.add(standbyBtn);
+                    responsePanel.setVisible(true);
+                } else if ("AN".equalsIgnoreCase(resType)) {
+                    responsePanel.add(affirmBtn);
+                    responsePanel.add(negativeBtn);
+                    responsePanel.add(standbyBtn);
+                    responsePanel.setVisible(true);
+                } else {
+                    responsePanel.setVisible(false);
+                }
             }
         } else {
             responsePanel.setVisible(false);
