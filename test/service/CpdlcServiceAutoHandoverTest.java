@@ -98,6 +98,21 @@ public class CpdlcServiceAutoHandoverTest {
         injectMessage(edggLogonMsg);
 
         assertEquals("EDGG", service.getCurrentATS());
+        assertEquals("", service.getNextATS());
+    }
+
+    @Test
+    public void testNextATSClearedWhenStationBecomesCurrentATS() {
+        service.setNextATS("EDGG");
+        assertEquals("EDGG", service.getNextATS());
+
+        // Setting pending logon and accepting logon from EDGG
+        setField("pendingLogonStation", "EDGG");
+        AcarsMessage edggLogonMsg = new AcarsMessage("EDGG", "THY100", "CPDLC", "LOGON ACCEPTED");
+        injectMessage(edggLogonMsg);
+
+        assertEquals("EDGG", service.getCurrentATS());
+        assertEquals("", service.getNextATS());
     }
 
     private void setField(String fieldName, Object value) {

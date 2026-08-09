@@ -284,6 +284,7 @@ public class CpdlcService {
             msg.setRead(true);
             if (!msg.getType().equalsIgnoreCase("system")) {
                 setCurrentATS(null);
+                setNextATS("");
                 notifyConnectionStatus(true);
             }
             addMessage(msg);
@@ -367,6 +368,9 @@ public class CpdlcService {
     private void setCurrentATS(String ats) {
         this.currentATS = ats;
         this.isLoggedOn = (ats != null);
+        if (ats != null && !ats.trim().isEmpty() && nextATS != null && ats.trim().equalsIgnoreCase(nextATS.trim())) {
+            this.nextATS = "";
+        }
         for (CpdlcListener l : listeners) {
             l.onAtsUnitChanged(ats);
         }
@@ -400,7 +404,14 @@ public class CpdlcService {
     public String getCallsign() { return callsign; }
     public String getCurrentATS() { return currentATS; }
     public String getNextATS() { return nextATS; }
-    public void setNextATS(String nextATS) { this.nextATS = nextATS != null ? nextATS : ""; }
+    public void setNextATS(String nextATS) { 
+        String cleaned = nextATS != null ? nextATS.trim() : "";
+        if (currentATS != null && !currentATS.trim().isEmpty() && cleaned.equalsIgnoreCase(currentATS.trim())) {
+            this.nextATS = "";
+        } else {
+            this.nextATS = cleaned;
+        }
+    }
     public boolean isLoggedOn() { return isLoggedOn; }
     public boolean isConnected() { return fetcherService != null && !fetcherService.isShutdown(); }
     public List<AcarsMessage> getMessages() { return Collections.unmodifiableList(messages); }

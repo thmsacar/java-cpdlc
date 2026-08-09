@@ -284,7 +284,7 @@ public class CduController implements CpdlcListener {
                     String lowerText = text.toLowerCase();
                     if (lowerText.startsWith("error") || lowerText.contains("timeout") || lowerText.contains("timed out") || lowerText.contains("failed")) {
                         setFailLed(true);
-                        this.nextAts = "";
+                        setNextAts("");
                     }
                     triggerUserAttention();
                 }
@@ -323,7 +323,7 @@ public class CduController implements CpdlcListener {
     @Override
     public void onAutoHandover(String nextStation) {
         if (nextStation != null && !nextStation.isEmpty()) {
-            this.nextAts = nextStation;
+            setNextAts(nextStation);
             this.statusMessage = "AUTO HANDOVER " + nextStation;
         }
         refreshDisplay();
@@ -334,8 +334,8 @@ public class CduController implements CpdlcListener {
         if (atsUnit != null) {
             this.atcCenter = atsUnit;
             this.statusMessage = "LOGGED TO " + atsUnit;
-            if (atsUnit.equalsIgnoreCase(nextAts) || atsUnit.equalsIgnoreCase(atcCenter)) {
-                this.nextAts = "";
+            if (atsUnit.equalsIgnoreCase(this.nextAts) || atsUnit.equalsIgnoreCase(atcCenter) || (service != null && atsUnit.equalsIgnoreCase(service.getNextATS()))) {
+                setNextAts("");
             }
         } else {
             if (!statusMessage.startsWith("AUTO LOGOFF") && !statusMessage.startsWith("AUTO HANDOVER")) {
@@ -410,13 +410,22 @@ public class CduController implements CpdlcListener {
     public void setAtcCenter(String atcCenter) { this.atcCenter = atcCenter; }
 
     public String getNextAts() { 
-        if (service != null && service.getNextATS() != null && !service.getNextATS().isEmpty()) {
-            return service.getNextATS();
+        String current = (service != null && service.getCurrentATS() != null) ? service.getCurrentATS().trim() : (atcCenter != null ? atcCenter.trim() : "");
+        String next = (service != null && service.getNextATS() != null && !service.getNextATS().isEmpty()) 
+                ? service.getNextATS().trim() 
+                : (nextAts != null ? nextAts.trim() : "");
+        if (!current.isEmpty() && !next.isEmpty() && current.equalsIgnoreCase(next)) {
+            return "";
         }
-        return nextAts; 
+        return next; 
     }
     public void setNextAts(String nextAts) { 
-        this.nextAts = nextAts != null ? nextAts : ""; 
+        String cleaned = nextAts != null ? nextAts.trim() : "";
+        String current = (service != null && service.getCurrentATS() != null) ? service.getCurrentATS().trim() : (atcCenter != null ? atcCenter.trim() : "");
+        if (!current.isEmpty() && cleaned.equalsIgnoreCase(current)) {
+            cleaned = "";
+        }
+        this.nextAts = cleaned; 
         if (service != null) service.setNextATS(this.nextAts);
         refreshDisplay(); 
     }
