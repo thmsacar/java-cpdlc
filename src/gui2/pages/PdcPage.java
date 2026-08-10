@@ -144,7 +144,7 @@ public class PdcPage implements CduPage {
 
                         Flight f = new Flight(controller.getCallsign(), origin, dest, acftType);
                         controller.getService().sendPdcRequest(destinationStation, f, stand, atis, "");
-                        controller.setStatusMessage("TELEX TO " + destinationStation);
+                        controller.setStatusMessage("SENDING TELEX TO " + destinationStation);
                     } else {
                         controller.setStatusMessage("NO CONNECTION");
                     }

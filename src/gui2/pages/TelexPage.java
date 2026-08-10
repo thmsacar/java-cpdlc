@@ -64,7 +64,7 @@ public class TelexPage implements CduPage {
             if (index == 3) { // LSK 4R: SEND TELEX>
                 if (controller.getService() != null && !targetStation.isEmpty() && !messageText.isEmpty()) {
                     controller.getService().sendTelex(targetStation, messageText);
-                    controller.setStatusMessage("TELEX SENT TO " + targetStation);
+                    controller.setStatusMessage("SENDING TELEX TO " + targetStation);
                     messageText = "";
                 } else {
                     controller.setStatusMessage("ENTER STATION & MSG");

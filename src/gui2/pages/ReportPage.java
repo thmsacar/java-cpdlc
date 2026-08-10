@@ -148,24 +148,25 @@ public class ReportPage implements CduPage {
                             break;
                         }
 
+                        String targetAts = controller.getService().getCurrentATS();
                         if ("POSITION".equals(reportType)) {
                             if (!position.isEmpty() && !time.isEmpty() && !altitude.isEmpty()) {
                                 controller.getService().sendPositionReport(position, time, altitude, thereafter, nextFix, etaNext);
-                                controller.setStatusMessage("POS REPORT SENT");
+                                controller.setStatusMessage("SENDING REPORT TO " + targetAts);
                             } else {
                                 controller.setStatusMessage("ENTER POS, TIME & ALT");
                             }
                         } else if ("LEVEL".equals(reportType)) {
                             if (!altitude.isEmpty()) {
                                 controller.getService().sendLevelReport(levelStatus, altitude);
-                                controller.setStatusMessage("LEVEL REPORT SENT");
+                                controller.setStatusMessage("SENDING REPORT TO " + targetAts);
                             } else {
                                 controller.setStatusMessage("ENTER ALTITUDE");
                             }
                         } else if ("SPEED".equals(reportType)) {
                             if (!speed.isEmpty()) {
                                 controller.getService().sendSpeedReport("MACH".equals(speedMode), speed);
-                                controller.setStatusMessage("SPEED REPORT SENT");
+                                controller.setStatusMessage("SENDING REPORT TO " + targetAts);
                             } else {
                                 controller.setStatusMessage("ENTER SPEED");
                             }

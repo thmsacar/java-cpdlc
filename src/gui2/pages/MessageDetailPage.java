@@ -227,7 +227,7 @@ public class MessageDetailPage implements CduPage {
         if (controller.getService() != null && message instanceof CpdlcMessage) {
             CpdlcMessage cpdlc = (CpdlcMessage) message;
             controller.getService().sendResponse(type, cpdlc);
-            controller.setStatusMessage("CPDLC TO " + message.getFrom());
+            controller.setStatusMessage("SENDING CPDLC TO " + message.getFrom());
             controller.popPage();
         }
     }

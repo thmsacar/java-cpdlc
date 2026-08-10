@@ -371,7 +371,11 @@ public class CduController implements CpdlcListener {
     public void onError(String errorMessage) {
         SoundManager.playWarning();
         setFailLed(true);
-        statusMessage = "ERROR: " + errorMessage;
+        if (errorMessage != null && errorMessage.startsWith("ERROR:")) {
+            statusMessage = errorMessage;
+        } else {
+            statusMessage = "ERROR: " + errorMessage;
+        }
         triggerUserAttention();
         refreshDisplay();
     }

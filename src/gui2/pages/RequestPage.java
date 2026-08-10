@@ -131,7 +131,7 @@ public class RequestPage implements CduPage {
                         }
 
                         String sentDisplay = ("SPEED".equals(reqType) || ("EXPECT".equals(reqType) && "SPEED".equals(expectSubtype))) && "MACH".equals(speedMode) ? "." + value : value;
-                        controller.setStatusMessage("REQ SENT: " + reqType + " " + sentDisplay);
+                        controller.setStatusMessage("SENDING REQ TO " + controller.getService().getCurrentATS());
                         value = "";
                     } else if (value.isEmpty()) {
                         controller.setStatusMessage("ENTER VALUE");
