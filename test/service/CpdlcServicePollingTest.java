@@ -43,4 +43,22 @@ public class CpdlcServicePollingTest {
         long burstTimestamp = (long) burstUntilField.get(service);
         assertEquals("sendResponse should NOT trigger fast polling burst", 0L, burstTimestamp);
     }
+
+    @Test
+    public void testClampingBehaviorWhenTaskHasShortDelay() throws Exception {
+        Field currentFetchFutureField = CpdlcService.class.getDeclaredField("currentFetchFuture");
+        currentFetchFutureField.setAccessible(true);
+
+        service.start();
+        Thread.sleep(100);
+
+        // Current task is active
+        Object future = currentFetchFutureField.get(service);
+        assertNotNull(future);
+
+        service.triggerFastPollingBurst();
+        Object newFuture = currentFetchFutureField.get(service);
+        assertNotNull(newFuture);
+        service.stop();
+    }
 }

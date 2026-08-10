@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,6 +50,7 @@ public class CpdlcService {
     /** Expiry timestamp until which accelerated polling ({@link #BURST_POLL_INTERVAL_MS}) is active. */
     private volatile long burstUntilTimestamp = 0L;
     private ScheduledExecutorService fetcherService;
+    private ScheduledFuture<?> currentFetchFuture;
 
     public CpdlcService(String callsign, String hoppieID) {
         this.callsign = callsign;
@@ -140,7 +142,7 @@ public class CpdlcService {
     /** Schedules the next polling execution after a specified delay. */
     private synchronized void scheduleNextFetch(long delay, TimeUnit unit) {
         if (fetcherService == null || fetcherService.isShutdown()) return;
-        fetcherService.schedule(this::runFetchCycle, delay, unit);
+        currentFetchFuture = fetcherService.schedule(this::runFetchCycle, delay, unit);
     }
 
     /** Executes one polling cycle to retrieve new messages, then reschedules the next cycle. */
@@ -171,14 +173,24 @@ public class CpdlcService {
 
     /**
      * Triggers 15-second accelerated burst polling ({@link #BURST_POLL_INTERVAL_MS}) for 1 minute ({@link #BURST_DURATION_MS}) after sending an outgoing message or request.
+     * Clamps the next poll delay to 15 seconds max if the remaining delay exceeds 15 seconds.
      */
     public synchronized void triggerFastPollingBurst() {
         this.burstUntilTimestamp = System.currentTimeMillis() + BURST_DURATION_MS;
-        if (fetcherService != null && !fetcherService.isShutdown()) {
-            fetcherService.shutdownNow();
-            fetcherService = Executors.newSingleThreadScheduledExecutor();
-            scheduleNextFetch(BURST_POLL_INTERVAL_MS, TimeUnit.MILLISECONDS);
+
+        long remainingMs = (currentFetchFuture != null && !currentFetchFuture.isDone()) 
+                ? currentFetchFuture.getDelay(TimeUnit.MILLISECONDS) 
+                : -1L;
+
+        // If more than 15 seconds remaining (e.g. 35s left), clamp next fetch to 15 seconds
+        if (remainingMs > BURST_POLL_INTERVAL_MS || remainingMs <= 0) {
+            if (fetcherService != null && !fetcherService.isShutdown()) {
+                fetcherService.shutdownNow();
+                fetcherService = Executors.newSingleThreadScheduledExecutor();
+                scheduleNextFetch(BURST_POLL_INTERVAL_MS, TimeUnit.MILLISECONDS);
+            }
         }
+        // If 15 seconds or less remaining (e.g. 2s left), leave the pending task to fire on its schedule!
     }
 
     /** Checks if an incoming system message is a duplicate of the last message. */
