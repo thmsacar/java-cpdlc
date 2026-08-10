@@ -7,9 +7,11 @@ import gui2.controller.CduController;
 import hoppie.AcarsMessage;
 import hoppie.CpdlcMessage;
 import hoppie.TimeFormatter;
+import hoppie.CpdlcResponseType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Message Detail & Reply page for CDU with CPDLC TO/FROM and TELEX TO/FROM headers,
@@ -42,7 +44,7 @@ public class MessageDetailPage implements CduPage {
             return;
         }
 
-        boolean isOutgoing = message.getFrom() != null && message.getFrom().equalsIgnoreCase(controller.getCallsign());
+        boolean isOutgoing = message.isOutgoing();
         boolean isCpdlc = message instanceof CpdlcMessage || "CPDLC".equalsIgnoreCase(message.getType());
         boolean isSystem = "SYSTEM".equalsIgnoreCase(message.getType());
 
@@ -92,16 +94,21 @@ public class MessageDetailPage implements CduPage {
                     display.setLine(3, new LineItem("", "", DisplayColor.WHITE), new LineItem("", sent + ">", DisplayColor.WHITE_DIM));
                 }
             } else {
-                String resType = cpdlc.getResponseType() != null ? cpdlc.getResponseType().trim().toUpperCase() : "";
-
-                if (isWilcoUnableRequired(resType)) {
-                    display.setLine(3, new LineItem("", "<WILCO", DisplayColor.GREEN), new LineItem("", "UNABLE>", DisplayColor.AMBER));
-                    display.setLine(4, new LineItem("", "<STANDBY", DisplayColor.AMBER), new LineItem("", "", DisplayColor.WHITE));
-                } else if ("AN".equals(resType) || "A/N".equals(resType) || "AFFIRM".equals(resType)) {
-                    display.setLine(3, new LineItem("", "<AFFIRM", DisplayColor.GREEN), new LineItem("", "NEGATIVE>", DisplayColor.AMBER));
-                    display.setLine(4, new LineItem("", "<STANDBY", DisplayColor.AMBER), new LineItem("", "", DisplayColor.WHITE));
-                } else if ("R".equals(resType) || "ROGER".equals(resType)) {
-                    display.setLine(3, new LineItem("", "<ROGER", DisplayColor.CYAN), new LineItem("", "STANDBY>", DisplayColor.AMBER));
+                switch (cpdlc.getParsedResponseType()) {
+                    case WILCO_UNABLE:
+                        display.setLine(3, new LineItem("", "<WILCO", DisplayColor.GREEN), new LineItem("", "UNABLE>", DisplayColor.AMBER));
+                        display.setLine(4, new LineItem("", "<STANDBY", DisplayColor.AMBER), new LineItem("", "", DisplayColor.WHITE));
+                        break;
+                    case AFFIRM_NEGATIVE:
+                        display.setLine(3, new LineItem("", "<AFFIRM", DisplayColor.GREEN), new LineItem("", "NEGATIVE>", DisplayColor.AMBER));
+                        display.setLine(4, new LineItem("", "<STANDBY", DisplayColor.AMBER), new LineItem("", "", DisplayColor.WHITE));
+                        break;
+                    case ROGER:
+                        display.setLine(3, new LineItem("", "<ROGER", DisplayColor.CYAN), new LineItem("", "STANDBY>", DisplayColor.AMBER));
+                        break;
+                    case NONE:
+                    default:
+                        break;
                 }
             }
         }
@@ -115,18 +122,12 @@ public class MessageDetailPage implements CduPage {
     }
 
     private boolean requiresReplyPrompt(CduController controller) {
-        if (message == null) return false;
-        boolean isOutgoing = message.getFrom() != null && message.getFrom().equalsIgnoreCase(controller.getCallsign());
-        if (isOutgoing || !(message instanceof CpdlcMessage)) return false;
+        if (message == null || message.isOutgoing() || !(message instanceof CpdlcMessage)) return false;
 
         CpdlcMessage cpdlc = (CpdlcMessage) message;
         if (cpdlc.hasBeenReplied()) return true;
 
-        String resType = cpdlc.getResponseType() != null ? cpdlc.getResponseType().trim().toUpperCase() : "";
-
-        return isWilcoUnableRequired(resType) 
-            || "AN".equals(resType) || "A/N".equals(resType) || "AFFIRM".equals(resType)
-            || "R".equals(resType) || "ROGER".equals(resType);
+        return cpdlc.getParsedResponseType() != CpdlcResponseType.NONE;
     }
 
     private List<String> formatMessageLines(String rawMessage, int maxLen) {
@@ -150,13 +151,6 @@ public class MessageDetailPage implements CduPage {
             }
         }
         return result;
-    }
-
-    private boolean isWilcoUnableRequired(String resType) {
-        if (resType == null || resType.isEmpty() || "N".equals(resType) || "NE".equals(resType) || "NO".equals(resType)) {
-            return false;
-        }
-        return "Y".equals(resType) || "YES".equals(resType) || "WU".equals(resType) || "W/U".equals(resType) || "WILCO".equals(resType);
     }
 
     @Override
@@ -184,27 +178,30 @@ public class MessageDetailPage implements CduPage {
             return;
         }
 
-        boolean isOutgoing = message != null && message.getFrom() != null && message.getFrom().equalsIgnoreCase(controller.getCallsign());
-
-        if (!isOutgoing && message instanceof CpdlcMessage && controller.getService() != null) {
+        if (message != null && !message.isOutgoing() && message instanceof CpdlcMessage && controller.getService() != null) {
             CpdlcMessage cpdlc = (CpdlcMessage) message;
             if (cpdlc.hasBeenReplied()) {
                 return;
             }
 
-            String resType = cpdlc.getResponseType() != null ? cpdlc.getResponseType().trim().toUpperCase() : "";
-
-            if (isWilcoUnableRequired(resType)) {
-                if (isLeft && index == 3) sendResponse("WILCO", controller);
-                if (!isLeft && index == 3) sendResponse("UNABLE", controller);
-                if (isLeft && index == 4) sendResponse("STANDBY", controller);
-            } else if ("AN".equals(resType) || "A/N".equals(resType) || "AFFIRM".equals(resType)) {
-                if (isLeft && index == 3) sendResponse("AFFIRM", controller);
-                if (!isLeft && index == 3) sendResponse("NEGATIVE", controller);
-                if (isLeft && index == 4) sendResponse("STANDBY", controller);
-            } else if ("R".equals(resType) || "ROGER".equals(resType)) {
-                if (isLeft && index == 3) sendResponse("ROGER", controller);
-                if (isLeft && index == 4) sendResponse("STANDBY", controller);
+            switch (cpdlc.getParsedResponseType()) {
+                case WILCO_UNABLE:
+                    if (isLeft && index == 3) sendResponse("WILCO", controller);
+                    if (!isLeft && index == 3) sendResponse("UNABLE", controller);
+                    if (isLeft && index == 4) sendResponse("STANDBY", controller);
+                    break;
+                case AFFIRM_NEGATIVE:
+                    if (isLeft && index == 3) sendResponse("AFFIRM", controller);
+                    if (!isLeft && index == 3) sendResponse("NEGATIVE", controller);
+                    if (isLeft && index == 4) sendResponse("STANDBY", controller);
+                    break;
+                case ROGER:
+                    if (isLeft && index == 3) sendResponse("ROGER", controller);
+                    if (isLeft && index == 4) sendResponse("STANDBY", controller);
+                    break;
+                case NONE:
+                default:
+                    break;
             }
         }
     }

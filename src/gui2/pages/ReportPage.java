@@ -157,15 +157,14 @@ public class ReportPage implements CduPage {
                             }
                         } else if ("LEVEL".equals(reportType)) {
                             if (!altitude.isEmpty()) {
-                                controller.getService().sendReport(levelStatus + " LEVEL " + altitude);
+                                controller.getService().sendLevelReport(levelStatus, altitude);
                                 controller.setStatusMessage("LEVEL REPORT SENT");
                             } else {
                                 controller.setStatusMessage("ENTER ALTITUDE");
                             }
                         } else if ("SPEED".equals(reportType)) {
                             if (!speed.isEmpty()) {
-                                String spdText = "MACH".equals(speedMode) ? "M." + speed : "IAS " + speed;
-                                controller.getService().sendReport("PRESENT SPEED " + spdText);
+                                controller.getService().sendSpeedReport("MACH".equals(speedMode), speed);
                                 controller.setStatusMessage("SPEED REPORT SENT");
                             } else {
                                 controller.setStatusMessage("ENTER SPEED");

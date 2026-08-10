@@ -13,6 +13,9 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+/**
+ * Main cockpit dashboard panel for Desktop Swing UI (v1), managing navigation cards.
+ */
 public class DashboardPanel extends JPanel implements CpdlcListener {
     
     public static final String UI_FONT = "Roboto Mono";

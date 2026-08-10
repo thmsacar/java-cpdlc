@@ -54,4 +54,15 @@ public class AcarsMessageTest {
 
         assertTrue(detail.contains("SYSTEM:\nConnected as KLM123"));
     }
+
+    @Test
+    public void testIsOutgoingFlag() {
+        AcarsMessage outgoingMsg = new AcarsMessage("KLM123", "cpdlc", "EHAM_TWR", "REQUEST LEVEL 350", true);
+        assertTrue(outgoingMsg.isOutgoing());
+        assertEquals("(EHAM_TWR)<", outgoingMsg.getListFormat().get("header"));
+
+        AcarsMessage incomingMsg = new AcarsMessage("EHAM_TWR", "cpdlc", "KLM123", "CLEARED DIRECT NAVIX", false);
+        assertFalse(incomingMsg.isOutgoing());
+        assertEquals("(EHAM_TWR)>", incomingMsg.getListFormat().get("header"));
+    }
 }

@@ -9,11 +9,18 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+/**
+ * Utility for checking newer application versions via GitHub Releases.
+ */
 public class UpdateChecker {
 
+    /** Current application version string. */
     public static final String CURRENT_VERSION = "1.3.0";
     private static final String GITHUB_RELEASES_API = "https://api.github.com/repos/thmsacar/java-cpdlc/releases/latest";
 
+    /**
+     * Asynchronously checks GitHub for updates and displays a dialog if a newer version is available.
+     */
     public static void checkForUpdatesAsync(Component parent) {
         Thread thread = new Thread(() -> {
             try {
@@ -29,6 +36,9 @@ public class UpdateChecker {
         thread.start();
     }
 
+    /**
+     * Fetches the latest release details from GitHub Releases API.
+     */
     public static ReleaseInfo fetchLatestRelease() throws Exception {
         URL url = new URL(GITHUB_RELEASES_API);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -59,6 +69,9 @@ public class UpdateChecker {
         return null;
     }
 
+    /**
+     * Strips leading 'v' or 'V' prefixes from version strings.
+     */
     public static String cleanVersionString(String rawVersion) {
         if (rawVersion == null) return "";
         rawVersion = rawVersion.trim();
@@ -68,6 +81,9 @@ public class UpdateChecker {
         return rawVersion;
     }
 
+    /**
+     * Compares version strings to determine if remote is newer than current.
+     */
     public static boolean isNewerVersion(String current, String remote) {
         if (remote == null || remote.trim().isEmpty()) return false;
 
@@ -91,6 +107,9 @@ public class UpdateChecker {
         return false;
     }
 
+    /**
+     * Container for GitHub release details.
+     */
     public static class ReleaseInfo {
         public final String version;
         public final String tagName;

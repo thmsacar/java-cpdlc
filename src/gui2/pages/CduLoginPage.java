@@ -14,7 +14,6 @@ public class CduLoginPage implements CduPage {
 
     private String callsign = UserPreferences.getLastCallsign() != null ? UserPreferences.getLastCallsign() : "";
     private String hoppieID = UserPreferences.getLastHoppieID() != null ? UserPreferences.getLastHoppieID() : "";
-    private String simbriefID = UserPreferences.getLastSimbriefID() != null ? UserPreferences.getLastSimbriefID() : "";
 
     @Override
     public String getPageTitle() {
@@ -28,7 +27,6 @@ public class CduLoginPage implements CduPage {
 
         String safeCallsign = callsign != null ? callsign : "";
         String safeHoppie = hoppieID != null ? hoppieID : "";
-        String safeSimbrief = simbriefID != null ? simbriefID : "";
 
         display.setLine(0, 
             new LineItem("CALLSIGN", safeCallsign.isEmpty() ? "----" : safeCallsign, DisplayColor.WHITE),
@@ -37,11 +35,6 @@ public class CduLoginPage implements CduPage {
 
         display.setLine(1, 
             new LineItem("HOPPIE ID", safeHoppie.isEmpty() ? "----------------" : maskHoppieID(safeHoppie), DisplayColor.WHITE),
-            new LineItem("", "", DisplayColor.WHITE)
-        );
-
-        display.setLine(2, 
-            new LineItem("SIMBRIEF ID", safeSimbrief.isEmpty() ? "----" : safeSimbrief, DisplayColor.WHITE_DIM),
             new LineItem("", "", DisplayColor.WHITE)
         );
 
@@ -79,13 +72,6 @@ public class CduLoginPage implements CduPage {
                     if (!input.isEmpty()) {
                         hoppieID = input;
                         controller.setHoppieID(hoppieID);
-                        controller.clearScratchpad();
-                    }
-                    break;
-                case 2: // LSK 3L: SIMBRIEF ID
-                    if (!input.isEmpty()) {
-                        simbriefID = input.toUpperCase();
-                        controller.setSimbriefID(simbriefID);
                         controller.clearScratchpad();
                     }
                     break;

@@ -46,4 +46,29 @@ public class CpdlcMessageTest {
         assertTrue(msg.hasBeenReplied());
         assertEquals("WILCO", msg.getSentResponse());
     }
+
+    @Test
+    public void testGetParsedResponseType() {
+        CpdlcMessage wuMsg = new CpdlcMessage("EHAM_TWR", "cpdlc", "KLM123", "/data2/1//WU/DESCEND FL100");
+        assertEquals(CpdlcResponseType.WILCO_UNABLE, wuMsg.getParsedResponseType());
+
+        CpdlcMessage anMsg = new CpdlcMessage("EHAM_TWR", "cpdlc", "KLM123", "/data2/2//AN/REPORT LEVEL");
+        assertEquals(CpdlcResponseType.AFFIRM_NEGATIVE, anMsg.getParsedResponseType());
+
+        CpdlcMessage rMsg = new CpdlcMessage("EHAM_TWR", "cpdlc", "KLM123", "/data2/3//R/CONTACT EDGG 123.450");
+        assertEquals(CpdlcResponseType.ROGER, rMsg.getParsedResponseType());
+
+        CpdlcMessage neMsg = new CpdlcMessage("EHAM_TWR", "cpdlc", "KLM123", "/data2/4//NE/ROGER");
+        assertEquals(CpdlcResponseType.NONE, neMsg.getParsedResponseType());
+    }
+
+    @Test
+    public void testParseCpdlcContentWithSlashesInBody() {
+        String rawContent = "/data2/10/5/WU/CLEARED DIRECT VIA SPY / RUNWAY 24";
+        CpdlcMessage msg = new CpdlcMessage("EHAM_TWR", "cpdlc", "KLM123", rawContent);
+
+        assertEquals(10, msg.getMsgNumber());
+        assertEquals("WU", msg.getResponseType());
+        assertEquals("CLEARED DIRECT VIA SPY / RUNWAY 24", msg.getMessage());
+    }
 }

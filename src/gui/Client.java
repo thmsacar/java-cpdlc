@@ -10,6 +10,9 @@ import java.awt.event.WindowEvent;
 import java.lang.reflect.Method;
 import java.net.URL;
 
+/**
+ * Main application window launcher for the Desktop Swing UI (v1).
+ */
 public class Client {
 
     protected JFrame frame;

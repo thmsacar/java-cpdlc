@@ -24,15 +24,30 @@ public class CpdlcService {
     private final String callsign;
     private final String hoppieID;
     private final HoppieAPI hoppieAPI;
+    // Thread-safe lists for background fetching and listener notifications
     private final List<AcarsMessage> messages = new CopyOnWriteArrayList<>();
     private final List<CpdlcListener> listeners = new CopyOnWriteArrayList<>();
     
+    /** Currently connected ATS unit callsign. */
     private String currentATS;
     private boolean isLoggedOn = false;
+    /** Station callsign for an in-progress logon request. */
     private String pendingLogonStation = "";
+    /** Flag indicating an automatic station handover is in progress. */
     private boolean isAutoHandoffPending = false;
+    /** Previous ATS unit callsign before a handover. */
     private String previousATS = "";
+    /** Next ATS unit callsign expected after a handover. */
     private String nextATS = "";
+    /** Standard idle polling interval of 40 seconds ({@link #DEFAULT_POLL_INTERVAL_MS}). */
+    private static final long DEFAULT_POLL_INTERVAL_MS = 40_000L;
+    /** Accelerated burst polling interval of 15 seconds ({@link #BURST_POLL_INTERVAL_MS}). */
+    private static final long BURST_POLL_INTERVAL_MS = 15_000L;
+    /** Duration of burst polling mode for 1 minute / 60 seconds ({@link #BURST_DURATION_MS}). */
+    private static final long BURST_DURATION_MS = 60_000L;
+
+    /** Expiry timestamp until which accelerated polling ({@link #BURST_POLL_INTERVAL_MS}) is active. */
+    private volatile long burstUntilTimestamp = 0L;
     private ScheduledExecutorService fetcherService;
 
     public CpdlcService(String callsign, String hoppieID) {
@@ -41,6 +56,7 @@ public class CpdlcService {
         this.hoppieAPI = new HoppieAPI(hoppieID);
     }
 
+    /** Validates callsign and Hoppie ID credentials via ping. */
     public static boolean validateCredentials(String callsign, String hoppieID) throws IOException {
         HoppieAPI api = new HoppieAPI(hoppieID);
         HoppieAPI.HoppieResponse response = api.sendPing(callsign);
@@ -62,22 +78,22 @@ public class CpdlcService {
         this.currentATS = "EDGG_CTR";
         this.isLoggedOn = true;
 
-        AcarsMessage m6 = new AcarsMessage("EHAM_TWR", "cpdlc", callsign, "CLEARED PRE-DEPARTURE ROUTE SPY3A RUNWAY 24");
+        AcarsMessage m6 = new AcarsMessage("EHAM_TWR", "cpdlc", callsign, "CLEARED PRE-DEPARTURE ROUTE SPY3A RUNWAY 24", false);
         m6.setRead(true);
 
-        AcarsMessage m5 = new AcarsMessage(callsign, "telex", "THY_OPS", "ARRIVED AT GATE E12 FUEL REMAINING 4200KG");
+        AcarsMessage m5 = new AcarsMessage(callsign, "telex", "THY_OPS", "ARRIVED AT GATE E12 FUEL REMAINING 4200KG", true);
         m5.setRead(true);
 
-        AcarsMessage m4 = new AcarsMessage("THY_OPS", "telex", callsign, "DISPATCH SHEET UPDATED FOR FLIGHT THY100");
+        AcarsMessage m4 = new AcarsMessage("THY_OPS", "telex", callsign, "DISPATCH SHEET UPDATED FOR FLIGHT THY100", false);
         m4.setRead(false);
 
-        AcarsMessage m3 = new AcarsMessage(callsign, "cpdlc", "EDGG_CTR", "REQUEST DIRECT TO LOGAN");
+        AcarsMessage m3 = new AcarsMessage(callsign, "cpdlc", "EDGG_CTR", "REQUEST DIRECT TO LOGAN", true);
         m3.setRead(true);
 
-        AcarsMessage m2 = new AcarsMessage("EDGG_CTR", "cpdlc", callsign, "CONTACT EDGG ON FREQUENCY 123.450");
+        AcarsMessage m2 = new AcarsMessage("EDGG_CTR", "cpdlc", callsign, "CONTACT EDGG ON FREQUENCY 123.450", false);
         m2.setRead(false);
 
-        AcarsMessage m1 = new AcarsMessage("EDGG_CTR", "cpdlc", callsign, "CLIMB TO FL370 WHEN READY");
+        AcarsMessage m1 = new AcarsMessage("EDGG_CTR", "cpdlc", callsign, "CLIMB TO FL370 WHEN READY", false);
         m1.setRead(false);
 
         addMessage(m6);
@@ -88,17 +104,20 @@ public class CpdlcService {
         addMessage(m1);
     }
 
+    /** Starts initial connection check and periodic message polling. */
     public void start() {
         checkInitialConnection();
         startAutoFetch();
     }
 
+    /** Stops the background message polling service. */
     public void stop() {
         if (fetcherService != null && !fetcherService.isShutdown()) {
             fetcherService.shutdownNow();
         }
     }
 
+    /** Asynchronously checks connection to the Hoppie network. */
     private void checkInitialConnection() {
         new Thread(() -> {
             AcarsMessage connectionMsg = hoppieAPI.checkConnection(callsign);
@@ -109,28 +128,60 @@ public class CpdlcService {
         }).start();
     }
 
-    private void startAutoFetch() {
+    /** Schedules periodic background polling for incoming messages. */
+    private synchronized void startAutoFetch() {
+        if (fetcherService != null && !fetcherService.isShutdown()) {
+            fetcherService.shutdownNow();
+        }
         fetcherService = Executors.newSingleThreadScheduledExecutor();
-        fetcherService.scheduleAtFixedRate(() -> {
-            try {
-                List<AcarsMessage> newMessages = hoppieAPI.fetchMessages(this.callsign);
-                if (!newMessages.isEmpty()) {
-                    for (AcarsMessage msg : newMessages) {
-                        if (isDuplicateSystemMessage(msg)) continue;
-                        
-                        addMessage(msg);
-                    }
-                    notifyConnectionStatus(true);
-                } else {
-                    notifyConnectionStatus(true);
-                }
-            } catch (Exception e) {
-                notifyError("Fetch error: " + e.getMessage());
-                notifyConnectionStatus(false);
-            }
-        }, 0, 40, TimeUnit.SECONDS);
+        scheduleNextFetch(0, TimeUnit.MILLISECONDS);
     }
 
+    /** Schedules the next polling execution after a specified delay. */
+    private synchronized void scheduleNextFetch(long delay, TimeUnit unit) {
+        if (fetcherService == null || fetcherService.isShutdown()) return;
+        fetcherService.schedule(this::runFetchCycle, delay, unit);
+    }
+
+    /** Executes one polling cycle to retrieve new messages, then reschedules the next cycle. */
+    private void runFetchCycle() {
+        try {
+            // Fetch unread messages from Hoppie server for current callsign
+            List<AcarsMessage> newMessages = hoppieAPI.fetchMessages(this.callsign);
+            if (!newMessages.isEmpty()) {
+                for (AcarsMessage msg : newMessages) {
+                    if (isDuplicateSystemMessage(msg)) continue;
+                    addMessage(msg);
+                }
+                notifyConnectionStatus(true);
+            } else {
+                notifyConnectionStatus(true);
+            }
+        } catch (Exception e) {
+            notifyError("Fetch error: " + e.getMessage());
+            notifyConnectionStatus(false);
+        } finally {
+            // Determine next polling delay: BURST_POLL_INTERVAL_MS (15s) if burst mode is active, otherwise DEFAULT_POLL_INTERVAL_MS (40s)
+            long nextDelay = (System.currentTimeMillis() < burstUntilTimestamp) 
+                    ? BURST_POLL_INTERVAL_MS 
+                    : DEFAULT_POLL_INTERVAL_MS;
+            scheduleNextFetch(nextDelay, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    /**
+     * Triggers 15-second accelerated burst polling ({@link #BURST_POLL_INTERVAL_MS}) for 1 minute ({@link #BURST_DURATION_MS}) after sending an outgoing message or request.
+     */
+    public synchronized void triggerFastPollingBurst() {
+        this.burstUntilTimestamp = System.currentTimeMillis() + BURST_DURATION_MS;
+        if (fetcherService != null && !fetcherService.isShutdown()) {
+            fetcherService.shutdownNow();
+            fetcherService = Executors.newSingleThreadScheduledExecutor();
+            scheduleNextFetch(BURST_POLL_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    /** Checks if an incoming system message is a duplicate of the last message. */
     private boolean isDuplicateSystemMessage(AcarsMessage msg) {
         if (messages.isEmpty() || !msg.getType().equalsIgnoreCase("system")) return false;
         AcarsMessage lastMsg = messages.get(0);
@@ -138,6 +189,10 @@ public class CpdlcService {
                msg.getMessage().equalsIgnoreCase(lastMsg.getMessage());
     }
 
+    /**
+     * Processes incoming CPDLC messages to handle logon confirmations, handovers, and logoffs.
+     * @param msg the message to process
+     */
     private void processIncomingMessage(AcarsMessage msg) {
         if (msg == null) return;
         String sender = msg.getFrom() != null ? msg.getFrom().trim() : "";
@@ -149,6 +204,7 @@ public class CpdlcService {
             return;
         }
 
+        //--LOGON ACCEPTED--
         if (text.contains("LOGON ACCEPTED") && !pendingLogonStation.isEmpty() && sender.equalsIgnoreCase(pendingLogonStation)) {
             if (isAutoHandoffPending && sender.equalsIgnoreCase(nextATS)) {
                 isAutoHandoffPending = false;
@@ -163,14 +219,17 @@ public class CpdlcService {
             return;
         }
 
+        //--LOGOFF--
         String upperText = text.toUpperCase();
         boolean isLogoff = upperText.contains("LOGOFF") || 
                            upperText.contains("SERVICE TERMINATED") || 
                            upperText.contains("DISCONNECT");
 
+        //--HANDOVER
         Matcher handoverMatcher = HANDOVER_PATTERN.matcher(text);
         boolean isHandover = handoverMatcher.find();
 
+        //--
         if (isLogoff && isLoggedOn()) {
             String targetStation = sender.isEmpty() ? currentATS : sender;
             sendLogoff();
@@ -187,12 +246,9 @@ public class CpdlcService {
         }
     }
 
-    /**
-     * Sends a telex message to a specific station.
-     * @param station The recipient station callsign.
-     * @param message The message content.
-     */
+    /** Sends a telex message to a specified station. */
     public void sendTelex(String station, String message) {
+        triggerFastPollingBurst();
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.sendTelex(station, callsign, message);
             msg.setRead(true);
@@ -201,15 +257,13 @@ public class CpdlcService {
         });
     }
 
-    /**
-     * Sends a CPDLC request message to the currently connected ATS unit.
-     * @param message The request message content.
-     */
+    /** Sends a CPDLC request message to the active ATS unit. */
     public void sendRequest(String message) {
         if (currentATS == null || currentATS.trim().isEmpty() || !isLoggedOn) {
             notifyError("Cannot send request: Not connected to ATC unit.");
             return;
         }
+        triggerFastPollingBurst();
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.request(currentATS, callsign, message);
             msg.setRead(true);
@@ -218,11 +272,13 @@ public class CpdlcService {
         });
     }
 
+    /** Sends a CPDLC report message to the active ATS unit. */
     public void sendReport(String message) {
         if (currentATS == null || currentATS.trim().isEmpty() || !isLoggedOn) {
             notifyError("Cannot send report: Not connected to ATC unit.");
             return;
         }
+        triggerFastPollingBurst();
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.report(currentATS, callsign, message);
             msg.setRead(true);
@@ -266,7 +322,9 @@ public class CpdlcService {
         if (msg != null) sendReport(msg);
     }
 
+    /** Sends a CPDLC logon request to an ATS station. */
     public void sendLogon(String station, String remarks) {
+        triggerFastPollingBurst();
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.sendLogonATC(station, callsign, remarks);
             msg.setRead(true);
@@ -278,7 +336,9 @@ public class CpdlcService {
         });
     }
 
+    /** Sends a CPDLC logoff request to the active ATS station. */
     public void sendLogoff() {
+        triggerFastPollingBurst();
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.sendLogoffATC(currentATS, callsign);
             msg.setRead(true);
@@ -291,6 +351,7 @@ public class CpdlcService {
         });
     }
 
+    /** Sends a CPDLC logoff to a station, used for logging of after a handover */
     public void sendLogoffToStation(String station) {
         executeAsync(() -> {
             if (station != null && !station.trim().isEmpty()) {
@@ -301,7 +362,9 @@ public class CpdlcService {
         });
     }
 
+    /** Sends a Pre-Departure Clearance (PDC) request to a station. */
     public void sendPdcRequest(String station, Flight flight, String stand, String atis, String remarks) {
+        triggerFastPollingBurst();
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.sendPdcRequest(station, flight, stand, atis, remarks);
             msg.setRead(true);
@@ -309,6 +372,7 @@ public class CpdlcService {
         });
     }
 
+    /** Sends a response (WILCO, UNABLE, ROGER, etc.) to an incoming CPDLC message. */
     public void sendResponse(String responseType, CpdlcMessage originalMsg) {
         if (originalMsg != null) {
             originalMsg.setSentResponse(responseType);
@@ -329,6 +393,7 @@ public class CpdlcService {
         });
     }
 
+    /** Fetches flight plan data asynchronously from SimBrief. */
     public void fetchSimbriefData(String simbriefID, SimbriefCallback callback) {
         executeAsync(() -> {
             try {
@@ -347,11 +412,13 @@ public class CpdlcService {
         void onFailure(Exception e);
     }
 
+    /** Executes a task asynchronously on a new thread. */
     private void executeAsync(Runnable task) {
         // TODO: Replace with a ThreadPoolExecutor for better resource management
         new Thread(task).start(); // Could be replaced by an Executor
     }
 
+    /** Processes, stores, and notifies listeners of a new message. */
     private void addMessage(AcarsMessage message) {
         if (message == null) return;
         if (message.getFrom() != null && message.getFrom().equalsIgnoreCase(callsign)) {

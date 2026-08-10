@@ -9,6 +9,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class MessageListPanel extends JPanel implements CpdlcListener {
@@ -34,7 +35,7 @@ public class MessageListPanel extends JPanel implements CpdlcListener {
     private void setupUI() {
         setLayout(new BorderLayout());
         
-        messageList.setCellRenderer(new MessageListCellRenderer(service.getCallsign()));
+        messageList.setCellRenderer(new MessageListCellRenderer());
         messageList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
@@ -91,7 +92,6 @@ public class MessageListPanel extends JPanel implements CpdlcListener {
     public void onError(String message) {}
 
     private static class MessageListCellRenderer extends DefaultListCellRenderer {
-        private final String callsign;
         private final JPanel rendererPanel = new JPanel(new BorderLayout(8, 0));
         private final JPanel leftBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         private final JLabel unreadDotLabel = new JLabel();
@@ -100,8 +100,7 @@ public class MessageListPanel extends JPanel implements CpdlcListener {
         private final JLabel previewLabel = new JLabel();
         private final JLabel timeLabel = new JLabel();
 
-        public MessageListCellRenderer(String callsign) {
-            this.callsign = callsign;
+        public MessageListCellRenderer() {
             leftBox.setOpaque(false);
             leftBox.add(unreadDotLabel);
             leftBox.add(arrowLabel);
@@ -123,13 +122,13 @@ public class MessageListPanel extends JPanel implements CpdlcListener {
                                                       boolean isSelected, boolean cellHasFocus) {
             if (value instanceof AcarsMessage) {
                 AcarsMessage msg = (AcarsMessage) value;
-                java.util.Map<String, String> format = msg.getListFormat(callsign);
+                Map<String, String> format = msg.getListFormat();
                 arrowLabel.setText(format.get("symbol"));
                 headerLabel.setText(format.get("header"));
                 previewLabel.setText(format.get("preview"));
                 timeLabel.setText(format.get("time"));
 
-                boolean isOutgoing = msg.getFrom().equalsIgnoreCase(callsign);
+                boolean isOutgoing = msg.isOutgoing();
                 boolean isUnread = !msg.isRead() && !isOutgoing;
 
                 Color typeColor;

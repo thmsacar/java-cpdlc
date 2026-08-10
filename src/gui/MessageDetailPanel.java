@@ -108,9 +108,9 @@ public class MessageDetailPanel extends JPanel {
             return;
         }
 
-        detailTextArea.setText(message.getDetailFormat(service.getCallsign()));
+        detailTextArea.setText(message.getDetailFormat());
         
-        boolean isOurMessage = message.getFrom().equalsIgnoreCase(service.getCallsign());
+        boolean isOurMessage = message.isOutgoing();
         boolean isCpdlc = message instanceof CpdlcMessage;
         
         if (isCpdlc && !isOurMessage) {
@@ -135,23 +135,28 @@ public class MessageDetailPanel extends JPanel {
                 negativeBtn.setEnabled(true); negativeBtn.setCustomColor(RED_RESPONSE, Color.WHITE);
                 rogerBtn.setEnabled(true); rogerBtn.setCustomColor(BLUE_RESPONSE, Color.WHITE);
 
-                String resType = cpdlc.getResponseType();
-                if ("WU".equalsIgnoreCase(resType)) {
-                    responsePanel.add(wilcoBtn);
-                    responsePanel.add(unableBtn);
-                    responsePanel.add(standbyBtn);
-                    responsePanel.setVisible(true);
-                } else if ("R".equalsIgnoreCase(resType)) {
-                    responsePanel.add(rogerBtn);
-                    responsePanel.add(standbyBtn);
-                    responsePanel.setVisible(true);
-                } else if ("AN".equalsIgnoreCase(resType)) {
-                    responsePanel.add(affirmBtn);
-                    responsePanel.add(negativeBtn);
-                    responsePanel.add(standbyBtn);
-                    responsePanel.setVisible(true);
-                } else {
-                    responsePanel.setVisible(false);
+                switch (cpdlc.getParsedResponseType()) {
+                    case WILCO_UNABLE:
+                        responsePanel.add(wilcoBtn);
+                        responsePanel.add(unableBtn);
+                        responsePanel.add(standbyBtn);
+                        responsePanel.setVisible(true);
+                        break;
+                    case ROGER:
+                        responsePanel.add(rogerBtn);
+                        responsePanel.add(standbyBtn);
+                        responsePanel.setVisible(true);
+                        break;
+                    case AFFIRM_NEGATIVE:
+                        responsePanel.add(affirmBtn);
+                        responsePanel.add(negativeBtn);
+                        responsePanel.add(standbyBtn);
+                        responsePanel.setVisible(true);
+                        break;
+                    case NONE:
+                    default:
+                        responsePanel.setVisible(false);
+                        break;
                 }
             }
         } else {

@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Model representing an ACARS/CPDLC message.
+ */
 public class AcarsMessage {
 
     private final Date timestamp;
@@ -13,23 +16,42 @@ public class AcarsMessage {
     private final String to;
     private String message;
     private boolean isRead = false;
+    /** Flag indicating if the message was sent by this aircraft client. */
+    private boolean isOutgoing = false;
 
-    public AcarsMessage(String from, String type, String to, String message) {
+    public AcarsMessage(String from, String type, String to, String message, boolean isOutgoing) {
         this.timestamp = new Date();
         this.from = from;
         this.type = type;
         this.to = to;
         this.message = message;
         this.isRead = false;
+        this.isOutgoing = isOutgoing;
     }
 
+    public AcarsMessage(String from, String type, String to, String message) {
+        this(from, type, to, message, false);
+    }
+
+    /** Constructs a system message. */
     public AcarsMessage(String type, String message) {
-        this.from = "system";
-        this.to = "system";
-        this.timestamp = new Date();
-        this.type = type;
-        this.message = message;
-        this.isRead = false;
+        this("system", type, "system", message, false);
+    }
+
+    public boolean isOutgoing() {
+        return isOutgoing;
+    }
+
+    /** Checks callsign and sets the outgoing status of the message. */
+    public boolean isOutgoing(String callsign) {
+        if (callsign != null && from != null && from.equalsIgnoreCase(callsign)) {
+            this.isOutgoing = true;
+        }
+        return this.isOutgoing;
+    }
+
+    public void setOutgoing(boolean outgoing) {
+        this.isOutgoing = outgoing;
     }
 
     public boolean isRead() {
@@ -66,13 +88,11 @@ public class AcarsMessage {
 
     /**
      * Formats the message for display in the main message list.
-     * @param callsign The aircraft callsign to determine if TO or FROM.
      * @return A map containing header, preview, time, entry, and symbol.
      */
-    public HashMap<String, String> getListFormat(String callsign){
+    public HashMap<String, String> getListFormat() {
         String header;
         String symbol;
-        boolean isOutgoing = this.getFrom().equalsIgnoreCase(callsign);
 
         if ("system".equalsIgnoreCase(this.getType())) {
             header = "(SYSTEM)>";
@@ -106,16 +126,26 @@ public class AcarsMessage {
         return map;
     }
 
-    public String getDetailFormat(String callsign){
+    public HashMap<String, String> getListFormat(String callsign){
+        if (callsign != null && from != null && from.equalsIgnoreCase(callsign)) {
+            this.isOutgoing = true;
+        }
+        return getListFormat();
+    }
+
+    /**
+     * Formats the full message text for detail display views.
+     */
+    public String getDetailFormat() {
         String entry = TimeFormatter.zuluTime(this.getTimestamp());
         if ("system".equalsIgnoreCase(this.getType())) {
             entry += " SYSTEM:\n" + this.getMessage();
         } else {
             String contact;
-            if (this.getFrom().equalsIgnoreCase(callsign)) {
+            if (isOutgoing) {
                 contact = "TO " + this.getTo();
             } else {
-                contact = "FROM " + this.getFrom() ;
+                contact = "FROM " + this.getFrom();
             }
             if ("telex".equalsIgnoreCase(this.getType())) {
                 entry += " TELEX " + contact + ": \n" + this.getMessage();
@@ -127,6 +157,16 @@ public class AcarsMessage {
         return entry;
     }
 
+    public String getDetailFormat(String callsign){
+        if (callsign != null && from != null && from.equalsIgnoreCase(callsign)) {
+            this.isOutgoing = true;
+        }
+        return getDetailFormat();
+    }
+
+    /**
+     * Decodes Unicode escape sequences (e.g. \\u2B08) into characters.
+     */
     public static String decodeUnicode(String input) {
         if (input == null || !input.contains("\\u")) return input;
 

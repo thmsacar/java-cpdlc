@@ -4,8 +4,10 @@ import flight.Flight;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -33,9 +35,10 @@ public class HoppieAPI {
 
     private final String urlStr = "http://www.hoppie.nl/acars/system/connect.html/connect.html";
     private final String logon;
+    /** Counter for generating unique CPDLC message sequence numbers. */
     private int cpdlcCounter;
 
-    // Response class to contain HttpResponse (compatible Java8)
+    /** Wrapper for HTTP status code and response body. */
     public static class HoppieResponse {
         private final int statusCode;
         private final String body;
@@ -59,7 +62,7 @@ public class HoppieAPI {
         System.setProperty("https.protocols", "TLSv1.2");
     }
 
-    // Java 8 compatible HTTP GET
+    /** Sends a raw HTTP GET request to the given URL. */
     private HoppieResponse sendHttpRequest(String fullUrl) throws IOException {
         URL url = new URL(fullUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -81,20 +84,26 @@ public class HoppieAPI {
         return new HoppieResponse(status, body);
     }
 
-    private String createFullUrl(String from, String to, String type, String packet) {
-        // Replace spaces with '+' (URL encoding)
-        String safePacket = packet.replace(" ", "+");
-
+    /** Constructs the full Hoppie API URL with query parameters. */
+    String createFullUrl(String from, String to, String type, String packet) {
         return urlStr
-                + "?logon=" + logon
-                + "&from=" + from
-                + "&to=" + to
-                + "&type=" + type
-                + "&packet=" + safePacket;
+                + "?logon=" + encodeParam(logon)
+                + "&from=" + encodeParam(from)
+                + "&to=" + encodeParam(to)
+                + "&type=" + encodeParam(type)
+                + "&packet=" + encodeParam(packet);
     }
 
-    //Sends a request type 'poll', response is the unread messages for 'callsign'
-    //Used for fetchMessages method
+    static String encodeParam(String param) {
+        if (param == null) return "";
+        try {
+            return URLEncoder.encode(param, "UTF-8").replace("%2F", "/");
+        } catch (UnsupportedEncodingException e) {
+            return param.replace(" ", "+");
+        }
+    }
+
+    /** Sends a poll request to fetch unread messages from the server. */
     private HoppieResponse pollRequest(String callsign) throws IOException {
         String url = createFullUrl(callsign, "SERVER", "poll", "");
         return sendHttpRequest(url);
@@ -124,6 +133,7 @@ public class HoppieAPI {
         return parsePollResponseBody(response.body(), callsign);
     }
 
+    /** Parses raw Hoppie poll response body into a list of AcarsMessages. */
     public static List<AcarsMessage> parsePollResponseBody(String body, String callsign) {
         List<AcarsMessage> list = new ArrayList<>();
         Pattern p = Pattern.compile("\\{(\\S+)\\s+(\\S+)\\s+\\{([\\s\\S]*?)\\}\\}");
@@ -172,6 +182,15 @@ public class HoppieAPI {
     }
 
     /**
+     * Sanitizes user text by replacing ASCII slashes ('/') with a Unicode division slash ('∕', \u2215)
+     * to prevent CPDLC packet corruption and URL query string issues.
+     */
+    public static String safeUserText(String text) {
+        if (text == null) return "";
+        return text.replace('/', '\u2215').trim();
+    }
+
+    /**
      * Sends a telex message to a specific station.
      * @param station The recipient station callsign.
      * @param callsign The sender's callsign.
@@ -179,11 +198,14 @@ public class HoppieAPI {
      * @return The resulting AcarsMessage or an error system message.
      */
     public AcarsMessage sendTelex(String station, String callsign, String message) {
-        String url = createFullUrl(callsign, station, "telex", message);
+        String cleanStation = safeUserText(station);
+        String cleanCallsign = safeUserText(callsign);
+        String cleanMessage = safeUserText(message);
+        String url = createFullUrl(cleanCallsign, cleanStation, "telex", cleanMessage);
         try{
             HoppieResponse response = sendHttpRequest(url);
             if (response.body().trim().startsWith("ok")) {
-                return new AcarsMessage(callsign, "telex", station, message);
+                return new AcarsMessage(cleanCallsign, "telex", cleanStation, cleanMessage, true);
             }else {
                 return new AcarsMessage("system", "ERROR: "+response.body());
             }
@@ -192,13 +214,14 @@ public class HoppieAPI {
         }
     }
 
+    /** Transmits a raw CPDLC formatted message packet. */
     private AcarsMessage sendCpdlcMessage(String station, String callsign, String rawText) {
         String url = createFullUrl(callsign, station, "cpdlc", rawText);
         try {
             HoppieResponse response = sendHttpRequest(url);
             if (response.body().trim().startsWith("ok")) {
                 cpdlcCounter++;
-                return new CpdlcMessage(callsign, "cpdlc", station, rawText);
+                return new CpdlcMessage(callsign, "cpdlc", station, rawText, true);
             }else{
                 return new AcarsMessage("system", "ERROR: "+response.body());
             }
@@ -208,11 +231,13 @@ public class HoppieAPI {
 
     }
 
+    /** Sends a ping request to check server reachability. */
     public HoppieResponse sendPing(String callsign) throws IOException {
         String url = createFullUrl(callsign, "SERVER", "ping", "");
         return sendHttpRequest(url);
     }
 
+    /** Verifies network connection and callsign authorization on Hoppie. */
     public AcarsMessage checkConnection(String callsign) {
         try {
             HoppieResponse response = sendPing(callsign);
@@ -226,59 +251,66 @@ public class HoppieAPI {
         }
     }
 
+    /** Formats and sends a CPDLC request packet. */
     private AcarsMessage cpdlcRequest(String station, String callsign, String text, boolean isReplyRequired) {
-        String replyReq = isReplyRequired ? "Y" : "N";
-        String rawText = String.format(CPDLC_MSG,
-                cpdlcCounter,
-                "",
-                replyReq,
-                text
-        );
-        return sendCpdlcMessage(station, callsign, rawText);
+        return cpdlcRequest(station, callsign, text, isReplyRequired, -1);
     }
 
+    /** Formats and sends a CPDLC response packet. */
     private AcarsMessage cpdlcRequest(String station, String callsign, String text, boolean isReplyRequired, int repliedMsg) {
         String replyReq = isReplyRequired ? "Y" : "N";
+        String cleanStation = safeUserText(station);
+        String cleanCallsign = safeUserText(callsign);
+        String cleanText = safeUserText(text);
         String rawText = String.format(CPDLC_MSG,
                 cpdlcCounter,
-                repliedMsg,
+                repliedMsg > 0 ? String.valueOf(repliedMsg) : "",
                 replyReq,
-                text
+                cleanText
         );
-        return sendCpdlcMessage(station, callsign, rawText);
+        return sendCpdlcMessage(cleanStation, cleanCallsign, rawText);
     }
 
+    /** Sends a CPDLC logon request to an ATC station. */
     public AcarsMessage sendLogonATC(String station, String callsign, String freeText) {
         if (freeText==null) freeText="";
         String logonMsg = String.format(LOGON_TEMPLATE, freeText);
         return cpdlcRequest(station, callsign, logonMsg, true);
     }
 
+    /** Sends a CPDLC logoff request to an ATC station. */
     public AcarsMessage sendLogoffATC(String station, String callsign) {
         return cpdlcRequest(station, callsign, LOGOFF_TEMPLATE, false);
     }
 
     // --- CPDLC Response Methods ---
+
+    /** Sends a WILCO response to an uplink CPDLC message. */
     public AcarsMessage wilco(String station, String callsign, int repliedMsg) {
         return this.cpdlcRequest(station, callsign, "WILCO", false, repliedMsg );
     }
 
+    /** Sends a ROGER response to an uplink CPDLC message. */
     public AcarsMessage roger(String station, String callsign, int repliedMsg) {
         return this.cpdlcRequest(station, callsign, "ROGER", false , repliedMsg);
     }
 
+    /** Sends an AFFIRM response to an uplink CPDLC message. */
     public AcarsMessage affirm(String station, String callsign, int repliedMsg) {
         return this.cpdlcRequest(station, callsign, "AFFIRM", false, repliedMsg);
     }
 
+    /** Sends a NEGATIVE response to an uplink CPDLC message. */
     public AcarsMessage negative(String station, String callsign, int repliedMsg) {
         return this.cpdlcRequest(station, callsign, "NEGATIVE", false, repliedMsg);
     }
 
+    /** Sends an UNABLE response to an uplink CPDLC message. */
     public AcarsMessage unable(String station, String callsign, int repliedMsg) {
         return this.cpdlcRequest(station, callsign, "UNABLE", false, repliedMsg);
     }
 
+    /** Sends a STANDBY response to an uplink CPDLC message. */
     public AcarsMessage standby(String station, String callsign, int repliedMsg) {
         return this.cpdlcRequest(station, callsign, "STANDBY", false, repliedMsg);
     }

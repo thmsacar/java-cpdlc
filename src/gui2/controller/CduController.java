@@ -44,9 +44,6 @@ public class CduController implements CpdlcListener {
     private String hoppieID = "";
     private String simbriefID = "";
 
-    private String originStation = "";
-    private String destStation = "";
-    private String acftType = "";
     private String atcCenter = "";
     private String nextAts = ""; // Next Data Authority (NDA)
 
@@ -130,26 +127,6 @@ public class CduController implements CpdlcListener {
 
         // Open Menu page directly on connection
         showPage(new MainMenuPage());
-
-        // Auto-fetch Simbrief data if ID available
-        if (simbriefID != null && !simbriefID.trim().isEmpty()) {
-            service.fetchSimbriefData(simbriefID, new CpdlcService.SimbriefCallback() {
-                @Override
-                public void onSuccess(Flight flight) {
-                    if (flight != null) {
-                        originStation = flight.getOrigin() != null ? flight.getOrigin() : "";
-                        destStation = flight.getDestination() != null ? flight.getDestination() : "";
-                        acftType = flight.getAircraft() != null ? flight.getAircraft() : "";
-                        refreshDisplay();
-                    }
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    // Ignore Simbrief errors on initial connect
-                }
-            });
-        }
         refreshDisplay();
     }
 
@@ -396,15 +373,6 @@ public class CduController implements CpdlcListener {
 
     public String getSimbriefID() { return simbriefID; }
     public void setSimbriefID(String simbriefID) { this.simbriefID = simbriefID; UserPreferences.setLastSimbriefID(simbriefID); }
-
-    public String getOriginStation() { return originStation; }
-    public void setOriginStation(String originStation) { this.originStation = originStation; }
-
-    public String getDestStation() { return destStation; }
-    public void setDestStation(String destStation) { this.destStation = destStation; }
-
-    public String getAcftType() { return acftType; }
-    public void setAcftType(String acftType) { this.acftType = acftType; }
 
     public String getAtcCenter() { return atcCenter; }
     public void setAtcCenter(String atcCenter) { this.atcCenter = atcCenter; }

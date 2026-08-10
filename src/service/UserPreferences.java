@@ -11,7 +11,8 @@ public class UserPreferences {
     private static final String KEY_SIMBRIEF_ID = "lastSimbriefID";
 
     /**
-     * Overrides the Preferences node (used primarily for unit testing so real user preferences are never mutated).
+     * Overrides the Preferences node
+     * Used primarily for unit testing so real user preferences are never mutated.
      */
     public static void setPreferencesNode(Preferences customPrefs) {
         if (customPrefs != null) {

@@ -8,6 +8,7 @@ import hoppie.AcarsMessage;
 import hoppie.TimeFormatter;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Messages Inbox / Outbox list page for CDU displaying incoming (<SENDER) and outgoing (RECIPIENT>) items with Zulu time.
@@ -35,9 +36,9 @@ public class MessageListPage implements CduPage {
             int msgIdx = pageOffset + i;
             if (msgIdx < total) {
                 AcarsMessage msg = msgs.get(msgIdx);
-                boolean isOutgoing = msg.getFrom() != null && msg.getFrom().equalsIgnoreCase(controller.getCallsign());
-                String stationLabel = isOutgoing ? (msg.getTo() != null ? msg.getTo() : "") + ">" : "<" + (msg.getFrom() != null ? msg.getFrom() : "");
-                String preview = msg.getMessage() != null ? msg.getMessage().replace("@", " ").replace("\n", " ").replaceAll("\\s+", " ").trim() : "";
+                boolean isOutgoing = msg.isOutgoing();
+                String stationLabel = isOutgoing ? (msg.getTo() != null ? msg.getTo().toUpperCase(Locale.ENGLISH) : "") + ">" : "<" + (msg.getFrom() != null ? msg.getFrom().toUpperCase(Locale.ENGLISH) : "");
+                String preview = msg.getMessage() != null ? msg.getMessage().replace("@", " ").replace("\n", " ").replaceAll("\\s+", " ").trim().toUpperCase(Locale.ENGLISH) : "";
                 if (preview.length() > 14) preview = preview.substring(0, 14) + "..";
 
                 String zuluTime = msg.getTimestamp() != null ? TimeFormatter.zuluTime(msg.getTimestamp()) : "";
