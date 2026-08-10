@@ -39,7 +39,7 @@ public class MessageListPage implements CduPage {
                 boolean isOutgoing = msg.isOutgoing();
                 String stationLabel = isOutgoing ? (msg.getTo() != null ? msg.getTo().toUpperCase(Locale.ENGLISH) : "") + ">" : "<" + (msg.getFrom() != null ? msg.getFrom().toUpperCase(Locale.ENGLISH) : "");
                 String preview = msg.getMessage() != null ? msg.getMessage().replace("@", " ").replace("\n", " ").replaceAll("\\s+", " ").trim().toUpperCase(Locale.ENGLISH) : "";
-                if (preview.length() > 14) preview = preview.substring(0, 14) + "..";
+                if (preview.length() > 20) preview = preview.substring(0, 20) + "..";
 
                 String zuluTime = msg.getTimestamp() != null ? TimeFormatter.zuluTime(msg.getTimestamp()) : "";
 

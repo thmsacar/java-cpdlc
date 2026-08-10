@@ -8,6 +8,10 @@ import gui2.pages.CduLoginPage;
 import gui2.pages.CduPage;
 import gui2.pages.MainMenuPage;
 import gui2.pages.MessageDetailPage;
+import gui2.pages.MessageListPage;
+import gui2.pages.PdcPage;
+import gui2.pages.ReportPage;
+import gui2.pages.RequestPage;
 import hoppie.AcarsMessage;
 import hoppie.CpdlcMessage;
 import service.ConnectionState;
@@ -272,6 +276,9 @@ public class CduController implements CpdlcListener {
                 setExecLed(true);
                 if (!statusMessage.startsWith("AUTO LOGOFF")) {
                     statusMessage = (isCpdlc ? "CPDLC TO " : "TELEX TO ") + to;
+                }
+                if (currentPage instanceof PdcPage || currentPage instanceof RequestPage || currentPage instanceof ReportPage) {
+                    SwingUtilities.invokeLater(() -> showPage(new MessageListPage()));
                 }
             } else {
                 // Incoming message: status bar says CPDLC FROM or TELEX FROM

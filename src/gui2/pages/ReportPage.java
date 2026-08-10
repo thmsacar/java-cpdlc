@@ -149,11 +149,11 @@ public class ReportPage implements CduPage {
                         }
 
                         if ("POSITION".equals(reportType)) {
-                            if (!position.isEmpty() && !altitude.isEmpty()) {
+                            if (!position.isEmpty() && !time.isEmpty() && !altitude.isEmpty()) {
                                 controller.getService().sendPositionReport(position, time, altitude, thereafter, nextFix, etaNext);
                                 controller.setStatusMessage("POS REPORT SENT");
                             } else {
-                                controller.setStatusMessage("ENTER POS & ALT");
+                                controller.setStatusMessage("ENTER POS, TIME & ALT");
                             }
                         } else if ("LEVEL".equals(reportType)) {
                             if (!altitude.isEmpty()) {

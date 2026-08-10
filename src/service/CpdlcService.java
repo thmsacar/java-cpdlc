@@ -52,11 +52,13 @@ public class CpdlcService {
     private volatile ConnectionState connectionState = ConnectionState.DISCONNECTED;
     private ScheduledExecutorService fetcherService;
     private ScheduledFuture<?> currentFetchFuture;
+    private final FlightLogManager flightLogManager;
 
     public CpdlcService(String callsign, String hoppieID) {
         this.callsign = callsign;
         this.hoppieID = hoppieID;
         this.hoppieAPI = new HoppieAPI(hoppieID);
+        this.flightLogManager = new FlightLogManager(callsign);
     }
 
     /** Validates callsign and Hoppie ID credentials via ping. */
@@ -117,6 +119,9 @@ public class CpdlcService {
     public void stop() {
         if (fetcherService != null && !fetcherService.isShutdown()) {
             fetcherService.shutdownNow();
+        }
+        if (flightLogManager != null) {
+            flightLogManager.endSession();
         }
     }
 
@@ -454,6 +459,9 @@ public class CpdlcService {
         }
         processIncomingMessage(message);
         messages.add(0, message);
+        if (flightLogManager != null) {
+            flightLogManager.logMessage(message);
+        }
         for (CpdlcListener l : listeners) {
             l.onMessageReceived(message);
             l.onMessagesUpdated(Collections.unmodifiableList(messages));
@@ -524,4 +532,5 @@ public class CpdlcService {
     public boolean isLoggedOn() { return isLoggedOn; }
     public boolean isConnected() { return fetcherService != null && !fetcherService.isShutdown(); }
     public List<AcarsMessage> getMessages() { return Collections.unmodifiableList(messages); }
+    public FlightLogManager getFlightLogManager() { return flightLogManager; }
 }

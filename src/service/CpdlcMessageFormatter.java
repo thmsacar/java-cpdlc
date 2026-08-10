@@ -132,17 +132,17 @@ CpdlcMessageFormatter {
 
         StringBuilder sb = new StringBuilder();
         sb.append("POSITION ").append(pos.trim())
-          .append(" AT ").append(time.trim())
+          .append(" AT ").append(time.trim()).append("Z")
           .append(" LEVEL ").append(level.trim());
-        
-        if (thereafter != null && !thereafter.trim().isEmpty()) {
-            sb.append("@THEREAFTER ").append(thereafter.trim());
-        }
+
         if (nextPos != null && !nextPos.trim().isEmpty()) {
             sb.append("@ESTIMATING ").append(nextPos.trim());
             if (etaNext != null && !etaNext.trim().isEmpty()) {
                 sb.append(" AT ").append(etaNext.trim());
             }
+        }
+        if (thereafter != null && !thereafter.trim().isEmpty()) {
+            sb.append("@THEREAFTER ").append(thereafter.trim());
         }
         return sb.toString();
     }

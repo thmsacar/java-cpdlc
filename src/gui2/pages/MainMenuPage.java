@@ -29,7 +29,7 @@ public class MainMenuPage implements CduPage {
             && controller.getService().getCurrentATS() != null 
             && !controller.getService().getCurrentATS().trim().isEmpty();
 
-        display.setLine(0, new LineItem("", "<ATC LOGON/STATUS", DisplayColor.WHITE), new LineItem("", "", DisplayColor.WHITE));
+        display.setLine(0, new LineItem("", "<ATC LOGON/STATUS", DisplayColor.WHITE), new LineItem("", "FLIGHT LOGS>", DisplayColor.WHITE));
         display.setLine(1, new LineItem("", "<TELEX", DisplayColor.WHITE), new LineItem("", "", DisplayColor.WHITE));
         display.setLine(2, new LineItem("", "<PDC REQUEST", DisplayColor.WHITE), new LineItem("", "", DisplayColor.WHITE));
         display.setLine(3, isConnectedToAtc ? new LineItem("", "<REQUESTS", DisplayColor.WHITE) : new LineItem("", "", DisplayColor.WHITE), new LineItem("", "", DisplayColor.WHITE));
@@ -58,8 +58,9 @@ public class MainMenuPage implements CduPage {
                 case 5: controller.pushPage(new CduDisconnectPage(false)); break; // LSK 6L: <DISCONNECT (stay open on disconnect)
             }
         } else {
-            if (index == 5) { // LSK 6R: MESSAGES
-                controller.showPage(new MessageListPage());
+            switch (index) {
+                case 0: controller.showPage(new CduLogsPage()); break; // LSK 1R: FLIGHT LOGS>
+                case 5: controller.showPage(new MessageListPage()); break; // LSK 6R: MESSAGES
             }
         }
     }
