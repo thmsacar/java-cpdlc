@@ -439,8 +439,7 @@ public class CpdlcService {
                 SimbriefAPI api = new SimbriefAPI(simbriefID);
                 Flight flight = api.getFlight();
                 callback.onSuccess(flight);
-            } catch (IOException e) {
-                notifyError("Simbrief error: " + e.getMessage());
+            } catch (Exception e) {
                 callback.onFailure(e);
             }
         });
@@ -496,11 +495,13 @@ public class CpdlcService {
     }
 
     public synchronized void setConnectionState(ConnectionState newState) {
-        if (newState == null || this.connectionState == newState) return;
+        if (newState == null) return;
         ConnectionState oldState = this.connectionState;
         this.connectionState = newState;
-        for (CpdlcListener l : listeners) {
-            l.onConnectionStateChanged(oldState, newState);
+        if (oldState != newState) {
+            for (CpdlcListener l : listeners) {
+                l.onConnectionStateChanged(oldState, newState);
+            }
         }
         notifyConnectionStatus(newState == ConnectionState.CONNECTED);
     }

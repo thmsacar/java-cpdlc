@@ -332,7 +332,24 @@ public class CduController implements CpdlcListener {
 
     @Override
     public void onConnectionStatusChanged(boolean isConnected) {
-        // Maintained for backwards compatibility; state handling delegated to onConnectionStateChanged
+        if (isConnected) {
+            setFailLed(false);
+            setExecLed(true);
+            if (statusMessage != null && (statusMessage.startsWith("ERROR:") || statusMessage.startsWith("RECONNECTING...") || statusMessage.startsWith("HOPPIE DISCONNECTED"))) {
+                if (service != null && service.isLoggedOn()) {
+                    statusMessage = "LOGGED TO " + service.getCurrentATS();
+                } else {
+                    statusMessage = "CONNECTED TO HOPPIE";
+                }
+            }
+        } else {
+            setFailLed(true);
+            setExecLed(false);
+            if (statusMessage != null && !statusMessage.startsWith("AUTO LOGOFF") && !statusMessage.startsWith("AUTO HANDOVER")) {
+                statusMessage = "HOPPIE DISCONNECTED";
+            }
+        }
+        refreshDisplay();
     }
 
     @Override
