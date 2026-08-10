@@ -3,8 +3,10 @@ package service;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+/** Tests string formatting helper methods in CpdlcMessageFormatter. */
 public class CpdlcMessageFormatterTest {
 
+    /** Verifies formatting of "DUE TO" remark suffixes. */
     @Test
     public void testFormatDueTo() {
         assertEquals("DUE TO PERFORMANCE", CpdlcMessageFormatter.formatDueTo("PERFORMANCE", ""));
@@ -14,6 +16,7 @@ public class CpdlcMessageFormatterTest {
         assertEquals("", CpdlcMessageFormatter.formatDueTo(null, ""));
     }
 
+    /** Verifies formatting of direct waypoint request strings. */
     @Test
     public void testFormatDirectRequest() {
         assertEquals("REQUEST DIRECT TO NAVIX", CpdlcMessageFormatter.formatDirectRequest("NAVIX", null));
@@ -22,6 +25,7 @@ public class CpdlcMessageFormatterTest {
         assertEquals("", CpdlcMessageFormatter.formatDirectRequest(null, null));
     }
 
+    /** Verifies formatting of flight level request strings. */
     @Test
     public void testFormatLevelRequest() {
         assertEquals("REQUEST LEVEL 350", CpdlcMessageFormatter.formatLevelRequest("350", ""));
@@ -29,6 +33,7 @@ public class CpdlcMessageFormatterTest {
         assertEquals("", CpdlcMessageFormatter.formatLevelRequest("", "DUE TO PERFORMANCE"));
     }
 
+    /** Verifies formatting of airspeed and Mach number request strings. */
     @Test
     public void testFormatSpeedRequest() {
         assertEquals("REQUEST SPEED IAS 280", CpdlcMessageFormatter.formatSpeedRequest("ias", "280", ""));
@@ -36,6 +41,7 @@ public class CpdlcMessageFormatterTest {
         assertEquals("", CpdlcMessageFormatter.formatSpeedRequest("ias", "", ""));
     }
 
+    /** Verifies formatting of "WHEN CAN WE EXPECT" clearance query strings. */
     @Test
     public void testFormatWhenCanWeExpectRequest() {
         assertEquals("WHEN CAN WE EXPECT LEVEL 370", CpdlcMessageFormatter.formatWhenCanWeExpectRequest("LEVEL", "370", ""));
@@ -43,6 +49,7 @@ public class CpdlcMessageFormatterTest {
         assertEquals("", CpdlcMessageFormatter.formatWhenCanWeExpectRequest("LEVEL", "", ""));
     }
 
+    /** Verifies formatting of level maintaining/climbing/descending reports. */
     @Test
     public void testFormatLevelReport() {
         assertEquals("MAINTAINING LEVEL 350", CpdlcMessageFormatter.formatLevelReport("MAINTAINING", "350"));
@@ -51,6 +58,7 @@ public class CpdlcMessageFormatterTest {
         assertNull(CpdlcMessageFormatter.formatLevelReport("MAINTAINING", ""));
     }
 
+    /** Verifies formatting of IAS and Mach speed reports. */
     @Test
     public void testFormatSpeedReport() {
         assertEquals("PRESENT SPEED IAS 280", CpdlcMessageFormatter.formatSpeedReport(false, "280"));
@@ -58,6 +66,7 @@ public class CpdlcMessageFormatterTest {
         assertNull(CpdlcMessageFormatter.formatSpeedReport(false, ""));
     }
 
+    /** Verifies formatting of position report payload strings. */
     @Test
     public void testFormatPositionReport() {
         assertEquals("POSITION ABEAM AT 1234 LEVEL 350", 

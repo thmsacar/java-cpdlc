@@ -5,8 +5,10 @@ import java.util.HashMap;
 
 import static org.junit.Assert.*;
 
+/** Tests message creation, directional flags, and formatting in AcarsMessage. */
 public class AcarsMessageTest {
 
+    /** Verifies Unicode escape sequence decoding. */
     @Test
     public void testDecodeUnicode() {
         assertEquals("⬈", AcarsMessage.decodeUnicode("\\u2B08"));
@@ -15,6 +17,7 @@ public class AcarsMessageTest {
         assertNull(AcarsMessage.decodeUnicode(null));
     }
 
+    /** Verifies list format generation for outgoing messages. */
     @Test
     public void testGetListFormatOutgoing() {
         AcarsMessage msg = new AcarsMessage("KLM123", "cpdlc", "EHAM_TWR", "REQUEST LEVEL 350");
@@ -27,6 +30,7 @@ public class AcarsMessageTest {
         assertNotNull(format.get("time"));
     }
 
+    /** Verifies list format generation for incoming messages. */
     @Test
     public void testGetListFormatIncoming() {
         AcarsMessage msg = new AcarsMessage("EHAM_TWR", "cpdlc", "KLM123", "CLEARED DIRECT NAVIX");
@@ -39,6 +43,7 @@ public class AcarsMessageTest {
         assertNotNull(format.get("time"));
     }
 
+    /** Verifies newline character replacement in detail formatting for CPDLC messages. */
     @Test
     public void testGetDetailFormatCpdlcNewlineReplacement() {
         AcarsMessage msg = new AcarsMessage("EHAM_TWR", "cpdlc", "KLM123", "LINE1@LINE2@LINE3");
@@ -47,6 +52,7 @@ public class AcarsMessageTest {
         assertTrue(detail.contains("CPDLC FROM EHAM_TWR: \nLINE1\nLINE2\nLINE3"));
     }
 
+    /** Verifies detail formatting for system notifications. */
     @Test
     public void testGetDetailFormatSystemMessage() {
         AcarsMessage msg = new AcarsMessage("system", "Connected as KLM123");
@@ -55,6 +61,7 @@ public class AcarsMessageTest {
         assertTrue(detail.contains("SYSTEM:\nConnected as KLM123"));
     }
 
+    /** Verifies directional flag detection for incoming vs outgoing messages. */
     @Test
     public void testIsOutgoingFlag() {
         AcarsMessage outgoingMsg = new AcarsMessage("KLM123", "cpdlc", "EHAM_TWR", "REQUEST LEVEL 350", true);

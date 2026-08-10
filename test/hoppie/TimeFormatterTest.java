@@ -7,8 +7,10 @@ import java.util.TimeZone;
 
 import static org.junit.Assert.*;
 
+/** Tests Zulu (UTC) time formatting utility in TimeFormatter. */
 public class TimeFormatterTest {
 
+    /** Verifies formatting of Date objects to HH:mmZ string representation. */
     @Test
     public void testZuluTimeFormatting() {
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));

@@ -5,8 +5,10 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
+/** Tests regex parsing of poll response bodies from the Hoppie network in HoppieAPI. */
 public class HoppieAPIPollParsingTest {
 
+    /** Verifies parsing of poll response bodies containing multiple CPDLC and telex messages. */
     @Test
     public void testParsePollResponseBodyMultipleMessages() {
         String body = "ok {EHAM_TWR cpdlc {/data2/1//WU/LOGON ACCEPTED}} {EDDF_APP telex {WEATHER ADVISORY 1200Z}}";
@@ -33,6 +35,7 @@ public class HoppieAPIPollParsingTest {
         assertEquals("WEATHER ADVISORY 1200Z", telexMsg.getMessage());
     }
 
+    /** Verifies parsing when poll response body contains no new messages ("ok {}"). */
     @Test
     public void testParsePollResponseBodyEmpty() {
         String body = "ok {}";

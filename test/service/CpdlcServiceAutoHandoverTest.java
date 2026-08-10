@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 
+/** Tests automatic ATC logon, handover, and logoff transitions in CpdlcService. */
 public class CpdlcServiceAutoHandoverTest {
 
     private CpdlcService service;
@@ -18,6 +19,7 @@ public class CpdlcServiceAutoHandoverTest {
         service = new CpdlcService("THY100", "TESTHOPPIEID");
     }
 
+    /** Verifies automatic logoff trigger on incoming LOGOFF or SERVICE TERMINATED messages. */
     @Test
     public void testAutoLogoffTriggeredOnLogoffMessage() {
         AtomicBoolean autoLogoffFired = new AtomicBoolean(false);
@@ -56,6 +58,7 @@ public class CpdlcServiceAutoHandoverTest {
         assertEquals("EBBU", logoffStation.get());
     }
 
+    /** Verifies automatic handover trigger and station transition when receiving a HANDOVER message. */
     @Test
     public void testAutoHandoverTriggeredOnHandoverMessage() {
         AtomicBoolean autoHandoverFired = new AtomicBoolean(false);
@@ -101,6 +104,7 @@ public class CpdlcServiceAutoHandoverTest {
         assertEquals("", service.getNextATS());
     }
 
+    /** Verifies that nextATS field is cleared once pending station becomes the active currentATS. */
     @Test
     public void testNextATSClearedWhenStationBecomesCurrentATS() {
         service.setNextATS("EDGG");

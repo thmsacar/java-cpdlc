@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 
 import static org.junit.Assert.*;
 
+/** Tests dynamic burst polling behavior and interval clamping in CpdlcService. */
 public class CpdlcServicePollingTest {
 
     private CpdlcService service;
@@ -18,6 +19,7 @@ public class CpdlcServicePollingTest {
         service = new CpdlcService("KLM123", "TESTHOPPIEID");
     }
 
+    /** Verifies that sending a request sets burstUntilTimestamp 60s in the future. */
     @Test
     public void testTriggerFastPollingBurstSetsTimestamp() throws Exception {
         Field burstUntilField = CpdlcService.class.getDeclaredField("burstUntilTimestamp");
@@ -32,6 +34,7 @@ public class CpdlcServicePollingTest {
         assertTrue("Burst timestamp should be set in the future (~60s)", after > System.currentTimeMillis());
     }
 
+    /** Verifies that sending a WILCO/UNABLE response does not trigger burst mode. */
     @Test
     public void testSendResponseDoesNotTriggerBurst() throws Exception {
         Field burstUntilField = CpdlcService.class.getDeclaredField("burstUntilTimestamp");
@@ -44,6 +47,7 @@ public class CpdlcServicePollingTest {
         assertEquals("sendResponse should NOT trigger fast polling burst", 0L, burstTimestamp);
     }
 
+    /** Verifies that burst polling clamps delays without interrupting active short tasks. */
     @Test
     public void testClampingBehaviorWhenTaskHasShortDelay() throws Exception {
         Field currentFetchFutureField = CpdlcService.class.getDeclaredField("currentFetchFuture");

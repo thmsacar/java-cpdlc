@@ -7,6 +7,7 @@ import java.util.prefs.Preferences;
 
 import static org.junit.Assert.*;
 
+/** Tests persistent user preference storage and retrieval in UserPreferences using an isolated node. */
 public class UserPreferencesTest {
 
     private Preferences testPrefs;
@@ -26,6 +27,7 @@ public class UserPreferencesTest {
         UserPreferences.setPreferencesNode(null); // Reset back to default production node
     }
 
+    /** Verifies getting and setting callsign, Hoppie ID, and Simbrief ID user preferences. */
     @Test
     public void testUserPreferencesGetSet() {
         String testCallsign = "THY123";

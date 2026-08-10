@@ -1,32 +1,49 @@
 package hoppie;
 
 import org.junit.Test;
+import java.lang.reflect.Method;
+
 import static org.junit.Assert.*;
 
+/** Tests URL parameter encoding, full URL construction, and slash sanitization in HoppieAPI. */
 public class HoppieUrlEncodingTest {
 
-    @Test
-    public void testEncodeParam() {
-        // Spaces should be encoded as '+'
-        assertEquals("HELLO+WORLD", HoppieAPI.encodeParam("HELLO WORLD"));
-
-        // Special query characters (&, #, +, =) should be safely percentage-encoded
-        assertEquals("ATIS+%26+METAR%231", HoppieAPI.encodeParam("ATIS & METAR#1"));
-        assertEquals("%2B1000FT", HoppieAPI.encodeParam("+1000FT"));
-        assertEquals("PARAM%3DVALUE", HoppieAPI.encodeParam("PARAM=VALUE"));
-
-        // Forward slashes should be preserved for CPDLC message headers
-        assertEquals("/data2/1//WU/REQUEST+DIRECT", HoppieAPI.encodeParam("/data2/1//WU/REQUEST DIRECT"));
-
-        // Null and empty strings
-        assertEquals("", HoppieAPI.encodeParam(null));
-        assertEquals("", HoppieAPI.encodeParam(""));
+    private String invokeEncodeParam(String param) throws Exception {
+        Method method = HoppieAPI.class.getDeclaredMethod("encodeParam", String.class);
+        method.setAccessible(true);
+        return (String) method.invoke(null, param);
     }
 
+    private String invokeCreateFullUrl(HoppieAPI api, String from, String to, String type, String packet) throws Exception {
+        Method method = HoppieAPI.class.getDeclaredMethod("createFullUrl", String.class, String.class, String.class, String.class);
+        method.setAccessible(true);
+        return (String) method.invoke(api, from, to, type, packet);
+    }
+
+    /** Verifies URL parameter encoding while preserving CPDLC header slashes. */
     @Test
-    public void testCreateFullUrl() {
+    public void testEncodeParam() throws Exception {
+        // Spaces should be encoded as '+'
+        assertEquals("HELLO+WORLD", invokeEncodeParam("HELLO WORLD"));
+
+        // Special query characters (&, #, +, =) should be safely percentage-encoded
+        assertEquals("ATIS+%26+METAR%231", invokeEncodeParam("ATIS & METAR#1"));
+        assertEquals("%2B1000FT", invokeEncodeParam("+1000FT"));
+        assertEquals("PARAM%3DVALUE", invokeEncodeParam("PARAM=VALUE"));
+
+        // Forward slashes should be preserved for CPDLC message headers
+        assertEquals("/data2/1//WU/REQUEST+DIRECT", invokeEncodeParam("/data2/1//WU/REQUEST DIRECT"));
+
+        // Null and empty strings
+        assertEquals("", invokeEncodeParam(null));
+        assertEquals("", invokeEncodeParam(""));
+    }
+
+    /** Verifies full URL query parameter construction for Hoppie network requests. */
+    @Test
+    public void testCreateFullUrl() throws Exception {
         HoppieAPI api = new HoppieAPI("TESTLOGON123");
-        String url = api.createFullUrl("KLM123", "EDGG_CTR", "cpdlc", "/data2/1//WU/CLIMB TO FL350 & MAINTAIN");
+        String url = invokeCreateFullUrl(api, "KLM123", "EDGG_CTR", "cpdlc", "/data2/1//WU/CLIMB TO FL350 & MAINTAIN");
 
         assertTrue(url.startsWith("http://www.hoppie.nl/acars/system/connect.html/connect.html?"));
         assertTrue(url.contains("logon=TESTLOGON123"));
@@ -36,6 +53,7 @@ public class HoppieUrlEncodingTest {
         assertTrue(url.contains("packet=/data2/1//WU/CLIMB+TO+FL350+%26+MAINTAIN"));
     }
 
+    /** Verifies user text sanitization replacing ASCII slashes with Unicode division slashes. */
     @Test
     public void testSafeUserText() {
         assertEquals("CLIMB 5000∕FL100", HoppieAPI.safeUserText("CLIMB 5000/FL100"));

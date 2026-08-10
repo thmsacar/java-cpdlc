@@ -85,7 +85,7 @@ public class HoppieAPI {
     }
 
     /** Constructs the full Hoppie API URL with query parameters. */
-    String createFullUrl(String from, String to, String type, String packet) {
+    private String createFullUrl(String from, String to, String type, String packet) {
         return urlStr
                 + "?logon=" + encodeParam(logon)
                 + "&from=" + encodeParam(from)
@@ -94,7 +94,7 @@ public class HoppieAPI {
                 + "&packet=" + encodeParam(packet);
     }
 
-    static String encodeParam(String param) {
+    private static String encodeParam(String param) {
         if (param == null) return "";
         try {
             return URLEncoder.encode(param, "UTF-8").replace("%2F", "/");

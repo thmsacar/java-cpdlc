@@ -3,8 +3,10 @@ package service;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+/** Tests semantic version comparison and GitHub API release checking in UpdateChecker. */
 public class UpdateCheckerTest {
 
+    /** Verifies cleaning of prefix characters from version tags. */
     @Test
     public void testCleanVersionString() {
         assertEquals("1.1.2", UpdateChecker.cleanVersionString("v1.1.2"));
@@ -13,6 +15,7 @@ public class UpdateCheckerTest {
         assertEquals("", UpdateChecker.cleanVersionString(null));
     }
 
+    /** Verifies semantic versioning comparison logic. */
     @Test
     public void testIsNewerVersion() {
         // Newer version cases
@@ -30,6 +33,7 @@ public class UpdateCheckerTest {
         assertFalse(UpdateChecker.isNewerVersion("1.1.2", ""));
     }
 
+    /** Verifies online fetching of the latest release from the GitHub Releases API. */
     @Test
     public void testFetchLatestRelease() {
         try {
