@@ -340,8 +340,8 @@ public class CduController implements CpdlcListener {
         if (newState == ConnectionState.CONNECTED) {
             setExecLed(true);
             setFailLed(false);
-            if (statusMessage != null && statusMessage.startsWith("AUTO LOGOFF")) {
-                // Preserve AUTO LOGOFF status message
+            if (statusMessage != null && (statusMessage.startsWith("AUTO LOGOFF") || statusMessage.startsWith("AUTO HANDOVER"))) {
+                // Preserve AUTO LOGOFF and AUTO HANDOVER status message
             } else if (service != null && service.isLoggedOn()) {
                 statusMessage = "LOGGED TO " + service.getCurrentATS();
             } else {

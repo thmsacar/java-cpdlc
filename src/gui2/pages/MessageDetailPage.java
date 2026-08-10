@@ -87,24 +87,27 @@ public class MessageDetailPage implements CduPage {
         if (hasReplyPrompts) {
             CpdlcMessage cpdlc = (CpdlcMessage) message;
             if (cpdlc.hasBeenReplied()) {
-                String sent = cpdlc.getSentResponse() != null ? cpdlc.getSentResponse().toUpperCase() : "";
+                String sent = cpdlc.getSentResponse() != null ? cpdlc.getSentResponse().toUpperCase(Locale.ENGLISH) : "";
                 if ("WILCO".equals(sent) || "STANDBY".equals(sent) || "AFFIRM".equals(sent) || "ROGER".equals(sent)) {
                     display.setLine(3, new LineItem("", "<" + sent, DisplayColor.WHITE_DIM), new LineItem("", "", DisplayColor.WHITE));
                 } else if ("UNABLE".equals(sent) || "NEGATIVE".equals(sent)) {
                     display.setLine(3, new LineItem("", "", DisplayColor.WHITE), new LineItem("", sent + ">", DisplayColor.WHITE_DIM));
+                } else {
+                    display.setLine(3, new LineItem("", "<REPLIED FREE TEXT", DisplayColor.WHITE_DIM), new LineItem("", "", DisplayColor.WHITE));
                 }
             } else {
                 switch (cpdlc.getParsedResponseType()) {
                     case WILCO_UNABLE:
                         display.setLine(3, new LineItem("", "<WILCO", DisplayColor.GREEN), new LineItem("", "UNABLE>", DisplayColor.AMBER));
-                        display.setLine(4, new LineItem("", "<STANDBY", DisplayColor.AMBER), new LineItem("", "", DisplayColor.WHITE));
+                        display.setLine(4, new LineItem("", "<STANDBY", DisplayColor.AMBER), new LineItem("", "FREE TEXT>", DisplayColor.WHITE));
                         break;
                     case AFFIRM_NEGATIVE:
                         display.setLine(3, new LineItem("", "<AFFIRM", DisplayColor.GREEN), new LineItem("", "NEGATIVE>", DisplayColor.AMBER));
-                        display.setLine(4, new LineItem("", "<STANDBY", DisplayColor.AMBER), new LineItem("", "", DisplayColor.WHITE));
+                        display.setLine(4, new LineItem("", "<STANDBY", DisplayColor.AMBER), new LineItem("", "FREE TEXT>", DisplayColor.WHITE));
                         break;
                     case ROGER:
                         display.setLine(3, new LineItem("", "<ROGER", DisplayColor.CYAN), new LineItem("", "STANDBY>", DisplayColor.AMBER));
+                        display.setLine(4, new LineItem("", "", DisplayColor.WHITE), new LineItem("", "FREE TEXT>", DisplayColor.WHITE));
                         break;
                     case NONE:
                     default:
@@ -155,6 +158,8 @@ public class MessageDetailPage implements CduPage {
 
     @Override
     public void onLskPressed(int index, boolean isLeft, String scratchpad, CduController controller) {
+        String input = scratchpad != null ? scratchpad.trim().toUpperCase(Locale.ENGLISH) : "";
+
         if (isLeft && index == 5) { // LSK 6L: <BACK
             controller.popPage();
             return;
@@ -184,6 +189,17 @@ public class MessageDetailPage implements CduPage {
                 return;
             }
 
+            // LSK 5R: FREE TEXT>
+            if (!isLeft && index == 4) {
+                if (input != null && !input.trim().isEmpty()) {
+                    sendResponse(input.trim(), controller);
+                    controller.clearScratchpad();
+                } else {
+                    controller.setStatusMessage("ENTER FREE TEXT");
+                }
+                return;
+            }
+
             switch (cpdlc.getParsedResponseType()) {
                 case WILCO_UNABLE:
                     if (isLeft && index == 3) sendResponse("WILCO", controller);
@@ -197,6 +213,7 @@ public class MessageDetailPage implements CduPage {
                     break;
                 case ROGER:
                     if (isLeft && index == 3) sendResponse("ROGER", controller);
+                    if (!isLeft && index == 3) sendResponse("STANDBY", controller);
                     if (isLeft && index == 4) sendResponse("STANDBY", controller);
                     break;
                 case NONE:

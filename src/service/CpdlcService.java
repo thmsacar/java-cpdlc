@@ -42,10 +42,10 @@ public class CpdlcService {
     private String nextATS = "";
     /** Standard idle polling interval of 40 seconds ({@link #DEFAULT_POLL_INTERVAL_MS}). */
     private static final long DEFAULT_POLL_INTERVAL_MS = 40_000L;
-    /** Accelerated burst polling interval of 15 seconds ({@link #BURST_POLL_INTERVAL_MS}). */
-    private static final long BURST_POLL_INTERVAL_MS = 15_000L;
-    /** Duration of burst polling mode for 1 minute / 60 seconds ({@link #BURST_DURATION_MS}). */
-    private static final long BURST_DURATION_MS = 60_000L;
+    /** Accelerated burst polling interval of 20 seconds ({@link #BURST_POLL_INTERVAL_MS}). */
+    private static final long BURST_POLL_INTERVAL_MS = 20_000L;
+    /** Duration of burst polling mode for 40 seconds ({@link #BURST_DURATION_MS}). */
+    private static final long BURST_DURATION_MS = 40_000L;
 
     /** Expiry timestamp until which accelerated polling ({@link #BURST_POLL_INTERVAL_MS}) is active. */
     private volatile long burstUntilTimestamp = 0L;
@@ -186,8 +186,8 @@ public class CpdlcService {
     }
 
     /**
-     * Triggers 15-second accelerated burst polling ({@link #BURST_POLL_INTERVAL_MS}) for 1 minute ({@link #BURST_DURATION_MS}) after sending an outgoing message or request.
-     * Clamps the next poll delay to 15 seconds max if the remaining delay exceeds 15 seconds.
+     * Triggers 20-second accelerated burst polling ({@link #BURST_POLL_INTERVAL_MS}) for 1 minute ({@link #BURST_DURATION_MS}) after sending an outgoing message or request.
+     * Clamps the next poll delay to 20 seconds max if the remaining delay exceeds 20 seconds.
      */
     public synchronized void triggerFastPollingBurst() {
         this.burstUntilTimestamp = System.currentTimeMillis() + BURST_DURATION_MS;
@@ -196,7 +196,7 @@ public class CpdlcService {
                 ? currentFetchFuture.getDelay(TimeUnit.MILLISECONDS) 
                 : -1L;
 
-        // If more than 15 seconds remaining (e.g. 35s left), clamp next fetch to 15 seconds
+        // If more than 20 seconds remaining (e.g. 35s left), clamp next fetch to 20 seconds
         if (remainingMs > BURST_POLL_INTERVAL_MS || remainingMs <= 0) {
             if (fetcherService != null && !fetcherService.isShutdown()) {
                 fetcherService.shutdownNow();
@@ -204,7 +204,7 @@ public class CpdlcService {
                 scheduleNextFetch(BURST_POLL_INTERVAL_MS, TimeUnit.MILLISECONDS);
             }
         }
-        // If 15 seconds or less remaining (e.g. 2s left), leave the pending task to fire on its schedule!
+        // If 20 seconds or less remaining (e.g. 2s left), leave the pending task to fire on its schedule!
     }
 
     /** Checks if an incoming system message is a duplicate of the last message. */
@@ -366,7 +366,6 @@ public class CpdlcService {
 
     /** Sends a CPDLC logoff request to the active ATS station. */
     public void sendLogoff() {
-        triggerFastPollingBurst();
         executeAsync(() -> {
             AcarsMessage msg = hoppieAPI.sendLogoffATC(currentATS, callsign);
             msg.setRead(true);
@@ -400,23 +399,30 @@ public class CpdlcService {
         });
     }
 
-    /** Sends a response (WILCO, UNABLE, ROGER, etc.) to an incoming CPDLC message. */
+    /** Sends a response (WILCO, UNABLE, ROGER, or free text) to an incoming CPDLC message. */
     public void sendResponse(String responseType, CpdlcMessage originalMsg) {
+        if (responseType == null || responseType.trim().isEmpty() || originalMsg == null) return;
+        String cleanType = responseType.trim().toUpperCase(java.util.Locale.ENGLISH);
         executeAsync(() -> {
-            AcarsMessage acarsMsg = null;
-            switch (responseType.toUpperCase()) {
+            AcarsMessage acarsMsg;
+            switch (cleanType) {
                 case "WILCO": acarsMsg = hoppieAPI.wilco(originalMsg.getFrom(), callsign, originalMsg.getMsgNumber()); break;
                 case "UNABLE": acarsMsg = hoppieAPI.unable(originalMsg.getFrom(), callsign, originalMsg.getMsgNumber()); break;
                 case "ROGER": acarsMsg = hoppieAPI.roger(originalMsg.getFrom(), callsign, originalMsg.getMsgNumber()); break;
                 case "STANDBY": acarsMsg = hoppieAPI.standby(originalMsg.getFrom(), callsign, originalMsg.getMsgNumber()); break;
                 case "AFFIRM": acarsMsg = hoppieAPI.affirm(originalMsg.getFrom(), callsign, originalMsg.getMsgNumber()); break;
                 case "NEGATIVE": acarsMsg = hoppieAPI.negative(originalMsg.getFrom(), callsign, originalMsg.getMsgNumber()); break;
+                default:
+                    // Custom free text reply
+                    acarsMsg = hoppieAPI.cpdlcRequest(originalMsg.getFrom(), callsign, cleanType, false, originalMsg.getMsgNumber());
+                    break;
             }
             if (acarsMsg != null) {
                 // Only mark original message as replied AND save response locally IF network transmission succeeded
+                // Exception: STANDBY does not flag the original message as replied, but is added to local message list
                 if (!acarsMsg.getType().equalsIgnoreCase("system")) {
-                    if (originalMsg != null) {
-                        originalMsg.setSentResponse(responseType);
+                    if (!"STANDBY".equalsIgnoreCase(cleanType)) {
+                        originalMsg.setSentResponse(cleanType);
                     }
                     addMessage(acarsMsg);
                 } else {

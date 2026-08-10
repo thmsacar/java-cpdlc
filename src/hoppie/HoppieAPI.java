@@ -302,7 +302,7 @@ public class HoppieAPI {
     }
 
     /** Formats and sends a CPDLC response packet. */
-    private AcarsMessage cpdlcRequest(String station, String callsign, String text, boolean isReplyRequired, int repliedMsg) {
+    public AcarsMessage cpdlcRequest(String station, String callsign, String text, boolean isReplyRequired, int repliedMsg) {
         String replyReq = isReplyRequired ? "Y" : "N";
         String cleanStation = safeUserText(station);
         String cleanCallsign = safeUserText(callsign);

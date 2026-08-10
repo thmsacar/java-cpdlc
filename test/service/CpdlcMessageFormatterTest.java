@@ -69,10 +69,10 @@ public class CpdlcMessageFormatterTest {
     /** Verifies formatting of position report payload strings. */
     @Test
     public void testFormatPositionReport() {
-        assertEquals("POSITION ABEAM AT 1234 LEVEL 350", 
+        assertEquals("POSITION ABEAM AT 1234Z LEVEL 350", 
             CpdlcMessageFormatter.formatPositionReport("ABEAM", "1234", "350", "", "", ""));
         
-        assertEquals("POSITION ABEAM AT 1234 LEVEL 350@THEREAFTER DIRECT@ESTIMATING NAVIX AT 1300", 
+        assertEquals("POSITION ABEAM AT 1234Z LEVEL 350@ESTIMATING NAVIX AT 1300@THEREAFTER DIRECT", 
             CpdlcMessageFormatter.formatPositionReport("ABEAM", "1234", "350", "DIRECT", "NAVIX", "1300"));
         
         assertNull(CpdlcMessageFormatter.formatPositionReport("", "1234", "350", "", "", ""));
