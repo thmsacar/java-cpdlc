@@ -64,6 +64,7 @@ public class LogonATCPanel extends JPanel {
         JTextArea messageArea = new JTextArea();
         messageArea.setFont(new Font(DashboardPanel.UI_FONT, Font.PLAIN, 14));
         messageArea.setLineWrap(true);
+        messageArea.getInputMap().put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER, 0), "none");
         ((AbstractDocument) messageArea.getDocument()).setDocumentFilter(new UppercaseFilter());
 
         JScrollPane scrollPane = new JScrollPane(messageArea);

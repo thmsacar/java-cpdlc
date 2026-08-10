@@ -53,11 +53,13 @@ public class HoppieUrlEncodingTest {
         assertTrue(url.contains("packet=/data2/1//WU/CLIMB+TO+FL350+%26+MAINTAIN"));
     }
 
-    /** Verifies user text sanitization replacing ASCII slashes with Unicode division slashes. */
+    /** Verifies user text sanitization replacing ASCII slashes with Unicode division slashes and stripping newlines. */
     @Test
     public void testSafeUserText() {
         assertEquals("CLIMB 5000∕FL100", HoppieAPI.safeUserText("CLIMB 5000/FL100"));
         assertEquals("EDGG∕CTR", HoppieAPI.safeUserText("EDGG/CTR"));
+        assertEquals("REMARK LINE 1 REMARK LINE 2", HoppieAPI.safeUserText("REMARK LINE 1\n REMARK LINE 2"));
+        assertEquals("REMARK LINE 1REMARK LINE 2", HoppieAPI.safeUserText("REMARK LINE 1\r\nREMARK LINE 2"));
         assertEquals("", HoppieAPI.safeUserText(null));
     }
 

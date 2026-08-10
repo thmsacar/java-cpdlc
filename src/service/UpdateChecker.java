@@ -15,7 +15,7 @@ import java.net.URL;
 public class UpdateChecker {
 
     /** Current application version string. */
-    public static final String CURRENT_VERSION = "1.3.0";
+    public static final String CURRENT_VERSION = "1.3.1";
     private static final String GITHUB_RELEASES_API = "https://api.github.com/repos/thmsacar/java-cpdlc/releases/latest";
 
     /**

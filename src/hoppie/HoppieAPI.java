@@ -232,7 +232,7 @@ public class HoppieAPI {
      */
     public static String safeUserText(String text) {
         if (text == null) return "";
-        return text.replace('/', '\u2215').trim();
+        return text.replaceAll("[\r\n]", "").replace('/', '\u2215').trim();
     }
 
     /**

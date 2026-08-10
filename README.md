@@ -30,7 +30,7 @@ The project uses **Maven** for the build process, so no manual library downloads
    ```
 2. **Run:** After the build is complete, you can find the executable JAR file in the target folder. You can launch the application by double-clicking the JAR file or using the following command: 
    ```bash
-   java -jar target/java-cpdlc-1.3.0.jar
+   java -jar target/java-cpdlc-1.3.1.jar
    ```
    
 ## Usage
