@@ -53,27 +53,51 @@ jobs:
           echo "VERSION=draft" >> $GITHUB_ENV
         fi
 
-    - name: Pack Application with jpackage
+    - name: Pack Default Application with jpackage
       shell: bash
       run: |
-        MAIN_JAR=$(ls target/*.jar | head -n 1)
+        mkdir -p target/default_input
+        cp target/java-cpdlc-${{ env.VERSION }}.jar target/default_input/ || cp target/java-cpdlc-*.jar target/default_input/
+        rm -f target/default_input/*-legacy.jar
+        DEFAULT_JAR=$(basename target/default_input/*.jar)
         EXTRA_OPTS=""
         if [ "${{ matrix.os }}" == "windows-latest" ]; then
           EXTRA_OPTS="--win-shortcut --win-menu --win-dir-chooser --win-menu-group JavaCPDLC"
         fi
         jpackage \
           --name "JavaCPDLC" \
-          --input target/ \
-          --main-jar $(basename $MAIN_JAR) \
+          --input target/default_input/ \
+          --main-jar "$DEFAULT_JAR" \
           --type ${{ matrix.pkg_type }} \
           --icon src/resources/icon.${{ matrix.icon_ext }} \
           --app-version ${{ env.VERSION == 'draft' && '1.0.0' || env.VERSION }} \
           $EXTRA_OPTS
 
-    - name: Prepare JAR for Release
+    - name: Pack Legacy Application with jpackage
       shell: bash
       run: |
-        cp target/*.jar JavaCPDLC-v${{ env.VERSION }}.jar
+        mkdir -p target/legacy_input
+        cp target/*-legacy.jar target/legacy_input/
+        LEGACY_JAR=$(basename target/legacy_input/*-legacy.jar)
+        EXTRA_OPTS=""
+        if [ "${{ matrix.os }}" == "windows-latest" ]; then
+          EXTRA_OPTS="--win-shortcut --win-menu --win-dir-chooser --win-menu-group JavaCPDLC"
+        fi
+        jpackage \
+          --name "JavaCPDLC-Legacy" \
+          --input target/legacy_input/ \
+          --main-jar "$LEGACY_JAR" \
+          --type ${{ matrix.pkg_type }} \
+          --icon src/resources/icon.${{ matrix.icon_ext }} \
+          --app-version ${{ env.VERSION == 'draft' && '1.0.0' || env.VERSION }} \
+          $EXTRA_OPTS
+
+    - name: Prepare JARs for Release
+      shell: bash
+      run: |
+        DEFAULT_JAR_FILE=$(ls target/java-cpdlc-*.jar | grep -v 'legacy' | head -n 1)
+        cp "$DEFAULT_JAR_FILE" JavaCPDLC-v${{ env.VERSION }}.jar
+        cp target/*-legacy.jar JavaCPDLC-Legacy-v${{ env.VERSION }}.jar
 
     - name: Create or Update Release
       if: startsWith(github.ref, 'refs/tags/')
