@@ -143,11 +143,11 @@ public class MessageDetailPage implements CduPage {
             while (line.length() > maxLen) {
                 int splitIdx = line.lastIndexOf(' ', maxLen);
                 if (splitIdx <= 0) splitIdx = maxLen;
-                result.add(line.substring(0, splitIdx).trim());
+                result.add(line.substring(0, splitIdx).trim().toUpperCase(Locale.ENGLISH));
                 line = line.substring(splitIdx).trim();
             }
             if (!line.isEmpty()) {
-                result.add(line);
+                result.add(line.toUpperCase(Locale.ENGLISH));
             }
         }
         return result;
@@ -209,7 +209,6 @@ public class MessageDetailPage implements CduPage {
     private void sendResponse(String type, CduController controller) {
         if (controller.getService() != null && message instanceof CpdlcMessage) {
             CpdlcMessage cpdlc = (CpdlcMessage) message;
-            cpdlc.setSentResponse(type);
             controller.getService().sendResponse(type, cpdlc);
             controller.setStatusMessage("CPDLC TO " + message.getFrom());
             controller.popPage();

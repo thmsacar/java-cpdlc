@@ -49,6 +49,7 @@ public class CpdlcService {
 
     /** Expiry timestamp until which accelerated polling ({@link #BURST_POLL_INTERVAL_MS}) is active. */
     private volatile long burstUntilTimestamp = 0L;
+    private volatile ConnectionState connectionState = ConnectionState.DISCONNECTED;
     private ScheduledExecutorService fetcherService;
     private ScheduledFuture<?> currentFetchFuture;
 
@@ -121,11 +122,13 @@ public class CpdlcService {
 
     /** Asynchronously checks connection to the Hoppie network. */
     private void checkInitialConnection() {
+        setConnectionState(ConnectionState.CONNECTING);
         new Thread(() -> {
             AcarsMessage connectionMsg = hoppieAPI.checkConnection(callsign);
             connectionMsg.setRead(true);
             addMessage(connectionMsg);
-            notifyConnectionStatus(!connectionMsg.getMessage().startsWith("ERROR"));
+            boolean isOk = !connectionMsg.getMessage().startsWith("ERROR");
+            setConnectionState(isOk ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED);
 //            populateMockData();
         }).start();
     }
@@ -151,17 +154,23 @@ public class CpdlcService {
             // Fetch unread messages from Hoppie server for current callsign
             List<AcarsMessage> newMessages = hoppieAPI.fetchMessages(this.callsign);
             if (!newMessages.isEmpty()) {
-                for (AcarsMessage msg : newMessages) {
-                    if (isDuplicateSystemMessage(msg)) continue;
-                    addMessage(msg);
+                // Filter out network fetch errors to prevent inbox spam, warning sound spam, and LED flicker
+                if (newMessages.size() == 1 && newMessages.get(0).getType().equalsIgnoreCase("system")
+                        && newMessages.get(0).getMessage().startsWith("ERROR:")) {
+                    setConnectionState(connectionState == ConnectionState.CONNECTED ? ConnectionState.RECONNECTING : ConnectionState.DISCONNECTED);
+                } else {
+                    for (AcarsMessage msg : newMessages) {
+                        if (isDuplicateSystemMessage(msg)) continue;
+                        addMessage(msg);
+                    }
+                    setConnectionState(ConnectionState.CONNECTED);
                 }
-                notifyConnectionStatus(true);
             } else {
-                notifyConnectionStatus(true);
+                setConnectionState(ConnectionState.CONNECTED);
             }
         } catch (Exception e) {
             notifyError("Fetch error: " + e.getMessage());
-            notifyConnectionStatus(false);
+            setConnectionState(connectionState == ConnectionState.CONNECTED ? ConnectionState.RECONNECTING : ConnectionState.DISCONNECTED);
         } finally {
             // Determine next polling delay: BURST_POLL_INTERVAL_MS (15s) if burst mode is active, otherwise DEFAULT_POLL_INTERVAL_MS (40s)
             long nextDelay = (System.currentTimeMillis() < burstUntilTimestamp) 
@@ -343,6 +352,8 @@ public class CpdlcService {
             if (!msg.getType().equalsIgnoreCase("system")) {
                 this.pendingLogonStation = station.trim();
                 notifyConnectionStatus(true);
+            } else {
+                this.pendingLogonStation = "";
             }
             addMessage(msg);
         });
@@ -386,9 +397,6 @@ public class CpdlcService {
 
     /** Sends a response (WILCO, UNABLE, ROGER, etc.) to an incoming CPDLC message. */
     public void sendResponse(String responseType, CpdlcMessage originalMsg) {
-        if (originalMsg != null) {
-            originalMsg.setSentResponse(responseType);
-        }
         executeAsync(() -> {
             AcarsMessage acarsMsg = null;
             switch (responseType.toUpperCase()) {
@@ -400,7 +408,15 @@ public class CpdlcService {
                 case "NEGATIVE": acarsMsg = hoppieAPI.negative(originalMsg.getFrom(), callsign, originalMsg.getMsgNumber()); break;
             }
             if (acarsMsg != null) {
-                addMessage(acarsMsg);
+                // Only mark original message as replied AND save response locally IF network transmission succeeded
+                if (!acarsMsg.getType().equalsIgnoreCase("system")) {
+                    if (originalMsg != null) {
+                        originalMsg.setSentResponse(responseType);
+                    }
+                    addMessage(acarsMsg);
+                } else {
+                    notifyError(acarsMsg.getMessage());
+                }
             }
         });
     }
@@ -459,6 +475,20 @@ public class CpdlcService {
         for (CpdlcListener l : listeners) {
             l.onConnectionStatusChanged(isConnected);
         }
+    }
+
+    public ConnectionState getConnectionState() {
+        return connectionState;
+    }
+
+    public synchronized void setConnectionState(ConnectionState newState) {
+        if (newState == null || this.connectionState == newState) return;
+        ConnectionState oldState = this.connectionState;
+        this.connectionState = newState;
+        for (CpdlcListener l : listeners) {
+            l.onConnectionStateChanged(oldState, newState);
+        }
+        notifyConnectionStatus(newState == ConnectionState.CONNECTED);
     }
 
     private void notifyError(String error) {

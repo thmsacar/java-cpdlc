@@ -12,4 +12,5 @@ public interface CpdlcListener {
 
     default void onAutoLogoff(String station) {}
     default void onAutoHandover(String nextStation) {}
+    default void onConnectionStateChanged(ConnectionState oldState, ConnectionState newState) {}
 }

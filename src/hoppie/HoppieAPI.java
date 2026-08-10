@@ -10,6 +10,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -33,10 +34,10 @@ public class HoppieAPI {
 
 
 
-    private final String urlStr = "http://www.hoppie.nl/acars/system/connect.html/connect.html";
+    private final String urlStr = "https://www.hoppie.nl/acars/system/connect.html/connect.html";
     private final String logon;
     /** Counter for generating unique CPDLC message sequence numbers. */
-    private int cpdlcCounter;
+    private final AtomicInteger cpdlcCounter;
 
     /** Wrapper for HTTP status code and response body. */
     public static class HoppieResponse {
@@ -57,9 +58,32 @@ public class HoppieAPI {
      */
     public HoppieAPI(String logon) {
         this.logon = logon;
-        this.cpdlcCounter = 1;
+        this.cpdlcCounter = new AtomicInteger(1);
         // Java 8 HTTPS/TLS force protocol to avoid errors
         System.setProperty("https.protocols", "TLSv1.2");
+    }
+
+    /** Sends a raw HTTP GET request with automatic retry for transient failures. */
+    private HoppieResponse sendHttpRequestWithRetry(String fullUrl, int maxRetries) throws IOException {
+        IOException lastException = null;
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                HoppieResponse response = sendHttpRequest(fullUrl);
+                // Retry on server-side HTTP 5xx errors (500, 502, 503, 504)
+                if (response.statusCode() >= 500 && attempt < maxRetries) {
+                    try { Thread.sleep(300L * attempt); } catch (InterruptedException ignored) {}
+                    continue;
+                }
+                return response;
+            } catch (IOException e) {
+                lastException = e;
+                if (attempt < maxRetries) {
+                    try { Thread.sleep(300L * attempt); } catch (InterruptedException ignored) {}
+                }
+            }
+        }
+        if (lastException != null) throw lastException;
+        throw new IOException("Network request failed after " + maxRetries + " attempts");
     }
 
     /** Sends a raw HTTP GET request to the given URL. */
@@ -84,6 +108,25 @@ public class HoppieAPI {
         return new HoppieResponse(status, body);
     }
 
+    /** Parses error responses from Hoppie server payloads or HTTP status codes. */
+    public static String parseErrorMessage(HoppieResponse response) {
+        if (response == null) return "ERROR: No response from server";
+        String body = response.body() != null ? response.body().trim() : "";
+
+        // Check for Hoppie payload error pattern: error {reason}
+        Pattern p = Pattern.compile("error\\s*\\{([^}]+)\\}", Pattern.CASE_INSENSITIVE);
+        Matcher m = p.matcher(body);
+        if (m.find()) {
+            return "ERROR: " + m.group(1).trim();
+        }
+
+        if (response.statusCode() >= 400) {
+            return "ERROR: HTTP " + response.statusCode() + (body.isEmpty() ? "" : " (" + body + ")");
+        }
+
+        return body.startsWith("ERROR:") ? body : "ERROR: " + body;
+    }
+
     /** Constructs the full Hoppie API URL with query parameters. */
     private String createFullUrl(String from, String to, String type, String packet) {
         return urlStr
@@ -106,7 +149,7 @@ public class HoppieAPI {
     /** Sends a poll request to fetch unread messages from the server. */
     private HoppieResponse pollRequest(String callsign) throws IOException {
         String url = createFullUrl(callsign, "SERVER", "poll", "");
-        return sendHttpRequest(url);
+        return sendHttpRequestWithRetry(url, 2);
     }
 
     /**
@@ -121,12 +164,12 @@ public class HoppieAPI {
         try {
             response = pollRequest(callsign);
         } catch (IOException e) {
-            list.add(new AcarsMessage("system", "ERROR: "+e.getMessage()));
+            list.add(new AcarsMessage("system", "ERROR: " + e.getMessage()));
             return list;
         }
 
-        if(!response.body().trim().startsWith("ok")) {
-            list.add(new AcarsMessage("system", "ERROR: "+response.body()));
+        if (!response.body().trim().startsWith("ok")) {
+            list.add(new AcarsMessage("system", parseErrorMessage(response)));
             return list;
         }
 
@@ -136,6 +179,8 @@ public class HoppieAPI {
     /** Parses raw Hoppie poll response body into a list of AcarsMessages. */
     public static List<AcarsMessage> parsePollResponseBody(String body, String callsign) {
         List<AcarsMessage> list = new ArrayList<>();
+        if (body == null || body.trim().isEmpty()) return list;
+
         Pattern p = Pattern.compile("\\{(\\S+)\\s+(\\S+)\\s+\\{([\\s\\S]*?)\\}\\}");
         Matcher m = p.matcher(body);
 
@@ -203,11 +248,11 @@ public class HoppieAPI {
         String cleanMessage = safeUserText(message);
         String url = createFullUrl(cleanCallsign, cleanStation, "telex", cleanMessage);
         try{
-            HoppieResponse response = sendHttpRequest(url);
+            HoppieResponse response = sendHttpRequestWithRetry(url, 3);
             if (response.body().trim().startsWith("ok")) {
                 return new AcarsMessage(cleanCallsign, "telex", cleanStation, cleanMessage, true);
             }else {
-                return new AcarsMessage("system", "ERROR: "+response.body());
+                return new AcarsMessage("system", parseErrorMessage(response));
             }
         } catch (IOException e) {
             return new AcarsMessage("system", "ERROR: "+e.getMessage());
@@ -218,12 +263,12 @@ public class HoppieAPI {
     private AcarsMessage sendCpdlcMessage(String station, String callsign, String rawText) {
         String url = createFullUrl(callsign, station, "cpdlc", rawText);
         try {
-            HoppieResponse response = sendHttpRequest(url);
+            HoppieResponse response = sendHttpRequestWithRetry(url, 3);
             if (response.body().trim().startsWith("ok")) {
-                cpdlcCounter++;
+                cpdlcCounter.getAndIncrement();
                 return new CpdlcMessage(callsign, "cpdlc", station, rawText, true);
             }else{
-                return new AcarsMessage("system", "ERROR: "+response.body());
+                return new AcarsMessage("system", parseErrorMessage(response));
             }
         } catch (IOException e) {
             return new AcarsMessage("system", "ERROR: "+e.getMessage());
@@ -234,7 +279,7 @@ public class HoppieAPI {
     /** Sends a ping request to check server reachability. */
     public HoppieResponse sendPing(String callsign) throws IOException {
         String url = createFullUrl(callsign, "SERVER", "ping", "");
-        return sendHttpRequest(url);
+        return sendHttpRequestWithRetry(url, 3);
     }
 
     /** Verifies network connection and callsign authorization on Hoppie. */
@@ -263,7 +308,7 @@ public class HoppieAPI {
         String cleanCallsign = safeUserText(callsign);
         String cleanText = safeUserText(text);
         String rawText = String.format(CPDLC_MSG,
-                cpdlcCounter,
+                cpdlcCounter.get(),
                 repliedMsg > 0 ? String.valueOf(repliedMsg) : "",
                 replyReq,
                 cleanText

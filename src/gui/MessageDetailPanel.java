@@ -108,7 +108,7 @@ public class MessageDetailPanel extends JPanel {
             return;
         }
 
-        detailTextArea.setText(message.getDetailFormat());
+        detailTextArea.setText(message.getDetailFormat() != null ? message.getDetailFormat().toUpperCase(java.util.Locale.ENGLISH) : "");
         
         boolean isOurMessage = message.isOutgoing();
         boolean isCpdlc = message instanceof CpdlcMessage;

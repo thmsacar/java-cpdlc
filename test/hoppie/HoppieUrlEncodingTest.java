@@ -45,7 +45,7 @@ public class HoppieUrlEncodingTest {
         HoppieAPI api = new HoppieAPI("TESTLOGON123");
         String url = invokeCreateFullUrl(api, "KLM123", "EDGG_CTR", "cpdlc", "/data2/1//WU/CLIMB TO FL350 & MAINTAIN");
 
-        assertTrue(url.startsWith("http://www.hoppie.nl/acars/system/connect.html/connect.html?"));
+        assertTrue(url.startsWith("https://www.hoppie.nl/acars/system/connect.html/connect.html?"));
         assertTrue(url.contains("logon=TESTLOGON123"));
         assertTrue(url.contains("from=KLM123"));
         assertTrue(url.contains("to=EDGG_CTR"));
@@ -59,5 +59,18 @@ public class HoppieUrlEncodingTest {
         assertEquals("CLIMB 5000∕FL100", HoppieAPI.safeUserText("CLIMB 5000/FL100"));
         assertEquals("EDGG∕CTR", HoppieAPI.safeUserText("EDGG/CTR"));
         assertEquals("", HoppieAPI.safeUserText(null));
+    }
+
+    /** Verifies parsing of Hoppie server error payloads and HTTP error status codes. */
+    @Test
+    public void testParseErrorMessage() {
+        HoppieAPI.HoppieResponse hoppieErr = new HoppieAPI.HoppieResponse(200, "error {invalid logon key}");
+        assertEquals("ERROR: invalid logon key", HoppieAPI.parseErrorMessage(hoppieErr));
+
+        HoppieAPI.HoppieResponse http500Err = new HoppieAPI.HoppieResponse(500, "Internal Server Error");
+        assertEquals("ERROR: HTTP 500 (Internal Server Error)", HoppieAPI.parseErrorMessage(http500Err));
+
+        HoppieAPI.HoppieResponse http503Err = new HoppieAPI.HoppieResponse(503, "");
+        assertEquals("ERROR: HTTP 503", HoppieAPI.parseErrorMessage(http503Err));
     }
 }

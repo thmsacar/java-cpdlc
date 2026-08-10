@@ -10,6 +10,7 @@ import gui2.pages.MainMenuPage;
 import gui2.pages.MessageDetailPage;
 import hoppie.AcarsMessage;
 import hoppie.CpdlcMessage;
+import service.ConnectionState;
 import service.CpdlcListener;
 import service.CpdlcService;
 import service.UserPreferences;
@@ -324,26 +325,37 @@ public class CduController implements CpdlcListener {
 
     @Override
     public void onConnectionStatusChanged(boolean isConnected) {
-        setExecLed(isConnected);
-        if (isConnected) {
-            boolean isErrorStatus = statusMessage != null && statusMessage.toLowerCase().startsWith("error");
-            if (isErrorStatus) {
-                setFailLed(true);
-            } else {
-                setFailLed(false);
-            }
+        // Maintained for backwards compatibility; state handling delegated to onConnectionStateChanged
+    }
 
+    @Override
+    public void onConnectionStateChanged(ConnectionState oldState, ConnectionState newState) {
+        if (newState == ConnectionState.CONNECTED) {
+            setExecLed(true);
+            setFailLed(false);
             if (statusMessage != null && statusMessage.startsWith("AUTO LOGOFF")) {
                 // Preserve AUTO LOGOFF status message
             } else if (service != null && service.isLoggedOn()) {
                 statusMessage = "LOGGED TO " + service.getCurrentATS();
-            } else if (!isErrorStatus) {
+            } else {
                 statusMessage = "CONNECTED TO HOPPIE";
             }
-        } else {
+        } else if (newState == ConnectionState.RECONNECTING) {
+            setExecLed(false);
+            setFailLed(true);
+            statusMessage = "RECONNECTING...";
+        } else if (newState == ConnectionState.CONNECTING) {
+            setExecLed(false);
+            setFailLed(false);
+            statusMessage = "CONNECTING...";
+        } else { // DISCONNECTED
+            setExecLed(false);
             setFailLed(true);
             statusMessage = "HOPPIE DISCONNECTED";
-            triggerUserAttention();
+            if (oldState == ConnectionState.CONNECTED || oldState == ConnectionState.RECONNECTING) {
+                SoundManager.playWarning();
+                triggerUserAttention();
+            }
         }
         refreshDisplay();
     }
