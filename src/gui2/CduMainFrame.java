@@ -16,14 +16,14 @@ public class CduMainFrame extends JFrame {
     public CduMainFrame() {
         super("JavaCPDLC");
 
-        try {
-            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-        } catch (Exception ignored) {}
-
+        setUndecorated(true);
         FontManager.loadFonts();
         setAppIcon(this);
 
-        getContentPane().setBackground(new Color(25, 28, 32));
+        Color darkBg = new Color(25, 28, 32);
+        setBackground(darkBg);
+        getRootPane().setBackground(darkBg);
+        getContentPane().setBackground(darkBg);
 
         cduPanel = new CduPanel();
 
@@ -42,6 +42,23 @@ public class CduMainFrame extends JFrame {
         pack();
         setMinimumSize(getSize());
         setLocationRelativeTo(null);
+    }
+
+    private static void initLookAndFeel() {
+        try {
+            if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+                System.setProperty("apple.laf.useScreenMenuBar", "true");
+                System.setProperty("apple.awt.application.name", "JavaCPDLC");
+                System.setProperty("apple.awt.application.appearance", "system");
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } else {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            }
+        } catch (Exception e) {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception ignored) {}
+        }
     }
 
     private void setAppIcon(JFrame frame) {
@@ -72,6 +89,7 @@ public class CduMainFrame extends JFrame {
     }
 
     public static void main(String[] args) {
+        initLookAndFeel();
         SwingUtilities.invokeLater(() -> {
             CduMainFrame frame = new CduMainFrame();
             frame.setVisible(true);

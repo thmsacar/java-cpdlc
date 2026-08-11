@@ -25,10 +25,40 @@ public class CduBezel extends JPanel {
     private Timer msgBlinkTimer;
     private boolean msgBlinkState = false;
     private TexturePaint noiseTexture;
+    protected final CduScrewButton closeScrewButton;
+    protected final CduScrewButton minimizeScrewButton;
 
     public CduBezel() {
         setOpaque(true);
         setBackground(new Color(30, 33, 38));
+        setLayout(null);
+
+        closeScrewButton = new CduScrewButton(CduScrewButton.Mode.CLOSE);
+        closeScrewButton.setBounds(7, 7, 22, 22);
+        add(closeScrewButton);
+
+        minimizeScrewButton = new CduScrewButton(CduScrewButton.Mode.MINIMIZE);
+        minimizeScrewButton.setBounds(32, 7, 22, 22);
+        add(minimizeScrewButton);
+    }
+
+    public CduScrewButton getCloseScrewButton() {
+        return closeScrewButton;
+    }
+
+    public CduScrewButton getMinimizeScrewButton() {
+        return minimizeScrewButton;
+    }
+
+    @Override
+    public void doLayout() {
+        super.doLayout();
+        if (closeScrewButton != null) {
+            closeScrewButton.setBounds(7, 7, 22, 22);
+        }
+        if (minimizeScrewButton != null) {
+            minimizeScrewButton.setBounds(32, 7, 22, 22);
+        }
     }
 
     private TexturePaint getNoiseTexture() {
@@ -88,7 +118,7 @@ public class CduBezel extends JPanel {
 
         // Cockpit matte base tone
         g2.setColor(new Color(42, 46, 54));
-        g2.fillRoundRect(0, 0, w, h, 14, 14);
+        g2.fillRect(0, 0, w, h);
 
         // Soft ambient overhead cockpit light gradient (radial from top-center)
         RadialGradientPaint ambientLight = new RadialGradientPaint(
@@ -98,21 +128,20 @@ public class CduBezel extends JPanel {
             new Color[]{new Color(56, 61, 70), new Color(30, 33, 38)}
         );
         g2.setPaint(ambientLight);
-        g2.fillRoundRect(0, 0, w, h, 14, 14);
+        g2.fillRect(0, 0, w, h);
 
         // Procedural powder-coated metal grain texture overlay
         g2.setPaint(getNoiseTexture());
-        g2.fillRoundRect(0, 0, w, h, 14, 14);
+        g2.fillRect(0, 0, w, h);
 
         // Outer metallic rim bevel
         g2.setColor(new Color(80, 85, 95, 100));
-        g2.drawRoundRect(1, 1, w - 3, h - 3, 14, 14);
+        g2.drawRect(1, 1, w - 3, h - 3);
         g2.setColor(new Color(15, 17, 20));
         g2.setStroke(new BasicStroke(1.5f));
-        g2.drawRoundRect(0, 0, w - 1, h - 1, 14, 14);
+        g2.drawRect(0, 0, w - 1, h - 1);
 
-        // Hardware screws in 4 corners
-        drawScrew(g2, 12, 12);
+        // Hardware screws in 3 remaining corners (top-left screw is the interactive CduScrewButton)
         drawScrew(g2, w - 24, 12);
         drawScrew(g2, 12, h - 24);
         drawScrew(g2, w - 24, h - 24);

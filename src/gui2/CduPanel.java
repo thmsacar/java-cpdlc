@@ -31,11 +31,170 @@ public class CduPanel extends CduBezel {
         this.controller.setExecLedConsumer(this::setExecLed);
         this.controller.setFailLedConsumer(this::setFailLed);
         setupUI();
+        setupWindowDragAndResize();
         setupGlobalKeyboardListener();
         initController();
     }
 
+    private static final int RESIZE_BORDER_WIDTH = 8;
+    private int resizeCursorDirection = Cursor.DEFAULT_CURSOR;
+    private Point dragStartPoint;
+    private Rectangle windowStartBounds;
+
+    private void setupWindowDragAndResize() {
+        java.awt.event.MouseAdapter adapter = new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseMoved(java.awt.event.MouseEvent e) {
+                Window window = SwingUtilities.getWindowAncestor(CduPanel.this);
+                if (window == null) return;
+
+                int x = e.getX();
+                int y = e.getY();
+                int w = getWidth();
+                int h = getHeight();
+
+                int cursor = Cursor.DEFAULT_CURSOR;
+                if (x <= RESIZE_BORDER_WIDTH && y <= RESIZE_BORDER_WIDTH) {
+                    cursor = Cursor.NW_RESIZE_CURSOR;
+                } else if (x >= w - RESIZE_BORDER_WIDTH && y <= RESIZE_BORDER_WIDTH) {
+                    cursor = Cursor.NE_RESIZE_CURSOR;
+                } else if (x <= RESIZE_BORDER_WIDTH && y >= h - RESIZE_BORDER_WIDTH) {
+                    cursor = Cursor.SW_RESIZE_CURSOR;
+                } else if (x >= w - RESIZE_BORDER_WIDTH && y >= h - RESIZE_BORDER_WIDTH) {
+                    cursor = Cursor.SE_RESIZE_CURSOR;
+                } else if (x <= RESIZE_BORDER_WIDTH) {
+                    cursor = Cursor.W_RESIZE_CURSOR;
+                } else if (x >= w - RESIZE_BORDER_WIDTH) {
+                    cursor = Cursor.E_RESIZE_CURSOR;
+                } else if (y <= RESIZE_BORDER_WIDTH) {
+                    cursor = Cursor.N_RESIZE_CURSOR;
+                } else if (y >= h - RESIZE_BORDER_WIDTH) {
+                    cursor = Cursor.S_RESIZE_CURSOR;
+                }
+
+                resizeCursorDirection = cursor;
+                if (cursor != Cursor.DEFAULT_CURSOR) {
+                    setCursor(Cursor.getPredefinedCursor(cursor));
+                } else {
+                    setCursor(Cursor.getDefaultCursor());
+                }
+            }
+
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                Window window = SwingUtilities.getWindowAncestor(CduPanel.this);
+                if (window != null) {
+                    dragStartPoint = e.getLocationOnScreen();
+                    windowStartBounds = window.getBounds();
+                }
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                if (resizeCursorDirection == Cursor.DEFAULT_CURSOR) {
+                    setCursor(Cursor.getDefaultCursor());
+                }
+            }
+
+            @Override
+            public void mouseDragged(java.awt.event.MouseEvent e) {
+                Window window = SwingUtilities.getWindowAncestor(CduPanel.this);
+                if (window == null || dragStartPoint == null || windowStartBounds == null) return;
+
+                Point currentPoint = e.getLocationOnScreen();
+                int dx = currentPoint.x - dragStartPoint.x;
+                int dy = currentPoint.y - dragStartPoint.y;
+
+                Rectangle b = new Rectangle(windowStartBounds);
+                Dimension minSize = window.getMinimumSize();
+                if (minSize == null || minSize.width <= 0) {
+                    minSize = new Dimension(380, 280);
+                }
+
+                switch (resizeCursorDirection) {
+                    case Cursor.E_RESIZE_CURSOR:
+                        b.width = Math.max(minSize.width, b.width + dx);
+                        break;
+                    case Cursor.S_RESIZE_CURSOR:
+                        b.height = Math.max(minSize.height, b.height + dy);
+                        break;
+                    case Cursor.SE_RESIZE_CURSOR:
+                        b.width = Math.max(minSize.width, b.width + dx);
+                        b.height = Math.max(minSize.height, b.height + dy);
+                        break;
+                    case Cursor.W_RESIZE_CURSOR:
+                        int newW = b.width - dx;
+                        if (newW >= minSize.width) {
+                            b.x += dx;
+                            b.width = newW;
+                        }
+                        break;
+                    case Cursor.N_RESIZE_CURSOR:
+                        int newH = b.height - dy;
+                        if (newH >= minSize.height) {
+                            b.y += dy;
+                            b.height = newH;
+                        }
+                        break;
+                    case Cursor.NW_RESIZE_CURSOR:
+                        int newW_nw = b.width - dx;
+                        int newH_nw = b.height - dy;
+                        if (newW_nw >= minSize.width) {
+                            b.x += dx;
+                            b.width = newW_nw;
+                        }
+                        if (newH_nw >= minSize.height) {
+                            b.y += dy;
+                            b.height = newH_nw;
+                        }
+                        break;
+                    case Cursor.NE_RESIZE_CURSOR:
+                        int newW_ne = b.width + dx;
+                        int newH_ne = b.height - dy;
+                        b.width = Math.max(minSize.width, newW_ne);
+                        if (newH_ne >= minSize.height) {
+                            b.y += dy;
+                            b.height = newH_ne;
+                        }
+                        break;
+                    case Cursor.SW_RESIZE_CURSOR:
+                        int newW_sw = b.width - dx;
+                        int newH_sw = b.height + dy;
+                        if (newW_sw >= minSize.width) {
+                            b.x += dx;
+                            b.width = newW_sw;
+                        }
+                        b.height = Math.max(minSize.height, newH_sw);
+                        break;
+                    default:
+                        // Move window
+                        b.x += dx;
+                        b.y += dy;
+                        break;
+                }
+
+                window.setBounds(b);
+                window.revalidate();
+                window.repaint();
+            }
+        };
+
+        addMouseListener(adapter);
+        addMouseMotionListener(adapter);
+    }
+
     private void setupUI() {
+        if (closeScrewButton != null) {
+            closeScrewButton.addActionListener(e -> controller.handleWindowClose());
+        }
+        if (minimizeScrewButton != null) {
+            minimizeScrewButton.addActionListener(e -> {
+                Window window = SwingUtilities.getWindowAncestor(CduPanel.this);
+                if (window instanceof Frame) {
+                    ((Frame) window).setState(Frame.ICONIFIED);
+                }
+            });
+        }
         setLayout(new BorderLayout(10, 0));
         setBorder(BorderFactory.createEmptyBorder(28, 16, 24, 16));
 
