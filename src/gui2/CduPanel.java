@@ -31,7 +31,6 @@ public class CduPanel extends CduBezel {
         this.controller.setExecLedConsumer(this::setExecLed);
         this.controller.setFailLedConsumer(this::setFailLed);
         setupUI();
-        setupWindowDragAndResize();
         setupGlobalKeyboardListener();
         initController();
     }
@@ -40,8 +39,12 @@ public class CduPanel extends CduBezel {
     private int resizeCursorDirection = Cursor.DEFAULT_CURSOR;
     private Point dragStartPoint;
     private Rectangle windowStartBounds;
+    private boolean windowDragAndResizeEnabled = false;
 
-    private void setupWindowDragAndResize() {
+    public void enableWindowDragAndResize() {
+        if (windowDragAndResizeEnabled) return;
+        windowDragAndResizeEnabled = true;
+
         java.awt.event.MouseAdapter adapter = new java.awt.event.MouseAdapter() {
             @Override
             public void mouseMoved(java.awt.event.MouseEvent e) {
@@ -184,17 +187,6 @@ public class CduPanel extends CduBezel {
     }
 
     private void setupUI() {
-        if (closeScrewButton != null) {
-            closeScrewButton.addActionListener(e -> controller.handleWindowClose());
-        }
-        if (minimizeScrewButton != null) {
-            minimizeScrewButton.addActionListener(e -> {
-                Window window = SwingUtilities.getWindowAncestor(CduPanel.this);
-                if (window instanceof Frame) {
-                    ((Frame) window).setState(Frame.ICONIFIED);
-                }
-            });
-        }
         setLayout(new BorderLayout(10, 0));
         setBorder(BorderFactory.createEmptyBorder(28, 16, 24, 16));
 

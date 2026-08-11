@@ -16,7 +16,6 @@ public class CduMainFrame extends JFrame {
     public CduMainFrame() {
         super("JavaCPDLC");
 
-        setUndecorated(true);
         FontManager.loadFonts();
         setAppIcon(this);
 
@@ -39,9 +38,43 @@ public class CduMainFrame extends JFrame {
         setLayout(new BorderLayout());
         add(cduPanel, BorderLayout.CENTER);
 
+        // =========================================================================
+        // WINDOWLESS FEATURES (Frameless Window, Hardware Screw Buttons, Drag & Resize)
+        // -------------------------------------------------------------------------
+        // All windowless features are consolidated in `setupWindowlessFeatures()`.
+        // To DISABLE windowless mode and use standard OS window decorations (title bar,
+        // native close/minimize buttons), simply comment out the line below:
+        // =========================================================================
+        setupWindowlessFeatures();
+
         pack();
         setMinimumSize(getSize());
         setLocationRelativeTo(null);
+    }
+
+    /**
+     * CONSOLIDATED WINDOWLESS FEATURE SETUP
+     * Everything related to the windowless feature (undecorated window, hardware screw buttons,
+     * and custom window drag/resizing) is defined right here in one single place.
+     * 
+     * To disable individual features or all windowless features, comment out lines in this method
+     * or comment out `setupWindowlessFeatures();` in the constructor above.
+     */
+    private void setupWindowlessFeatures() {
+        // 1. FRAME: Remove OS window title bar & border (Frameless/Undecorated Window)
+        setUndecorated(true);
+
+        // 2. SCREW BUTTONS: Enable interactive Close & Minimize hardware screw buttons on the bezel
+        cduPanel.setScrewButtonsEnabled(true);
+        cduPanel.getCloseScrewButton().addActionListener(e -> {
+            if (cduPanel.getController() != null) {
+                cduPanel.getController().handleWindowClose();
+            }
+        });
+        cduPanel.getMinimizeScrewButton().addActionListener(e -> setState(Frame.ICONIFIED));
+
+        // 3. RESIZING & DRAGGING: Enable custom border drag and 8-direction edge resizing
+        cduPanel.enableWindowDragAndResize();
     }
 
     private static void initLookAndFeel() {

@@ -27,6 +27,7 @@ public class CduBezel extends JPanel {
     private TexturePaint noiseTexture;
     protected final CduScrewButton closeScrewButton;
     protected final CduScrewButton minimizeScrewButton;
+    private boolean screwButtonsEnabled = false;
 
     public CduBezel() {
         setOpaque(true);
@@ -35,10 +36,12 @@ public class CduBezel extends JPanel {
 
         closeScrewButton = new CduScrewButton(CduScrewButton.Mode.CLOSE);
         closeScrewButton.setBounds(7, 7, 22, 22);
+        closeScrewButton.setVisible(false);
         add(closeScrewButton);
 
         minimizeScrewButton = new CduScrewButton(CduScrewButton.Mode.MINIMIZE);
         minimizeScrewButton.setBounds(32, 7, 22, 22);
+        minimizeScrewButton.setVisible(false);
         add(minimizeScrewButton);
     }
 
@@ -48,6 +51,21 @@ public class CduBezel extends JPanel {
 
     public CduScrewButton getMinimizeScrewButton() {
         return minimizeScrewButton;
+    }
+
+    public void setScrewButtonsEnabled(boolean enabled) {
+        this.screwButtonsEnabled = enabled;
+        if (closeScrewButton != null) {
+            closeScrewButton.setVisible(enabled);
+        }
+        if (minimizeScrewButton != null) {
+            minimizeScrewButton.setVisible(enabled);
+        }
+        repaint();
+    }
+
+    public boolean isScrewButtonsEnabled() {
+        return screwButtonsEnabled;
     }
 
     @Override
@@ -141,7 +159,10 @@ public class CduBezel extends JPanel {
         g2.setStroke(new BasicStroke(1.5f));
         g2.drawRect(0, 0, w - 1, h - 1);
 
-        // Hardware screws in 3 remaining corners (top-left screw is the interactive CduScrewButton)
+        // Hardware screws in corners (top-left screw is drawn as static screw when windowless screw buttons are disabled)
+        if (!screwButtonsEnabled) {
+            drawScrew(g2, 12, 12);
+        }
         drawScrew(g2, w - 24, 12);
         drawScrew(g2, 12, h - 24);
         drawScrew(g2, w - 24, h - 24);
