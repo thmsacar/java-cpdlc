@@ -103,15 +103,6 @@ public class CduButton extends JButton {
         int dashY = (height - dashH) / 2 + offY;
         g2.fillRect(dashX, dashY, dashW, dashH);
 
-        // Line extending towards screen
-        g2.setColor(new Color(90, 95, 105));
-        g2.setStroke(new BasicStroke(1.0f));
-        if (isLeft) {
-            g2.drawLine(width - 2, height / 2 + offY, width + 4, height / 2 + offY);
-        } else {
-            g2.drawLine(0, height / 2 + offY, -4, height / 2 + offY);
-        }
-
         g2.dispose();
     }
 }

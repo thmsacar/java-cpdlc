@@ -14,6 +14,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.KeyEvent;
+import java.awt.geom.Path2D;
 
 /**
  * Full CDU Cockpit Unit with pixel-perfect alignment between LSK buttons and display text lines.
@@ -42,7 +43,7 @@ public class CduPanel extends CduBezel {
         JPanel screenContainer = new JPanel(new BorderLayout());
         screenContainer.setOpaque(false);
         screenContainer.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(25, 27, 30), 4),
+                BorderFactory.createLineBorder(new Color(75, 80, 90), 4),
                 BorderFactory.createLineBorder(new Color(10, 10, 12), 2)
         ));
         screenContainer.add(display, BorderLayout.CENTER);
@@ -85,6 +86,46 @@ public class CduPanel extends CduBezel {
             rightPanel.add(btn);
         }
         add(rightPanel, BorderLayout.EAST);
+    }
+
+    @Override
+    protected void paintChildren(Graphics g) {
+        super.paintChildren(g);
+
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+
+        int w = getWidth();
+
+        // 6 LSK Line Pairs
+        int firstButtonCenterY = 84; // 28 (top border) + 45 (btnY) + 11 (half btn height)
+        int rowGap = 40;
+
+        g2.setColor(new Color(240, 244, 248));
+        g2.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+        for (int i = 0; i < 6; i++) {
+            int btnY = firstButtonCenterY + (i * rowGap);
+
+            // Left LSK Line: starts at left button border (X=54), goes horizontally to X=67.2,
+            // then drops 45° to (69.2, btnY + 2.0), staying strictly within the 4px gray border [66.0, 70.0].
+            Path2D.Float leftPath = new Path2D.Float();
+            leftPath.moveTo(54, btnY);
+            leftPath.lineTo(67.2f, btnY);
+            leftPath.lineTo(69.2f, btnY + 2.0f);
+            g2.draw(leftPath);
+
+            // Right LSK Line: starts at right button border (X=w-54), goes horizontally to X=w-67.2,
+            // then drops 45° to (w-69.2, btnY + 2.0), staying strictly within the 4px gray border [w-70.0, w-66.0].
+            Path2D.Float rightPath = new Path2D.Float();
+            rightPath.moveTo(w - 54, btnY);
+            rightPath.lineTo(w - 67.2f, btnY);
+            rightPath.lineTo(w - 69.2f, btnY + 2.0f);
+            g2.draw(rightPath);
+        }
+
+        g2.dispose();
     }
 
     private void setupGlobalKeyboardListener() {
