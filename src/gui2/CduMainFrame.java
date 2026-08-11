@@ -14,7 +14,7 @@ public class CduMainFrame extends JFrame {
     private final CduPanel cduPanel;
 
     public CduMainFrame() {
-        super("Java CPDLC");
+        super("JavaCPDLC");
 
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");

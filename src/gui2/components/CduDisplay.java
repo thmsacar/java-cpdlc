@@ -146,12 +146,27 @@ public class CduDisplay extends JPanel {
         Font fontBold = FontManager.BOLD != null ? FontManager.BOLD : new Font("Monospaced", Font.BOLD, 14);
         Font fontReg = FontManager.REGULAR != null ? FontManager.REGULAR : new Font("Monospaced", Font.PLAIN, 12);
 
-        // Header Title (Centered at Y=18)
+        // Header Title (Centered at Y=18; Callsign rendered in CYAN)
         g2.setFont(fontBold.deriveFont(15f));
-        g2.setColor(DisplayColor.WHITE.getColor());
         FontMetrics fmHeader = g2.getFontMetrics();
-        int headerX = (width - fmHeader.stringWidth(headerTitle)) / 2;
-        g2.drawString(headerTitle, headerX, 18);
+        if (headerTitle != null && headerTitle.contains(" - ")) {
+            int dashIdx = headerTitle.indexOf(" - ");
+            String csPart = headerTitle.substring(0, dashIdx);
+            String restPart = headerTitle.substring(dashIdx);
+
+            int totalW = fmHeader.stringWidth(headerTitle);
+            int startX = (width - totalW) / 2;
+
+            g2.setColor(DisplayColor.CYAN.getColor());
+            g2.drawString(csPart, startX, 18);
+
+            g2.setColor(DisplayColor.WHITE.getColor());
+            g2.drawString(restPart, startX + fmHeader.stringWidth(csPart), 18);
+        } else {
+            g2.setColor(DisplayColor.WHITE.getColor());
+            int headerX = (width - fmHeader.stringWidth(headerTitle)) / 2;
+            g2.drawString(headerTitle, headerX, 18);
+        }
 
         // Subheaders (Y=32)
         g2.setFont(fontReg.deriveFont(11f));

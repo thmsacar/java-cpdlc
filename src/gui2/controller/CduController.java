@@ -345,7 +345,9 @@ public class CduController implements CpdlcListener {
         } else {
             setFailLed(true);
             setExecLed(false);
-            if (statusMessage != null && !statusMessage.startsWith("AUTO LOGOFF") && !statusMessage.startsWith("AUTO HANDOVER")) {
+            if (service != null && service.getConnectionState() == ConnectionState.RECONNECTING) {
+                statusMessage = "RECONNECTING...";
+            } else if (statusMessage != null && !statusMessage.startsWith("AUTO LOGOFF") && !statusMessage.startsWith("AUTO HANDOVER")) {
                 statusMessage = "HOPPIE DISCONNECTED";
             }
         }
