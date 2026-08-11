@@ -6,6 +6,9 @@ import java.awt.font.GlyphVector;
 import java.awt.font.TextAttribute;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.ConvolveOp;
+import java.awt.image.Kernel;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -117,9 +120,9 @@ public class CduBezel extends JPanel {
         // Header Title (Aligned to top-left corner of screen container at X=66 with industrial engraved 3D effect)
         drawEngravedHeader(g2, 66, 20, "JAVA CPDLC v" + service.UpdateChecker.CURRENT_VERSION);
 
-        // Position LED right edge at w - 66 (aligned with black screen right edge) and MSG annunciator to its left
-        int ledX = w - 78;
-        int msgX = w - 134;
+        // Position MSG annunciator right edge at w - 66 (aligned with black screen right edge) and status LED to its right
+        int msgX = w - 110;
+        int ledX = w - 54;
 
         // MSG Annunciator LED (Blinks when unread message exists)
         boolean isMsgLit = msgLed && msgBlinkState;
@@ -142,8 +145,10 @@ public class CduBezel extends JPanel {
         g2.dispose();
     }
 
+
+
     private void drawEngravedHeader(Graphics2D g2, int x, int y, String text) {
-        Font font = new Font("Arial", Font.BOLD, 11);
+        Font font = new Font("Arial", Font.BOLD, 12);
         try {
             Map<TextAttribute, Object> attributes = new HashMap<>(font.getAttributes());
             attributes.put(TextAttribute.TRACKING, 0.05);
@@ -156,34 +161,23 @@ public class CduBezel extends JPanel {
 
         GlyphVector gv = font.createGlyphVector(g2.getFontRenderContext(), text);
         Shape textShape = gv.getOutline(x, y);
-        Rectangle2D bounds = textShape.getBounds2D();
 
-        // 1. Deep polymer recess occlusion shadow (top overhang cut inside dark resin casing)
-        Shape deepShadow = gv.getOutline(x, (float) (y - 1.6));
-        g2.setColor(new Color(8, 10, 14, 250));
-        g2.fill(deepShadow);
+        // 1. Light text-shadow offset down and right (light catch on lower/right cut edge)
+        Shape lightShadow = gv.getOutline(x + 0.5f, y + 0.8f);
+        g2.setColor(new Color(255, 255, 255, 75));
+        g2.fill(lightShadow);
 
-        // 2. Ambient trench shadow (depth inside stamped groove)
-        Shape midShadow = gv.getOutline(x, (float) (y - 0.8));
-        g2.setColor(new Color(14, 16, 22, 180));
-        g2.fill(midShadow);
+        // 2. Dark top/inner shadow offset up (groove depth shadow)
+        Shape darkShadow = gv.getOutline(x - 0.3f, y - 0.6f);
+        g2.setColor(new Color(10, 12, 16, 180));
+        g2.fill(darkShadow);
 
-        // 3. Subtle soft ambient light catch at lower lip of groove
-        Shape bottomLip = gv.getOutline(x, (float) (y + 0.8));
-        g2.setColor(new Color(210, 215, 225, 35));
-        g2.fill(bottomLip);
-
-        // 4. Matte cockpit enamel paint fill harmonized with ambient bezel lighting
-        float topY = (float) bounds.getY();
-        float bottomY = (float) (bounds.getY() + bounds.getHeight());
-        LinearGradientPaint fillGradient = new LinearGradientPaint(
-            new Point2D.Float(x, topY),
-            new Point2D.Float(x, bottomY),
-            new float[]{0.0f, 1.0f},
-            new Color[]{new Color(180, 185, 193), new Color(194, 199, 207)}
-        );
-        g2.setPaint(fillGradient);
+        // 3. Dark engraved text body (carved directly into background material with matching noise grain)
+        g2.setColor(new Color(18, 21, 26));
         g2.fill(textShape);
+        g2.setPaint(getNoiseTexture());
+        g2.fill(textShape);
+
     }
 
     private void drawScrew(Graphics2D g2, int x, int y) {
@@ -207,8 +201,11 @@ public class CduBezel extends JPanel {
                         new Color(24, 25, 29)
                 }
         );
+        Ellipse2D.Double screwHead = new Ellipse2D.Double(x, y, size, size);
         g2.setPaint(headMetal);
-        g2.fill(new Ellipse2D.Double(x, y, size, size));
+        g2.fill(screwHead);
+        g2.setPaint(getNoiseTexture());
+        g2.fill(screwHead);
 
         // 3. Thin machined rim ring — subtle lighter edge, not a glossy arc
         g2.setStroke(new BasicStroke(0.8f));

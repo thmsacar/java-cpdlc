@@ -146,9 +146,24 @@ public class CduController implements CpdlcListener {
         pushPage(new CduDisconnectPage(true));
     }
 
+    public String filterScratchpadText(String input) {
+        if (input == null || input.isEmpty()) return "";
+        boolean isLogin = currentPage instanceof CduLoginPage;
+        StringBuilder sb = new StringBuilder();
+        for (char c : input.toCharArray()) {
+            if (c >= ' ' && c <= '~') {
+                sb.append(isLogin ? c : Character.toUpperCase(c));
+            }
+        }
+        return sb.toString();
+    }
+
     public void showPage(CduPage page) {
         if (page == null) return;
         this.currentPage = page;
+        if (scratchpad != null) {
+            scratchpad = filterScratchpadText(scratchpad);
+        }
         refreshDisplay();
     }
 
@@ -199,7 +214,13 @@ public class CduController implements CpdlcListener {
                 return;
             default:
                 if (key.length() == 1) {
-                    scratchpad += key;
+                    char c = key.charAt(0);
+                    if (c >= ' ' && c <= '~') {
+                        if (!(currentPage instanceof CduLoginPage)) {
+                            c = Character.toUpperCase(c);
+                        }
+                        scratchpad += c;
+                    }
                 }
                 break;
         }
@@ -208,7 +229,7 @@ public class CduController implements CpdlcListener {
 
     public void handlePaste(String pasteText) {
         if (pasteText != null && !pasteText.isEmpty()) {
-            this.scratchpad += pasteText;
+            this.scratchpad += filterScratchpadText(pasteText);
             refreshDisplay();
         }
     }
@@ -441,7 +462,10 @@ public class CduController implements CpdlcListener {
     }
 
     public String getScratchpad() { return scratchpad; }
-    public void setScratchpad(String scratchpad) { this.scratchpad = scratchpad; refreshDisplay(); }
+    public void setScratchpad(String scratchpad) {
+        this.scratchpad = filterScratchpadText(scratchpad);
+        refreshDisplay();
+    }
 
     public String getStatusMessage() { return statusMessage; }
     public void setStatusMessage(String statusMessage) { this.statusMessage = statusMessage; refreshDisplay(); }

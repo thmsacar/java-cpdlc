@@ -8,11 +8,13 @@ public class FontManager {
     public static Font REGULAR;
     public static Font BOLD;
     public static Font LIGHT;
+    public static Font PMDG;
 
     public static void loadFonts() {
         REGULAR = loadFont("/resources/fonts/RobotoMono-Regular.ttf");
         BOLD = loadFont("/resources/fonts/RobotoMono-Bold.ttf");
         LIGHT = loadFont("/resources/fonts/RobotoMono-Light.ttf");
+        PMDG = loadFont("/resources/fonts/PMDG_NG3_DU_A.ttf");
     }
 
     private static Font loadFont(String path) {

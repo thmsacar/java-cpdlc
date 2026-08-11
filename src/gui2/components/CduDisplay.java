@@ -4,6 +4,8 @@ import gui.FontManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
 
 /**
  * Monospace CRT/LCD DCDU display screen with pixel-perfect row alignments matching LSK buttons.
@@ -55,7 +57,7 @@ public class CduDisplay extends JPanel {
 
     public CduDisplay() {
         setOpaque(true);
-        setBackground(new Color(5, 7, 10));
+        setBackground(new Color(3, 4, 6));
         setPreferredSize(new Dimension(380, 300));
         setMinimumSize(new Dimension(280, 250));
 
@@ -112,43 +114,68 @@ public class CduDisplay extends JPanel {
     }
 
     public int getLineMaxCharCount() {
-        Font fontBold = FontManager.BOLD != null ? FontManager.BOLD : new Font("Monospaced", Font.BOLD, 14);
-        FontMetrics fm = getFontMetrics(fontBold.deriveFont(14f));
+        Font fontDisplay = FontManager.PMDG != null ? FontManager.PMDG : (FontManager.BOLD != null ? FontManager.BOLD : new Font("Monospaced", Font.BOLD, 13));
+        FontMetrics fm = getFontMetrics(fontDisplay.deriveFont(13f));
         int availWidth = Math.max(100, getWidth() - 24);
         int charWidth = fm.charWidth('W');
         if (charWidth <= 0) charWidth = 10;
         return Math.max(20, availWidth / charWidth);
     }
 
+    private TexturePaint lcdGridTexture;
+
+    private TexturePaint getLcdGridTexture() {
+        if (lcdGridTexture == null) {
+            int cellSize = 2; // High-density 2x2 micro LCD subpixel cell
+            BufferedImage img = new BufferedImage(cellSize, cellSize, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = img.createGraphics();
+
+            g.setColor(new Color(0, 0, 0, 0));
+            g.fillRect(0, 0, cellSize, cellSize);
+
+            // Fine high-DPI LCD Subpixel Grid Seams (1px right & bottom borders at 8% opacity)
+            g.setColor(new Color(0, 0, 0, 20));
+            g.drawLine(cellSize - 1, 0, cellSize - 1, cellSize - 1);
+            g.drawLine(0, cellSize - 1, cellSize - 1, cellSize - 1);
+
+            // Subpixel aperture highlight
+            g.setColor(new Color(255, 255, 255, 6));
+            g.fillRect(0, 0, 1, 1);
+
+            g.dispose();
+            lcdGridTexture = new TexturePaint(img, new Rectangle(0, 0, cellSize, cellSize));
+        }
+        return lcdGridTexture;
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g.create();
-        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
         int width = getWidth();
         int height = getHeight();
-
-        // Solid CRT background fill
-        g2.setColor(new Color(5, 7, 10));
-        g2.fillRect(0, 0, width, height);
-
-        // CRT scanlines effect
-        g2.setColor(new Color(0, 0, 0, 35));
-        for (int y = 0; y < height; y += 3) {
-            g2.drawLine(0, y, width, y);
+        if (width <= 0 || height <= 0) {
+            g2.dispose();
+            return;
         }
 
-        // Inner screen shadow bevel
-        g2.setColor(new Color(0, 0, 0, 180));
-        g2.drawRect(0, 0, width - 1, height - 1);
+        // Render text & display content onto an off-screen buffer with max quality hints
+        BufferedImage textBuffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D tg = textBuffer.createGraphics();
+        tg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        tg.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+        tg.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        tg.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+        tg.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 
-        Font fontBold = FontManager.BOLD != null ? FontManager.BOLD : new Font("Monospaced", Font.BOLD, 14);
-        Font fontReg = FontManager.REGULAR != null ? FontManager.REGULAR : new Font("Monospaced", Font.PLAIN, 12);
+        Font fontBase = FontManager.PMDG != null ? FontManager.PMDG : (FontManager.BOLD != null ? FontManager.BOLD : new Font("Monospaced", Font.BOLD, 13));
+        Font fontBold = fontBase.deriveFont(Font.BOLD, 13f);
+        Font fontReg = fontBase.deriveFont(Font.PLAIN, 11f);
 
         // Header Title (Centered at Y=18; Callsign rendered in CYAN)
-        g2.setFont(fontBold.deriveFont(15f));
-        FontMetrics fmHeader = g2.getFontMetrics();
+        tg.setFont(fontBold.deriveFont(14f));
+        FontMetrics fmHeader = tg.getFontMetrics();
         if (headerTitle != null && headerTitle.contains(" - ")) {
             int dashIdx = headerTitle.indexOf(" - ");
             String csPart = headerTitle.substring(0, dashIdx);
@@ -157,26 +184,26 @@ public class CduDisplay extends JPanel {
             int totalW = fmHeader.stringWidth(headerTitle);
             int startX = (width - totalW) / 2;
 
-            g2.setColor(DisplayColor.CYAN.getColor());
-            g2.drawString(csPart, startX, 18);
+            tg.setColor(DisplayColor.CYAN.getColor());
+            tg.drawString(csPart, startX, 18);
 
-            g2.setColor(DisplayColor.WHITE.getColor());
-            g2.drawString(restPart, startX + fmHeader.stringWidth(csPart), 18);
+            tg.setColor(DisplayColor.WHITE.getColor());
+            tg.drawString(restPart, startX + fmHeader.stringWidth(csPart), 18);
         } else {
-            g2.setColor(DisplayColor.WHITE.getColor());
+            tg.setColor(DisplayColor.WHITE.getColor());
             int headerX = (width - fmHeader.stringWidth(headerTitle)) / 2;
-            g2.drawString(headerTitle, headerX, 18);
+            tg.drawString(headerTitle, headerX, 18);
         }
 
         // Subheaders (Y=32)
-        g2.setFont(fontReg.deriveFont(11f));
-        g2.setColor(DisplayColor.WHITE_DIM.getColor());
+        tg.setFont(fontReg.deriveFont(10f));
+        tg.setColor(DisplayColor.WHITE_DIM.getColor());
         if (leftSubheader != null && !leftSubheader.isEmpty()) {
-            g2.drawString(leftSubheader, 65, 32);
+            tg.drawString(leftSubheader, 65, 32);
         }
         if (rightSubheader != null && !rightSubheader.isEmpty()) {
-            FontMetrics fm = g2.getFontMetrics();
-            g2.drawString(rightSubheader, width - 65 - fm.stringWidth(rightSubheader), 32);
+            FontMetrics fm = tg.getFontMetrics();
+            tg.drawString(rightSubheader, width - 65 - fm.stringWidth(rightSubheader), 32);
         }
 
         // 6 Line Select Key Rows aligned with LSK center Y = (56 + i * 40)
@@ -195,45 +222,86 @@ public class CduDisplay extends JPanel {
             int yValue = centerY + 7;
 
             // Small Label
-            g2.setFont(fontReg.deriveFont(10.5f));
+            tg.setFont(fontReg.deriveFont(9.5f));
 
             if (left.label != null && !left.label.isEmpty()) {
-                g2.setColor(left.labelColor != null ? left.labelColor.getColor() : DisplayColor.WHITE_DIM.getColor());
-                g2.drawString(left.label, 12, yLabel);
+                tg.setColor(left.labelColor != null ? left.labelColor.getColor() : DisplayColor.WHITE_DIM.getColor());
+                tg.drawString(left.label, 12, yLabel);
             }
             if (right.label != null && !right.label.isEmpty()) {
-                g2.setColor(right.labelColor != null ? right.labelColor.getColor() : DisplayColor.WHITE_DIM.getColor());
-                FontMetrics fm = g2.getFontMetrics();
-                g2.drawString(right.label, width - 12 - fm.stringWidth(right.label), yLabel);
+                tg.setColor(right.labelColor != null ? right.labelColor.getColor() : DisplayColor.WHITE_DIM.getColor());
+                FontMetrics fm = tg.getFontMetrics();
+                tg.drawString(right.label, width - 12 - fm.stringWidth(right.label), yLabel);
             }
 
             // Large Value
-            g2.setFont(fontBold.deriveFont(14f));
+            tg.setFont(fontBold.deriveFont(13f));
 
             if (left.value != null && !left.value.isEmpty()) {
-                g2.setColor(left.valueColor != null ? left.valueColor.getColor() : DisplayColor.WHITE.getColor());
-                g2.drawString(left.value, 12, yValue);
+                tg.setColor(left.valueColor != null ? left.valueColor.getColor() : DisplayColor.WHITE.getColor());
+                tg.drawString(left.value, 12, yValue);
             }
             if (right.value != null && !right.value.isEmpty()) {
-                g2.setColor(right.valueColor != null ? right.valueColor.getColor() : DisplayColor.WHITE.getColor());
-                FontMetrics fm = g2.getFontMetrics();
-                g2.drawString(right.value, width - 12 - fm.stringWidth(right.value), yValue);
+                tg.setColor(right.valueColor != null ? right.valueColor.getColor() : DisplayColor.WHITE.getColor());
+                FontMetrics fm = tg.getFontMetrics();
+                tg.drawString(right.value, width - 12 - fm.stringWidth(right.value), yValue);
             }
         }
 
         // Scratchpad / Input Line at bottom (Y=282)
-        g2.setFont(fontBold.deriveFont(13.5f));
-        g2.setColor(DisplayColor.WHITE.getColor());
+        tg.setFont(fontBold.deriveFont(12.5f));
+        tg.setColor(DisplayColor.WHITE.getColor());
         if (scratchpad != null && !scratchpad.isEmpty()) {
-            g2.drawString(scratchpad, 12, height - 18);
+            tg.drawString(scratchpad, 12, height - 18);
         }
 
         // Status Line at very bottom (Y=295)
-        g2.setFont(fontReg.deriveFont(10.5f));
-        g2.setColor(DisplayColor.WHITE_DIM.getColor());
+        tg.setFont(fontReg.deriveFont(9.5f));
+        tg.setColor(DisplayColor.WHITE_DIM.getColor());
         if (statusText != null && !statusText.isEmpty()) {
-            g2.drawString(statusText, 12, height - 5);
+            tg.drawString(statusText, 12, height - 5);
         }
+
+        tg.dispose();
+
+        // 1. Deep Dark LCD Panel Backlight Background
+        g2.setColor(new Color(3, 4, 6));
+        g2.fillRect(0, 0, width, height);
+
+        // 2. High-Precision LCD Subpixel Light Diffusion / Soft Glow
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.15f));
+        g2.drawImage(textBuffer, -1, 0, null);
+        g2.drawImage(textBuffer, 1, 0, null);
+        g2.drawImage(textBuffer, 0, -1, null);
+        g2.drawImage(textBuffer, 0, 1, null);
+        g2.setComposite(AlphaComposite.SrcOver);
+
+        // 3. Main Text Layer (Crisp high-resolution text)
+        g2.drawImage(textBuffer, 0, 0, null);
+
+        // 4. Fine High-Density LCD Subpixel Matrix Grid Overlay
+        g2.setPaint(getLcdGridTexture());
+        g2.fillRect(0, 0, width, height);
+
+        // 5. Anti-Reflective LCD Glass Sheen
+        LinearGradientPaint glassSheen = new LinearGradientPaint(
+            new Point2D.Float(0, 0),
+            new Point2D.Float(width, height),
+            new float[]{0.0f, 0.45f, 1.0f},
+            new Color[]{
+                new Color(160, 185, 220, 12),
+                new Color(100, 130, 180, 4),
+                new Color(0, 0, 0, 20)
+            }
+        );
+        g2.setPaint(glassSheen);
+        g2.fillRect(0, 0, width, height);
+
+        // 6. Inner Screen Bevel Frame
+        g2.setColor(new Color(0, 0, 0, 220));
+        g2.drawRect(0, 0, width - 1, height - 1);
+        g2.setColor(new Color(255, 255, 255, 10));
+        g2.drawRect(1, 1, width - 3, height - 3);
 
         g2.dispose();
     }

@@ -158,7 +158,7 @@ public class CduPanel extends CduBezel {
                 } else if (c == ' ') {
                     controller.handleKeyTyped("SP");
                     return true;
-                } else if (Character.isLetterOrDigit(c) || c == '/' || c == '.' || c == '-' || c == '@') {
+                } else if (c >= ' ' && c != 127 || c > 127) {
                     controller.handleKeyTyped(String.valueOf(c));
                     return true;
                 }
