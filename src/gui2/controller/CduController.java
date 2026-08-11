@@ -251,7 +251,7 @@ public class CduController implements CpdlcListener {
 
             if ("SYSTEM".equalsIgnoreCase(type)) {
                 // Do NOT play sound for initial connection messages
-                if (text.toLowerCase().startsWith("connected as") || text.contains("CONNECTED TO")) {
+                if (text.toLowerCase().startsWith("connected as") || text.toLowerCase().contains("CONNECTED TO")) {
                     setFailLed(false);
                     setExecLed(true);
                     if (service != null && service.isLoggedOn()) {
@@ -260,7 +260,7 @@ public class CduController implements CpdlcListener {
                         statusMessage = "CONNECTED TO HOPPIE";
                     }
                 } else {
-                    SoundManager.playWarning();
+//                    SoundManager.playWarning();
                     setMsgLed(true);
                     statusMessage = text;
                     String lowerText = text.toLowerCase();
@@ -268,7 +268,7 @@ public class CduController implements CpdlcListener {
                         setFailLed(true);
                         setNextAts("");
                     }
-                    triggerUserAttention();
+//                    triggerUserAttention();
                 }
             } else if (isOutgoing) {
                 // Sent message: status bar says CPDLC TO or TELEX TO

@@ -159,18 +159,12 @@ public class CpdlcService {
             // Fetch unread messages from Hoppie server for current callsign
             List<AcarsMessage> newMessages = hoppieAPI.fetchMessages(this.callsign);
             if (!newMessages.isEmpty()) {
-                if (newMessages.size() == 1 && newMessages.get(0).getType().equalsIgnoreCase("system")
-                        && newMessages.get(0).getMessage().startsWith("ERROR:")) {
+                if (newMessages.size() == 1 && newMessages.get(0).getType().equalsIgnoreCase("system") && newMessages.get(0).isNetworkError()) {
                     AcarsMessage sysMsg = newMessages.get(0);
-                    if (sysMsg.isNetworkError()) {
-                        if (!isDuplicateSystemMessage(sysMsg)) {
-                            addMessage(sysMsg);
-                        }
-                        setConnectionState(connectionState == ConnectionState.CONNECTED ? ConnectionState.RECONNECTING : ConnectionState.DISCONNECTED);
-                    } else {
-                        // Keep existing code behavior for non-network error payloads
-                        setConnectionState(connectionState == ConnectionState.CONNECTED ? ConnectionState.RECONNECTING : ConnectionState.DISCONNECTED);
+                    if (connectionState != ConnectionState.CONNECTED && !isDuplicateSystemMessage(sysMsg)) {
+                        addMessage(sysMsg);
                     }
+                    setConnectionState(connectionState == ConnectionState.CONNECTED ? ConnectionState.RECONNECTING : ConnectionState.DISCONNECTED);
                 } else {
                     for (AcarsMessage msg : newMessages) {
                         if (isDuplicateSystemMessage(msg)) continue;
