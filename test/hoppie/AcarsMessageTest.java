@@ -72,4 +72,14 @@ public class AcarsMessageTest {
         assertFalse(incomingMsg.isOutgoing());
         assertEquals("(EHAM_TWR)>", incomingMsg.getListFormat().get("header"));
     }
+
+    /** Verifies isNetworkError default value and setter/getter. */
+    @Test
+    public void testIsNetworkErrorFlag() {
+        AcarsMessage msg = new AcarsMessage("system", "ERROR: Connection timed out");
+        assertFalse(msg.isNetworkError());
+
+        msg.setNetworkError(true);
+        assertTrue(msg.isNetworkError());
+    }
 }

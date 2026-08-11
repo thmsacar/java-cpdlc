@@ -18,6 +18,8 @@ public class AcarsMessage {
     private boolean isRead = false;
     /** Flag indicating if the message was sent by this aircraft client. */
     private boolean isOutgoing = false;
+    /** Flag indicating if this system error message was caused by an I/O network failure. */
+    private boolean isNetworkError = false;
 
     public AcarsMessage(String from, String type, String to, String message, boolean isOutgoing) {
         this.timestamp = new Date();
@@ -36,6 +38,14 @@ public class AcarsMessage {
     /** Constructs a system message. */
     public AcarsMessage(String type, String message) {
         this("system", type, "system", message, false);
+    }
+
+    public boolean isNetworkError() {
+        return isNetworkError;
+    }
+
+    public void setNetworkError(boolean isNetworkError) {
+        this.isNetworkError = isNetworkError;
     }
 
     public boolean isOutgoing() {

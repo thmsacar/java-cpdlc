@@ -164,7 +164,9 @@ public class HoppieAPI {
         try {
             response = pollRequest(callsign);
         } catch (IOException e) {
-            list.add(new AcarsMessage("system", "ERROR: " + e.getMessage()));
+            AcarsMessage sysMsg = new AcarsMessage("system", "ERROR: " + e.getMessage());
+            sysMsg.setNetworkError(true);
+            list.add(sysMsg);
             return list;
         }
 
@@ -255,7 +257,9 @@ public class HoppieAPI {
                 return new AcarsMessage("system", parseErrorMessage(response));
             }
         } catch (IOException e) {
-            return new AcarsMessage("system", "ERROR: "+e.getMessage());
+            AcarsMessage sysMsg = new AcarsMessage("system", "ERROR: "+e.getMessage());
+            sysMsg.setNetworkError(true);
+            return sysMsg;
         }
     }
 
@@ -271,7 +275,9 @@ public class HoppieAPI {
                 return new AcarsMessage("system", parseErrorMessage(response));
             }
         } catch (IOException e) {
-            return new AcarsMessage("system", "ERROR: "+e.getMessage());
+            AcarsMessage sysMsg = new AcarsMessage("system", "ERROR: "+e.getMessage());
+            sysMsg.setNetworkError(true);
+            return sysMsg;
         }
 
     }
@@ -292,7 +298,9 @@ public class HoppieAPI {
                 return new AcarsMessage("system", "ERROR: " + response.body());
             }
         } catch (IOException e) {
-            return new AcarsMessage("system", "ERROR: " + e.getMessage());
+            AcarsMessage sysMsg = new AcarsMessage("system", "ERROR: " + e.getMessage());
+            sysMsg.setNetworkError(true);
+            return sysMsg;
         }
     }
 
