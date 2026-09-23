@@ -1,11 +1,12 @@
-## Version 1.3.1 Release Notes
+## Version 2.0.0 Release Notes
 
-### Bugfix
-- **GUI Newline Character Filtering**: Filtered out carriage return (`\r`) and line feed (`\n`) characters in GUI input text fields, text areas, and clipboard paste to prevent illegal character errors on the Hoppie network, while ignoring Enter key presses in message text areas.
+### New CDU Style GUI
+Version 2.0.0 introduces a brand new CDU style interface as the primary GUI.
 
-### Features & Improvements
-- **Dynamic Burst Polling Mode**: Accelerated background message polling from 40s to 20s for 40s following outgoing requests, reports, telexes, logons, or PDC requests for faster ATC reply retrieval.
-- **Safe URL Parameter Encoding**: Robust query parameter encoding for Hoppie network requests, safely escaping special characters (`&`, `#`, `%`, `+`) while preserving `/data2/` header slashes and replacing ASCII `/` in user text with Unicode division slashes (`∕`).
-- **CPDLC Response Requirement Enum**: Created `CpdlcResponseType` enum (`WILCO_UNABLE`, `AFFIRM_NEGATIVE`, `ROGER`, `NONE`) and refactored UI detail rendering with clean `switch` statements.
+### Dual UI Availability
+With version 2.0.0, the application now offers two interfaces:
+- **CDU Style GUI (Default)**: The new CDU style interface is now the primary UI and will be actively maintained for future updates and bug fixes.
+- **Legacy GUI**: The legacy interface remains available for users who prefer the classic layout. Please note that future maintenance will focus on the CDU style interface, so bugs may occur in the legacy GUI.
 
-**Full Changelog**: https://github.com/thmsacar/java-cpdlc/compare/v1.3.0...v1.3.1
+**Full Changelog**: https://github.com/thmsacar/java-cpdlc/compare/v1.3.1...v2.0.0
+
