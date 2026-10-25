@@ -22,10 +22,20 @@ public class MessageListPage implements CduPage {
         return "CPDLC MESSAGES";
     }
 
+    public int getPageOffset() {
+        return pageOffset;
+    }
+
     @Override
     public void renderPage(CduDisplay display, CduController controller) {
         List<AcarsMessage> msgs = controller.getService() != null ? controller.getService().getMessages() : List.of();
         int total = msgs.size();
+        if (total > 0 && pageOffset >= total) {
+            pageOffset = ((total - 1) / 4) * 4;
+        } else if (total == 0) {
+            pageOffset = 0;
+        }
+
         int totalPages = Math.max(1, (int) Math.ceil(total / 4.0));
         int currentPageNum = (pageOffset / 4) + 1;
 
@@ -50,9 +60,16 @@ public class MessageListPage implements CduPage {
             }
         }
 
+        // Line 4 (LSK 5R): PREV button on top of NEXT (visible on all pages except first one)
+        display.setLine(4, 
+            new LineItem("", "", DisplayColor.WHITE),
+            pageOffset > 0 ? new LineItem("", "<PREV", DisplayColor.WHITE) : new LineItem("", "", DisplayColor.WHITE)
+        );
+
+        // Line 5 (LSK 6L/6R): <MENU on left; NEXT> button on right (visible on all pages except last one)
         display.setLine(5, 
             new LineItem("", "<MENU", DisplayColor.WHITE),
-            new LineItem("", total > pageOffset + 4 ? "NEXT>" : "<PREV", DisplayColor.WHITE)
+            total > pageOffset + 4 ? new LineItem("", "NEXT>", DisplayColor.WHITE) : new LineItem("", "", DisplayColor.WHITE)
         );
     }
 
@@ -70,11 +87,13 @@ public class MessageListPage implements CduPage {
                 controller.showPage(new MainMenuPage());
             }
         } else {
-            if (index == 5) { // LSK 6R: NEXT> or PREV>
+            if (index == 4) { // LSK 5R: <PREV (on top of NEXT)
+                if (pageOffset > 0) {
+                    pageOffset = Math.max(0, pageOffset - 4);
+                }
+            } else if (index == 5) { // LSK 6R: NEXT>
                 if (pageOffset + 4 < msgs.size()) {
                     pageOffset += 4;
-                } else {
-                    pageOffset = 0;
                 }
             }
         }

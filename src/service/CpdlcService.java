@@ -459,7 +459,7 @@ public class CpdlcService {
     }
 
     /** Processes, stores, and notifies listeners of a new message. */
-    private void addMessage(AcarsMessage message) {
+    public void addMessage(AcarsMessage message) {
         if (message == null) return;
         if (message.getFrom() != null && message.getFrom().equalsIgnoreCase(callsign)) {
             message.setRead(true);

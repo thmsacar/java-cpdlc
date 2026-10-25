@@ -95,6 +95,20 @@ public class CduDisplay extends JPanel {
         }
     }
 
+    public LineItem getLeftLine(int index) {
+        if (index >= 0 && index < 6) {
+            return leftLines[index];
+        }
+        return null;
+    }
+
+    public LineItem getRightLine(int index) {
+        if (index >= 0 && index < 6) {
+            return rightLines[index];
+        }
+        return null;
+    }
+
     public void clearLines() {
         for (int i = 0; i < 6; i++) {
             leftLines[i] = new LineItem();
