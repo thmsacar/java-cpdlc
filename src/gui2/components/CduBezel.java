@@ -2,12 +2,16 @@ package gui2.components;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.font.TextAttribute;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.ConvolveOp;
+import java.awt.image.Kernel;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * Cockpit Bezel container with realistic matte bead-blasted / powder-coated avionics metal texture,
@@ -282,8 +286,9 @@ public class CduBezel extends JPanel {
         drawScrew(g2, 12, h - 24);
         drawScrew(g2, w - 24, h - 24);
 
-        // 4. Header Title (Aligned to top-left corner of screen container at X=66 with industrial engraved 3D effect)
-        drawEngravedHeader(g2, 66, 20, "JAVA CPDLC v" + service.UpdateChecker.CURRENT_VERSION);
+        // 4. Header Title (Aligned to top-left corner of screen container at X=66)
+        drawStickerHeader(g2, 66, 20, "JAVA CPDLC v" + service.UpdateChecker.CURRENT_VERSION);
+
 
         // Position MSG annunciator right edge at w - 66 and status LED to its right
         int msgX = w - 110;
@@ -473,33 +478,97 @@ public class CduBezel extends JPanel {
         g2.draw(new Arc2D.Double(x - 1.5, y - 1.5, size + 3, size + 3, 285, 115, Arc2D.OPEN));
     }
 
-    private void drawEngravedHeader(Graphics2D g2, int x, int y, String text) {
-        Font font = new Font("Arial", Font.BOLD, 12);
-        try {
-            Map<TextAttribute, Object> attributes = new HashMap<>(font.getAttributes());
-            attributes.put(TextAttribute.TRACKING, 0.05);
-            font = font.deriveFont(attributes);
-        } catch (Throwable ignored) {}
 
-        g2.setFont(font);
+    private TexturePaint cleanPaperPaint;
+
+    private void drawStickerHeader(Graphics2D g2, int x, int y, String text) {
+        AffineTransform oldTransform = g2.getTransform();
+        Composite oldComposite = g2.getComposite();
+        Paint oldPaint = g2.getPaint();
+        Stroke oldStroke = g2.getStroke();
+        Font oldFont = g2.getFont();
+
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
-        GlyphVector gv = font.createGlyphVector(g2.getFontRenderContext(), text);
-        Shape textShape = gv.getOutline(x, y);
+        Font font = new Font("Arial", Font.BOLD, 10);
+        try {
+            Map<TextAttribute, Object> attributes = new HashMap<>(font.getAttributes());
+            attributes.put(TextAttribute.TRACKING, 0.04f);
+            font = font.deriveFont(attributes);
+        } catch (Throwable ignored) {}
+        g2.setFont(font);
 
-        Shape lightShadow = gv.getOutline(x + 0.5f, y + 0.8f);
-        g2.setColor(new Color(255, 255, 255, 65));
-        g2.fill(lightShadow);
+        FontRenderContext frc = g2.getFontRenderContext();
+        GlyphVector gv = font.createGlyphVector(frc, text);
+        Rectangle2D textBounds = gv.getVisualBounds();
 
-        Shape darkShadow = gv.getOutline(x - 0.3f, y - 0.6f);
-        g2.setColor(new Color(10, 12, 16, 180));
-        g2.fill(darkShadow);
+        float padX = 6.2f;
+        float padY = 3.2f;
+        float textX = x + 2.0f;
+        float textY = y - 1.0f;
 
-        g2.setColor(new Color(20, 23, 28));
-        g2.fill(textShape);
-        g2.setPaint(getNoiseTexture());
-        g2.fill(textShape);
+        float rectX = (float) (textX + textBounds.getX() - padX);
+        float rectY = (float) (textY + textBounds.getY() - padY);
+        float rectW = (float) (textBounds.getWidth() + padX * 2.0f);
+        float rectH = (float) (textBounds.getHeight() + padY * 2.0f);
+        // Rounded die-cut sticker corners
+        float corner = 3.2f;
+
+        double centerX = rectX + rectW / 2.0;
+        double centerY = rectY + rectH / 2.0;
+        g2.rotate(Math.toRadians(-0.45), centerX, centerY);
+
+        // 1. Inset bottom-only shadow (inset horizontally so it never pokes out around the edges as a black line)
+        g2.setColor(new Color(0, 0, 0, 38));
+        g2.fill(new RoundRectangle2D.Float(rectX + 1.0f, rectY + 0.75f, rectW - 2.0f, rectH, corner, corner));
+
+        // 2. Single-pass matte paper fill (no setClip used, preserving pure anti-aliased cream edges)
+        RoundRectangle2D stickerShape = new RoundRectangle2D.Float(rectX, rectY, rectW, rectH, corner, corner);
+        g2.setPaint(getCleanPaperTexture());
+        g2.fill(stickerShape);
+
+        // 3. Subtle bright paper-cut edge thickness (prevents dark anti-aliasing fringe against the dark panel)
+        g2.setColor(new Color(246, 243, 235, 130));
+        g2.setStroke(new BasicStroke(0.45f));
+        g2.draw(new RoundRectangle2D.Float(rectX + 0.2f, rectY + 0.2f, rectW - 0.4f, rectH - 0.4f, corner, corner));
+
+        // 4. Crisp matte charcoal ink
+        g2.setColor(new Color(38, 37, 36, 238));
+        g2.drawGlyphVector(gv, textX, textY);
+
+        g2.setFont(oldFont);
+        g2.setStroke(oldStroke);
+        g2.setPaint(oldPaint);
+        g2.setComposite(oldComposite);
+        g2.setTransform(oldTransform);
+    }
+
+    // Generates a clean, uniform matte cream paper surface without blotchy lines
+    private TexturePaint getCleanPaperTexture() {
+        if (cleanPaperPaint != null) {
+            return cleanPaperPaint;
+        }
+
+        int size = 64;
+        BufferedImage tex = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Random rng = new Random(2026L);
+
+        for (int y = 0; y < size; y++) {
+            for (int x = 0; x < size; x++) {
+                // Very subtle +-2 tonal variation for smooth matte sticker paper
+                int grain = rng.nextInt(5) - 2;
+                int r = 238 + grain;
+                int g = 234 + grain;
+                int b = 223 + grain;
+                tex.setRGB(x, y, (255 << 24) | (r << 16) | (g << 8) | b);
+            }
+        }
+
+        cleanPaperPaint = new TexturePaint(tex, new Rectangle2D.Float(0, 0, size, size));
+        return cleanPaperPaint;
     }
 
     private void drawScrew(Graphics2D g2, int x, int y) {
