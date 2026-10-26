@@ -6,15 +6,12 @@ import java.awt.font.GlyphVector;
 import java.awt.font.TextAttribute;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.ConvolveOp;
-import java.awt.image.Kernel;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Cockpit Bezel container with realistic matte powder-coated metal texture, hardware screws,
- * MSG annunciator, and mini round status LED (OFF when disconnected, GREEN when connected, RED on error).
+ * Cockpit Bezel container with realistic matte bead-blasted / powder-coated avionics metal texture,
+ * 3D recessed display shroud, hardware screws, MSG annunciator, and mini round status LED.
  */
 public class CduBezel extends JPanel {
 
@@ -25,13 +22,15 @@ public class CduBezel extends JPanel {
     private Timer msgBlinkTimer;
     private boolean msgBlinkState = false;
     private TexturePaint noiseTexture;
+    private TexturePaint avionicsTexture;
+
     protected final CduScrewButton closeScrewButton;
     protected final CduScrewButton minimizeScrewButton;
     private boolean screwButtonsEnabled = false;
 
     public CduBezel() {
         setOpaque(true);
-        setBackground(new Color(30, 33, 38));
+        setBackground(new Color(38, 42, 49));
         setLayout(null);
 
         closeScrewButton = new CduScrewButton(CduScrewButton.Mode.CLOSE);
@@ -86,7 +85,7 @@ public class CduBezel extends JPanel {
             java.util.Random r = new java.util.Random(12345);
             for (int y = 0; y < tileSize; y++) {
                 for (int x = 0; x < tileSize; x++) {
-                    int alpha = 5 + r.nextInt(12); // subtle 2-4% noise alpha
+                    int alpha = 5 + r.nextInt(10);
                     int val = r.nextBoolean() ? 255 : 0;
                     img.setRGB(x, y, (alpha << 24) | (val << 16) | (val << 8) | val);
                 }
@@ -94,6 +93,141 @@ public class CduBezel extends JPanel {
             noiseTexture = new TexturePaint(img, new Rectangle(0, 0, tileSize, tileSize));
         }
         return noiseTexture;
+    }
+
+    /**
+     * Generates a seamless 256x256 matte powder-coated / bead-blasted avionics metal texture.
+     * Uses a multi-scale heightmap with top-left directional bump shading so micro-grains
+     * catch subtle light and shadow.
+     */
+    private TexturePaint getAvionicsTexture() {
+        if (avionicsTexture == null) {
+            final int size = 256;
+            final int mask = size - 1;
+            java.util.Random rnd = new java.util.Random(420737);
+
+            float[][] raw = new float[size][size];
+            for (int y = 0; y < size; y++) {
+                for (int x = 0; x < size; x++) {
+                    raw[y][x] = (rnd.nextFloat() - 0.5f) * 2f;
+                }
+            }
+
+            // 1. Fine bead-blast micro-grain
+            float[][] fine = new float[size][size];
+            for (int y = 0; y < size; y++) {
+                for (int x = 0; x < size; x++) {
+                    float sum = raw[y][x] * 0.36f
+                            + (raw[y][(x - 1) & mask] + raw[y][(x + 1) & mask]
+                            + raw[(y - 1) & mask][x] + raw[(y + 1) & mask][x]) * 0.11f
+                            + (raw[(y - 1) & mask][(x - 1) & mask] + raw[(y - 1) & mask][(x + 1) & mask]
+                            + raw[(y + 1) & mask][(x - 1) & mask] + raw[(y + 1) & mask][(x + 1) & mask]) * 0.05f;
+                    fine[y][x] = sum;
+                }
+            }
+
+            // 2. Medium powder-coat stipple
+            float[][] med = new float[size][size];
+            for (int y = 0; y < size; y++) {
+                for (int x = 0; x < size; x++) {
+                    float s = 0f;
+                    for (int dy = -2; dy <= 2; dy++) {
+                        for (int dx = -2; dx <= 2; dx++) {
+                            s += fine[(y + dy) & mask][(x + dx) & mask];
+                        }
+                    }
+                    med[y][x] = s / 25f;
+                }
+            }
+
+            // 3. Broad subtle cast-metal mottling
+            float[][] broad = new float[size][size];
+            for (int y = 0; y < size; y++) {
+                for (int x = 0; x < size; x++) {
+                    float s = 0f;
+                    for (int dy = -6; dy <= 6; dy += 2) {
+                        for (int dx = -6; dx <= 6; dx += 2) {
+                            s += med[(y + dy) & mask][(x + dx) & mask];
+                        }
+                    }
+                    broad[y][x] = s / 49f;
+                }
+            }
+
+            float[][] heightMap = new float[size][size];
+            for (int y = 0; y < size; y++) {
+                for (int x = 0; x < size; x++) {
+                    heightMap[y][x] = fine[y][x] * 0.52f + med[y][x] * 0.95f + broad[y][x] * 1.15f;
+                }
+            }
+
+            // Base color matches original slate blue-gray cockpit tone: RGB(42, 46, 54)
+            final float baseR = 42f;
+            final float baseG = 46f;
+            final float baseB = 54f;
+
+            BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
+            for (int y = 0; y < size; y++) {
+                for (int x = 0; x < size; x++) {
+                    float dx = heightMap[y][x] - heightMap[y][(x - 1) & mask];
+                    float dy = heightMap[y][x] - heightMap[(y - 1) & mask][x];
+                    float bump = (dx * 0.65f + dy * 0.85f) * 2.4f;
+
+                    float cavity = heightMap[y][x] * 0.9f + broad[y][x] * 1.6f;
+                    float delta = bump + cavity;
+
+                    int r = clampRgb(Math.round(baseR + delta * 0.92f));
+                    int g = clampRgb(Math.round(baseG + delta * 0.96f));
+                    int b = clampRgb(Math.round(baseB + delta * 1.05f));
+
+                    img.setRGB(x, y, (r << 16) | (g << 8) | b);
+                }
+            }
+
+            avionicsTexture = new TexturePaint(img, new Rectangle(0, 0, size, size));
+        }
+        return avionicsTexture;
+    }
+
+    private static int clampRgb(int val) {
+        return Math.max(0, Math.min(255, val));
+    }
+
+    /**
+     * Paints the base bead-blasted texture + cockpit overhead lighting onto the current clip/shape.
+     * Used by both paintComponent and the inward bezel shroud so their lighting matches seamlessly.
+     */
+    private void paintAvionicsSurface(Graphics2D g2, Shape target, int w, int h) {
+        g2.setPaint(getAvionicsTexture());
+        g2.fill(target);
+
+        LinearGradientPaint verticalFalloff = new LinearGradientPaint(
+                new Point2D.Float(0, 0),
+                new Point2D.Float(0, h),
+                new float[]{0.0f, 0.22f, 0.72f, 1.0f},
+                new Color[]{
+                        new Color(195, 210, 230, 18),
+                        new Color(180, 195, 215, 5),
+                        new Color(10, 12, 16, 12),
+                        new Color(8, 10, 14, 42)
+                }
+        );
+        g2.setPaint(verticalFalloff);
+        g2.fill(target);
+
+        float sheenRadius = Math.max(w, h) * 0.95f;
+        RadialGradientPaint overheadSheen = new RadialGradientPaint(
+                new Point2D.Float(w * 0.46f, -h * 0.08f),
+                sheenRadius,
+                new float[]{0.0f, 0.45f, 1.0f},
+                new Color[]{
+                        new Color(210, 222, 240, 20),
+                        new Color(180, 195, 215, 6),
+                        new Color(12, 14, 18, 28)
+                }
+        );
+        g2.setPaint(overheadSheen);
+        g2.fill(target);
     }
 
     public void setMsgLed(boolean active) {
@@ -118,6 +252,7 @@ public class CduBezel extends JPanel {
         }
         repaint();
     }
+
     public void setExecLed(boolean active) { this.execLed = active; repaint(); }
     public void setFailLed(boolean active) { this.failLed = active; repaint(); }
 
@@ -126,51 +261,31 @@ public class CduBezel extends JPanel {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
         int w = getWidth();
         int h = getHeight();
 
-        // Fill background solid first to guarantee no white flicker
-        g2.setColor(new Color(25, 28, 32));
-        g2.fillRect(0, 0, w, h);
+        // 1. Matte bead-blasted powder-coat base texture & cockpit lighting
+        paintAvionicsSurface(g2, new Rectangle(0, 0, w, h), w, h);
 
-        // Cockpit matte base tone
-        g2.setColor(new Color(42, 46, 54));
-        g2.fillRect(0, 0, w, h);
+        // 2. Machined 3D outer panel chamfer & edge lighting
+        drawOuterMachinedBevel(g2, w, h);
 
-        // Soft ambient overhead cockpit light gradient (radial from top-center)
-        RadialGradientPaint ambientLight = new RadialGradientPaint(
-            new Point2D.Float(w / 2.0f, 0.0f),
-            h * 1.3f,
-            new float[]{0.0f, 1.0f},
-            new Color[]{new Color(56, 61, 70), new Color(30, 33, 38)}
-        );
-        g2.setPaint(ambientLight);
-        g2.fillRect(0, 0, w, h);
-
-        // Procedural powder-coated metal grain texture overlay
-        g2.setPaint(getNoiseTexture());
-        g2.fillRect(0, 0, w, h);
-
-        // Outer metallic rim bevel
-        g2.setColor(new Color(80, 85, 95, 100));
-        g2.drawRect(1, 1, w - 3, h - 3);
-        g2.setColor(new Color(15, 17, 20));
-        g2.setStroke(new BasicStroke(1.5f));
-        g2.drawRect(0, 0, w - 1, h - 1);
-
-        // Hardware screws in corners (top-left screw is drawn as static screw when windowless screw buttons are disabled)
+        // 3. Recessed counterbore pockets & hardware screws in corners
         if (!screwButtonsEnabled) {
             drawScrew(g2, 12, 12);
+        } else {
+            drawScrewCounterbore(g2, 12, 12, 12);
         }
         drawScrew(g2, w - 24, 12);
         drawScrew(g2, 12, h - 24);
         drawScrew(g2, w - 24, h - 24);
 
-        // Header Title (Aligned to top-left corner of screen container at X=66 with industrial engraved 3D effect)
+        // 4. Header Title (Aligned to top-left corner of screen container at X=66 with industrial engraved 3D effect)
         drawEngravedHeader(g2, 66, 20, "JAVA CPDLC v" + service.UpdateChecker.CURRENT_VERSION);
 
-        // Position MSG annunciator right edge at w - 66 (aligned with black screen right edge) and status LED to its right
+        // Position MSG annunciator right edge at w - 66 and status LED to its right
         int msgX = w - 110;
         int ledX = w - 54;
 
@@ -188,14 +303,175 @@ public class CduBezel extends JPanel {
             Color highlightColor = new Color(200, 255, 210);
             drawRoundLed(g2, ledX, 9, 12, coreColor, highlightColor, true);
         } else {
-            // Off state: dark dim socket
             drawRoundLed(g2, ledX, 9, 12, new Color(35, 38, 44), new Color(55, 58, 64), false);
         }
 
         g2.dispose();
     }
 
+    @Override
+    protected void paintChildren(Graphics g) {
+        super.paintChildren(g);
 
+        // Replace the flat light-gray border of the screen container with a smooth inward 3D recessed bezel
+        Rectangle screenBounds = findScreenBounds();
+        if (screenBounds != null) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            drawScreenRecessBevelInward(g2, screenBounds, getWidth(), getHeight());
+            g2.dispose();
+        }
+    }
+
+    private Rectangle findScreenBounds() {
+        for (Component c : getComponents()) {
+            if (c != closeScrewButton && c != minimizeScrewButton && c.isVisible()) {
+                if (c.getWidth() > 140 && c.getHeight() > 120) {
+                    return c.getBounds();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Draws a realistic, smooth 3D molded/machined bezel recess INWARD over the entire 7px
+     * light-gray border of the screen component. Matches the natural shading of the first version
+     * without harsh miter lines or leftover inner gray stripes.
+     */
+    private void drawScreenRecessBevelInward(Graphics2D g2, Rectangle r, int panelW, int panelH) {
+        int ox = r.x;
+        int oy = r.y;
+        int ow = r.width;
+        int oh = r.height;
+        int bevel = 7; // Covers the entire 7px light-gray border right up to the black screen
+
+        int ix = ox + bevel;
+        int iy = oy + bevel;
+        int iw = ow - bevel * 2;
+        int ih = oh - bevel * 2;
+
+        // 1. Overwrite the entire flat light-gray border with the exact same lit avionics metal surface
+        Area frameArea = new Area(new Rectangle(ox, oy, ow, oh));
+        frameArea.subtract(new Area(new Rectangle(ix, iy, iw, ih)));
+        paintAvionicsSurface(g2, frameArea, panelW, panelH);
+
+        // 2. Soft outer ridge transition along the top edge (subtle bend shadow, not a sharp black line)
+        g2.setStroke(new BasicStroke(1f));
+        g2.setColor(new Color(12, 14, 18, 80));
+        g2.drawLine(ox, oy, ox + ow - 1, oy);
+
+        // 3. Top sloped wall (faces down, away from overhead light -> smooth cast shadow)
+        Polygon topWall = new Polygon(
+                new int[]{ox, ox + ow, ix + iw, ix},
+                new int[]{oy, oy, iy, iy}, 4);
+        g2.setPaint(new LinearGradientPaint(
+                new Point2D.Float(0, oy), new Point2D.Float(0, iy),
+                new float[]{0.0f, 0.35f, 1.0f},
+                new Color[]{
+                        new Color(14, 16, 20, 165),
+                        new Color(18, 21, 26, 140),
+                        new Color(22, 25, 30, 105)
+                }));
+        g2.fill(topWall);
+
+        // 4. Left sloped wall (angled shadow, matching the first version's natural falloff)
+        Polygon leftWall = new Polygon(
+                new int[]{ox, ix, ix, ox},
+                new int[]{oy, iy, iy + ih, oy + oh}, 4);
+        g2.setPaint(new LinearGradientPaint(
+                new Point2D.Float(ox, 0), new Point2D.Float(ix, 0),
+                new float[]{0.0f, 0.45f, 1.0f},
+                new Color[]{
+                        new Color(20, 23, 28, 135),
+                        new Color(24, 27, 33, 110),
+                        new Color(28, 31, 37, 85)
+                }));
+        g2.fill(leftWall);
+
+        // 5. Right sloped wall (catches subtle side bounce light toward the outer ridge)
+        Polygon rightWall = new Polygon(
+                new int[]{ix + iw, ox + ow, ox + ow, ix + iw},
+                new int[]{iy, oy, oy + oh, iy + ih}, 4);
+        g2.setPaint(new LinearGradientPaint(
+                new Point2D.Float(ix + iw, 0), new Point2D.Float(ox + ow, 0),
+                new float[]{0.0f, 0.55f, 1.0f},
+                new Color[]{
+                        new Color(28, 32, 38, 85),
+                        new Color(44, 49, 58, 85),
+                        new Color(58, 64, 74, 90)
+                }));
+        g2.fill(rightWall);
+
+        // 6. Bottom sloped wall (faces up toward overhead cockpit light -> natural metallic sheen)
+        Polygon bottomWall = new Polygon(
+                new int[]{ix, ix + iw, ox + ow, ox},
+                new int[]{iy + ih, iy + ih, oy + oh, oy + oh}, 4);
+        g2.setPaint(new LinearGradientPaint(
+                new Point2D.Float(0, iy + ih), new Point2D.Float(0, oy + oh),
+                new float[]{0.0f, 0.5f, 1.0f},
+                new Color[]{
+                        new Color(52, 58, 67, 90),
+                        new Color(70, 77, 89, 108),
+                        new Color(86, 94, 108, 120)
+                }));
+        g2.fill(bottomWall);
+
+        // 7. Subtle bottom ridge catch-light where bottom slope meets the flat front panel
+        g2.setColor(new Color(115, 125, 140, 72));
+        g2.drawLine(ox + 1, oy + oh - 1, ox + ow - 2, oy + oh - 1);
+
+        // 8. Soft recessed depth shadow where the metal shroud meets the black screen glass
+        g2.setColor(new Color(8, 10, 14, 150));
+        g2.drawRect(ix, iy, iw - 1, ih - 1);
+        g2.setColor(new Color(0, 0, 0, 75));
+        g2.drawLine(ix + 1, iy + 1, ix + iw - 2, iy + 1);
+        g2.drawLine(ix + 1, iy + 2, ix + 1, iy + ih - 2);
+    }
+
+    /**
+     * Draws a realistic 3D machined chamfer along the outer perimeter of the unit.
+     */
+    private void drawOuterMachinedBevel(Graphics2D g2, int w, int h) {
+        g2.setStroke(new BasicStroke(1f));
+        g2.setColor(new Color(110, 120, 135, 85));
+        g2.drawLine(2, 1, w - 3, 1);
+        g2.setColor(new Color(85, 92, 105, 38));
+        g2.drawLine(2, 2, w - 3, 2);
+
+        g2.setColor(new Color(90, 98, 112, 55));
+        g2.drawLine(1, 2, 1, h - 3);
+
+        g2.setColor(new Color(14, 16, 20, 155));
+        g2.drawLine(2, h - 2, w - 2, h - 2);
+        g2.drawLine(w - 2, 2, w - 2, h - 2);
+
+        g2.setColor(new Color(18, 20, 25, 80));
+        g2.drawLine(3, h - 3, w - 3, h - 3);
+        g2.drawLine(w - 3, 3, w - 3, h - 3);
+
+        g2.setColor(new Color(12, 14, 17));
+        g2.drawRect(0, 0, w - 1, h - 1);
+    }
+
+    private void drawScrewCounterbore(Graphics2D g2, int x, int y, int size) {
+        float cx = x + size / 2.0f;
+        float cy = y + size / 2.0f;
+        float r = size * 0.78f;
+
+        RadialGradientPaint pocket = new RadialGradientPaint(
+                new Point2D.Float(cx, cy), r,
+                new float[]{0.0f, 0.65f, 1.0f},
+                new Color[]{new Color(10, 12, 15, 95), new Color(14, 16, 20, 45), new Color(0, 0, 0, 0)}
+        );
+        g2.setPaint(pocket);
+        g2.fill(new Ellipse2D.Float(cx - r, cy - r, r * 2, r * 2));
+
+        g2.setStroke(new BasicStroke(0.9f));
+        g2.setColor(new Color(95, 103, 116, 55));
+        g2.draw(new Arc2D.Double(x - 1.5, y - 1.5, size + 3, size + 3, 285, 115, Arc2D.OPEN));
+    }
 
     private void drawEngravedHeader(Graphics2D g2, int x, int y, String text) {
         Font font = new Font("Arial", Font.BOLD, 12);
@@ -212,22 +488,18 @@ public class CduBezel extends JPanel {
         GlyphVector gv = font.createGlyphVector(g2.getFontRenderContext(), text);
         Shape textShape = gv.getOutline(x, y);
 
-        // 1. Light text-shadow offset down and right (light catch on lower/right cut edge)
         Shape lightShadow = gv.getOutline(x + 0.5f, y + 0.8f);
-        g2.setColor(new Color(255, 255, 255, 75));
+        g2.setColor(new Color(255, 255, 255, 65));
         g2.fill(lightShadow);
 
-        // 2. Dark top/inner shadow offset up (groove depth shadow)
         Shape darkShadow = gv.getOutline(x - 0.3f, y - 0.6f);
         g2.setColor(new Color(10, 12, 16, 180));
         g2.fill(darkShadow);
 
-        // 3. Dark engraved text body (carved directly into background material with matching noise grain)
-        g2.setColor(new Color(18, 21, 26));
+        g2.setColor(new Color(20, 23, 28));
         g2.fill(textShape);
         g2.setPaint(getNoiseTexture());
         g2.fill(textShape);
-
     }
 
     private void drawScrew(Graphics2D g2, int x, int y) {
@@ -235,20 +507,20 @@ public class CduBezel extends JPanel {
         float centerX = x + size / 2.0f;
         float centerY = y + size / 2.0f;
 
-        // 1. Recessed countersink shadow — subtle, screw is flush-mounted not raised
-        g2.setColor(new Color(0, 0, 0, 70));
+        drawScrewCounterbore(g2, x, y, size);
+
+        g2.setColor(new Color(0, 0, 0, 85));
         g2.fill(new Ellipse2D.Double(x - 1, y - 0.5, size + 2, size + 2));
 
-        // 2. Screw head base — flat matte dark metal, very gentle gradient (not glossy)
-        Point2D headCenter = new Point2D.Float(centerX - size * 0.12f, centerY - size * 0.12f);
+        Point2D headCenter = new Point2D.Float(centerX - size * 0.14f, centerY - size * 0.14f);
         RadialGradientPaint headMetal = new RadialGradientPaint(
                 headCenter,
                 size * 0.8f,
                 new float[]{0.0f, 0.6f, 1.0f},
                 new Color[]{
-                        new Color(58, 60, 66),
-                        new Color(38, 40, 45),
-                        new Color(24, 25, 29)
+                        new Color(62, 66, 74),
+                        new Color(40, 43, 49),
+                        new Color(24, 26, 30)
                 }
         );
         Ellipse2D.Double screwHead = new Ellipse2D.Double(x, y, size, size);
@@ -257,217 +529,36 @@ public class CduBezel extends JPanel {
         g2.setPaint(getNoiseTexture());
         g2.fill(screwHead);
 
-        // 3. Thin machined rim ring — subtle lighter edge, not a glossy arc
         g2.setStroke(new BasicStroke(0.8f));
-        g2.setColor(new Color(95, 98, 105, 160));
+        g2.setColor(new Color(95, 98, 105, 150));
         g2.draw(new Ellipse2D.Double(x + 0.5, y + 0.5, size - 1, size - 1));
 
-        // 4. Outer contact edge — dark seam where head meets panel
         g2.setColor(new Color(12, 13, 15));
         g2.draw(new Ellipse2D.Double(x, y, size, size));
 
-        // 5. Faint top-left highlight sliver — just enough to read as slightly domed, not glossy
-        g2.setColor(new Color(120, 123, 130, 60));
+        g2.setColor(new Color(130, 135, 145, 65));
         g2.setStroke(new BasicStroke(1.0f));
         g2.draw(new Arc2D.Double(x + 1.3, y + 1.3, size - 2.6, size - 2.6, 110, 70, Arc2D.OPEN));
 
-        // 6. Phillips slot — dark, low-contrast grooves (subtle, not carved-looking)
         double cx = centerX, cy = centerY;
         double armLen = size * 0.27;
         double armHalfW = 0.7;
 
         g2.setStroke(new BasicStroke(1.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
-        g2.setColor(new Color(10, 11, 13, 190));
+        g2.setColor(new Color(10, 11, 13, 195));
         g2.draw(new Line2D.Double(cx - armLen, cy + armHalfW, cx + armLen, cy + armHalfW));
         g2.draw(new Line2D.Double(cx + armHalfW, cy - armLen, cx + armHalfW, cy + armLen));
 
-        g2.setColor(new Color(70, 72, 78, 90));
+        g2.setColor(new Color(75, 78, 86, 95));
         g2.draw(new Line2D.Double(cx - armLen, cy - armHalfW, cx + armLen, cy - armHalfW));
         g2.draw(new Line2D.Double(cx - armHalfW, cy - armLen, cx - armHalfW, cy + armLen));
 
-        // 7. Tiny center pit
-        g2.setColor(new Color(6, 6, 8, 150));
+        g2.setColor(new Color(6, 6, 8, 160));
         g2.fill(new Ellipse2D.Double(cx - 1.0, cy - 1.0, 2.0, 2.0));
     }
 
-//    private void drawAnnunciator(Graphics2D g2, int x, int y, String label, boolean isLit) {
-//        int width = 44;
-//        int height = 15;
-//        int cornerRadius = 4;
-//
-//        RoundRectangle2D.Float socketOuter = new RoundRectangle2D.Float(
-//                x - 1, y - 1, width + 2, height + 2, cornerRadius + 2, cornerRadius + 2);
-//        RoundRectangle2D.Float lensShape = new RoundRectangle2D.Float(
-//                x, y, width, height, cornerRadius, cornerRadius);
-//
-//        // 0. Cast shadow onto panel — grounds the whole unit, offset down-right from an
-//        //    implied upper-left light source
-//        g2.setColor(new Color(0, 0, 0, 70));
-//        g2.fill(new RoundRectangle2D.Float(x, y + 1.5f, width, height, cornerRadius + 2, cornerRadius + 2));
-//
-//        // 1. Dark bezel socket cut into polymer panel
-//        g2.setColor(new Color(15, 17, 21));
-//        g2.fill(socketOuter);
-//
-//        // 2. Socket rim — diagonal bevel stroke on the ACTUAL shape (not a mismatched arc),
-//        //    lit edge upper-left, shadow edge lower-right
-//        g2.setStroke(new BasicStroke(1.0f));
-//        g2.setPaint(new GradientPaint(x - 1, y - 1, new Color(80, 85, 95),
-//                x + width, y + height, new Color(30, 32, 38)));
-//        g2.draw(socketOuter);
-//
-//        // 4. Lens fill
-//        if (isLit) {
-//            // a. Base saturated amber gradient — deeper/richer than a generic yellow-orange,
-//            //    darker at bottom to imply the light source sits toward the top of the lens
-//            LinearGradientPaint lensGradient = new LinearGradientPaint(
-//                    new Point2D.Float(x, y), new Point2D.Float(x, y + height),
-//                    new float[]{0.0f, 0.45f, 1.0f},
-//                    new Color[]{new Color(255, 200, 60), new Color(250, 150, 10), new Color(195, 105, 0)}
-//            );
-//            g2.setPaint(lensGradient);
-//            g2.fill(lensShape);
-//
-//            // b. Bright hotspot — real lit lenses have a concentrated bright core near the
-//            //    filament/LED, not a uniform gradient across the whole surface
-//            Shape oldClip = g2.getClip();
-//            g2.clip(lensShape);
-//            RadialGradientPaint hotspot = new RadialGradientPaint(
-//                    new Point2D.Float(x + width * 0.4f, y + height * 0.4f),
-//                    width * 0.5f,
-//                    new float[]{0.0f, 0.5f, 1.0f},
-//                    new Color[]{new Color(255, 235, 150, 200), new Color(255, 180, 40, 90), new Color(255, 150, 0, 0)}
-//            );
-//            g2.setPaint(hotspot);
-//            g2.fill(lensShape);
-//
-//            // c. Diagonal glass glare streak — angled and tapered, clipped to the lens,
-//            //    reads as a curved glossy surface instead of a flat highlight bar
-//            Graphics2D gg = (Graphics2D) g2.create();
-//            gg.rotate(Math.toRadians(-20), x + width * 0.3, y + height * 0.3);
-//            GradientPaint glare = new GradientPaint(
-//                    x, y - 2, new Color(255, 255, 235, 150),
-//                    x, y + 5, new Color(255, 255, 235, 0));
-//            gg.setPaint(glare);
-//            gg.fill(new RoundRectangle2D.Float(x - 2, y - 3, width * 0.55f, 5f, 3, 3));
-//            gg.dispose();
-//            g2.setClip(oldClip);
-//
-//            // d. Bottom inner shadow — the far edge of a curved lens naturally falls off
-//            //    darker; without this the bottom edge looks pasted-on
-//            g2.setPaint(new GradientPaint(
-//                    x, y + height * 0.6f, new Color(0, 0, 0, 0),
-//                    x, y + height, new Color(0, 0, 0, 90)));
-//            Shape oldClip2 = g2.getClip();
-//            g2.clip(lensShape);
-//            g2.fill(new Rectangle2D.Float(x, y + height * 0.6f, width, height * 0.4f));
-//            g2.setClip(oldClip2);
-//
-//        } else {
-//            // a. Base lens material — off-center radial, molded translucent plastic look
-//            RadialGradientPaint lensBase = new RadialGradientPaint(
-//                    new Point2D.Float(x + width * 0.35f, y + height * 0.3f), width * 0.9f,
-//                    new float[]{0.0f, 0.6f, 1.0f},
-//                    new Color[]{new Color(54, 40, 14), new Color(38, 28, 10), new Color(24, 17, 6)}
-//            );
-//            g2.setPaint(lensBase);
-//            g2.fill(lensShape);
-//
-//            Shape oldClip = g2.getClip();
-//            g2.clip(lensShape);
-//
-//            // b. Bulb/filament silhouette faintly visible behind unlit translucent lens
-//            g2.setColor(new Color(12, 9, 3, 90));
-//            g2.fill(new Ellipse2D.Double(x + width * 0.5 - 5, y + height * 0.5 - 2.5, 10, 5));
-//
-//            // c. Faint ambient glass glare — same angled streak as the lit state, far dimmer,
-//            //    so the material reads as the same physical object in both states
-//            Graphics2D gg = (Graphics2D) g2.create();
-//            gg.rotate(Math.toRadians(-20), x + width * 0.3, y + height * 0.3);
-//            GradientPaint glare = new GradientPaint(
-//                    x, y - 2, new Color(160, 140, 90, 40),
-//                    x, y + 5, new Color(160, 140, 90, 0));
-//            gg.setPaint(glare);
-//            gg.fill(new RoundRectangle2D.Float(x - 2, y - 3, width * 0.55f, 5f, 3, 3));
-//            gg.dispose();
-//
-//            g2.setClip(oldClip);
-//
-//            // d. Beveled edge on the real shape — light upper-left, shadow lower-right
-//            g2.setStroke(new BasicStroke(0.8f));
-//            g2.setPaint(new GradientPaint(x, y, new Color(75, 58, 26, 140),
-//                    x + width, y + height, new Color(6, 5, 2, 160)));
-//            g2.draw(lensShape);
-//        }
-//
-//        // 5. Text
-//        Font font = new Font("Arial", Font.BOLD, 10);
-//        try {
-//            Map<TextAttribute, Object> attributes = new HashMap<>(font.getAttributes());
-//            attributes.put(TextAttribute.TRACKING, 0.06);
-//            font = font.deriveFont(attributes);
-//        } catch (Throwable ignored) {}
-//
-//        g2.setFont(font);
-//        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-//
-//        FontMetrics fm = g2.getFontMetrics(font);
-//        int strX = x + (width - fm.stringWidth(label)) / 2;
-//        int strY = y + ((height - fm.getHeight()) / 2) + fm.getAscent();
-//
-//        if (isLit) {
-//            float centerX = strX + fm.stringWidth(label) / 2.0f;
-//            float centerY = strY - (fm.getAscent() / 2.0f);
-//            RadialGradientPaint textDiffusion = new RadialGradientPaint(
-//                    new Point2D.Float(centerX, centerY), 20.0f,
-//                    new float[]{0.0f, 0.45f, 1.0f},
-//                    new Color[]{new Color(255, 240, 160, 190), new Color(255, 180, 30, 100), new Color(255, 130, 0, 0)}
-//            );
-//            g2.setPaint(textDiffusion);
-//            g2.fillRoundRect(x + 4, y + 1, width - 8, height - 2, 4, 4);
-//
-//            // Dark saturated text — reads as sitting under a bright translucent lens
-//            g2.setColor(new Color(70, 45, 10));
-//            g2.drawString(label, strX, strY);
-//        } else {
-//            g2.setColor(new Color(90, 68, 24));
-//            g2.drawString(label, strX, strY);
-//        }
-//
-//// 3. Ambient light spill — now an actual soft elliptical bloom, not a clipped rounded-rect
-//        if (isLit) {
-//            float centerX = x + width / 2.0f;
-//            float centerY = y + height / 2.0f;
-//
-//            float glowRx = width * 0.85f;   // horizontal reach
-//            float glowRy = height * 2.0f;   // vertical reach — taller since box is thin
-//
-//            AffineTransform glowTransform = new AffineTransform();
-//            glowTransform.translate(centerX, centerY);
-//            glowTransform.scale(glowRx, glowRy);
-//
-//            RadialGradientPaint boxGlow = new RadialGradientPaint(
-//                    new Point2D.Float(0, 0), 1.0f, new Point2D.Float(0, 0),
-//                    new float[]{0.00f, 0.35f, 0.55f, 0.75f, 1.00f},
-//                    new Color[]{
-//                            new Color(255, 150, 0, 95), new Color(255, 150, 0, 72),
-//                            new Color(255, 150, 0, 40), new Color(255, 150, 0, 15),
-//                            new Color(255, 150, 0, 0)
-//                    },
-//                    MultipleGradientPaint.CycleMethod.NO_CYCLE,
-//                    MultipleGradientPaint.ColorSpaceType.SRGB, glowTransform
-//            );
-//            g2.setPaint(boxGlow);
-//
-//            // Fill an ellipse sized to match the gradient's actual reach, not a rounded rect
-//            g2.fill(new Ellipse2D.Float(centerX - glowRx, centerY - glowRy,
-//                    glowRx * 2, glowRy * 2));
-//        }
-//    }
-
     private void drawSheen(Graphics2D g, float x, float y, float w, float h, int alpha, Color c) {
-        // Soft dome of reflected light hugging the top edge; no hard outline anywhere
         float rx = w * 0.6f, ry = h * 0.7f;
         AffineTransform t = new AffineTransform();
         t.translate(x + w * 0.35f, y - 1f);
@@ -497,7 +588,6 @@ public class CduBezel extends JPanel {
         RoundRectangle2D.Float socket = new RoundRectangle2D.Float(x - 1, y - 1, width + 2, height + 2, cr + 2, cr + 2);
         RoundRectangle2D.Float lens = new RoundRectangle2D.Float(x, y, width, height, cr, cr);
 
-        // 0. Spill onto the panel (drawn first, behind everything)
         if (isLit) {
             float rx = width * 0.8f, ry = height * 1.9f;
             AffineTransform t = new AffineTransform();
@@ -513,12 +603,10 @@ public class CduBezel extends JPanel {
                     MultipleGradientPaint.ColorSpaceType.SRGB, t));
             g.fill(new Ellipse2D.Float(cx - rx, cy - ry, rx * 2, ry * 2));
         } else {
-            // contact shadow only when unlit
             g.setColor(new Color(0, 0, 0, 70));
             g.fill(new RoundRectangle2D.Float(x, y + 1.5f, width, height, cr + 2, cr + 2));
         }
 
-        // 1. Bezel socket + rim
         g.setColor(new Color(12, 13, 16));
         g.fill(socket);
         g.setStroke(new BasicStroke(1f));
@@ -531,17 +619,14 @@ public class CduBezel extends JPanel {
             g.draw(socket);
         }
 
-        // 2. Lens
         Shape oldClip = g.getClip();
         g.clip(lens);
 
         if (isLit) {
-            // Bright amber, lighter at top, deeper at bottom
             g.setPaint(new GradientPaint(x, y, new Color(255, 198, 62),
                     x, y + height, new Color(255, 142, 6)));
             g.fill(lens);
 
-            // Warm hotspot behind the LED
             AffineTransform t = new AffineTransform();
             t.translate(cx, cy - 0.5f);
             t.scale(width * 0.5f, height * 0.9f);
@@ -554,33 +639,27 @@ public class CduBezel extends JPanel {
                     MultipleGradientPaint.ColorSpaceType.SRGB, t));
             g.fill(lens);
 
-            // Gentle edge falloff (thin, soft, not an outline)
             g.setStroke(new BasicStroke(2.4f));
             g.setColor(new Color(200, 90, 0, 55));
             g.draw(lens);
 
-            // Faint glass sheen
             drawSheen(g, x, y, width, height, 28, new Color(255, 250, 225));
         } else {
             g.setPaint(new GradientPaint(x, y, new Color(74, 50, 14),
                     x + width * 0.4f, y + height, new Color(38, 26, 8)));
             g.fill(lens);
 
-            // Faint warm bulb/LED visible through the unlit lens (~6% alpha)
             g.setColor(new Color(255, 170, 60, 16));
             g.fill(new Ellipse2D.Float(cx - 7f, cy - 3f, 14f, 6f));
 
-            // Recessed look
             g.setStroke(new BasicStroke(1.2f));
             g.setColor(new Color(0, 0, 0, 110));
             g.draw(new Line2D.Float(x + cr, y + 0.6f, x + width - cr, y + 0.6f));
             g.setColor(new Color(255, 200, 110, 28));
             g.draw(new Line2D.Float(x + cr, y + height - 0.6f, x + width - cr, y + height - 0.6f));
 
-            // Soft reflected-light sheen across the top
             drawSheen(g, x, y, width, height, 80, new Color(255, 240, 205));
 
-            // Thin edge highlight that fades out at both ends
             g.setStroke(new BasicStroke(0.9f));
             g.setPaint(new LinearGradientPaint(
                     new Point2D.Float(x, 0), new Point2D.Float(x + width, 0),
@@ -591,7 +670,6 @@ public class CduBezel extends JPanel {
         }
         g.setClip(oldClip);
 
-        // 3. Legend (a mask: dark in both states)
         Font font = new Font("Arial", Font.BOLD, 10);
         Map<TextAttribute, Object> attrs = new HashMap<>(font.getAttributes());
         attrs.put(TextAttribute.TRACKING, 0.06);
@@ -618,7 +696,6 @@ public class CduBezel extends JPanel {
         }
         g.setClip(oldClip);
 
-        // 4. Final thin lens edge
         g.setStroke(new BasicStroke(0.8f));
         g.setPaint(isLit ? new Color(150, 70, 0, 110)
                 : new GradientPaint(x, y, new Color(90, 70, 30, 140),
@@ -627,64 +704,6 @@ public class CduBezel extends JPanel {
 
         g.dispose();
     }
-
-//    private void drawRoundLed(Graphics2D g2, int x, int y, int size, Color coreColor, Color highlightColor, boolean isLit) {
-//        float centerX = x + size / 2.0f;
-//        float centerY = y + size / 2.0f;
-//
-//        // 1. Metallic bezel ring — drawn first, as the base
-//        if (!isLit) {
-//            g2.setColor(new Color(15, 17, 20));
-//            g2.fill(new Ellipse2D.Double(x - 1, y - 1, size + 2, size + 2));
-//            g2.setColor(new Color(90, 95, 105));
-//            g2.draw(new Ellipse2D.Double(x - 1, y - 1, size+2, size+2));
-//        }
-//
-//        // 2. Core LED body
-//        g2.setColor(coreColor);
-//        g2.fill(new Ellipse2D.Double(x, y, size, size));
-//
-//        // 3. Glossy specular highlight
-//        g2.setColor(highlightColor);
-//        g2.fill(new Ellipse2D.Double(x + 2, y + 2, size / 3.0, size / 3.0));
-//
-//
-//        // 4. Ambient glow — now drawn ON TOP of the bezel, spilling over it
-//        if (isLit) {
-//            Point2D center = new Point2D.Float(centerX, centerY);
-//
-//            int r = coreColor.getRed();
-//            int g = coreColor.getGreen();
-//            int b = coreColor.getBlue();
-//
-//            float glowRadius = size * 1.5f;
-//
-//            RadialGradientPaint ledGlow = new RadialGradientPaint(
-//                    center,
-//                    glowRadius,
-//                    new float[]{0.00f, 0.35f, 0.55f, 0.75f, 1.00f},
-//                    new Color[]{
-//                            new Color(r, g, b, 90),
-//                            new Color(r, g, b, 70),
-//                            new Color(r, g, b, 40),
-//                            new Color(r, g, b, 15),
-//                            new Color(r, g, b, 0)
-//                    }
-//            );
-//
-//            g2.setPaint(ledGlow);
-//            double glowDiameter = glowRadius * 2.0;
-//            double glowX = centerX - glowRadius;
-//            double glowY = centerY - glowRadius;
-//            g2.fill(new Ellipse2D.Double(glowX, glowY, glowDiameter, glowDiameter));
-//        }
-//
-//
-//    }
-
-// Required imports:
-// import java.awt.*;
-// import java.awt.geom.*;
 
     private static Color mixColor(Color a, Color b, float t) {
         t = Math.max(0f, Math.min(1f, t));
@@ -711,13 +730,11 @@ public class CduBezel extends JPanel {
         Ellipse2D.Float lens = new Ellipse2D.Float(x, y, size, size);
         Ellipse2D.Float socket = new Ellipse2D.Float(x - 1.2f, y - 1.2f, size + 2.4f, size + 2.4f);
 
-        // 0. Contact shadow on the panel (unlit only; lit is dominated by its own glow)
         if (!isLit) {
             g.setColor(new Color(0, 0, 0, 80));
             g.fill(new Ellipse2D.Float(x - 1f, y + 0.4f, size + 2f, size + 2f));
         }
 
-        // 1. Bezel: dark socket + beveled rim (unlit only; when lit the glow swallows it)
         if (!isLit) {
             g.setColor(new Color(12, 13, 16));
             g.fill(socket);
@@ -727,12 +744,10 @@ public class CduBezel extends JPanel {
             g.draw(socket);
         }
 
-        // 2. Lens
         Shape oldClip = g.getClip();
         g.clip(lens);
 
         if (isLit) {
-            // Hot core -> saturated body color -> darker edge (dome-shaped diffuser)
             g.setPaint(new RadialGradientPaint(
                     new Point2D.Float(cx, cy - size * 0.04f), r * 1.08f,
                     new float[]{0f, 0.35f, 0.75f, 1f},
@@ -742,7 +757,6 @@ public class CduBezel extends JPanel {
                             mixColor(coreColor, Color.BLACK, 0.18f)}));
             g.fill(lens);
 
-            // Soft dome sheen across the top (much fainter than when unlit)
             AffineTransform ts = new AffineTransform();
             ts.translate(cx, y + size * 0.2f);
             ts.scale(size * 0.42f, size * 0.26f);
@@ -755,7 +769,6 @@ public class CduBezel extends JPanel {
                     MultipleGradientPaint.ColorSpaceType.SRGB, ts));
             g.fill(lens);
 
-            // Soft specular glint (radial falloff, no hard edge)
             g.setPaint(new RadialGradientPaint(
                     new Point2D.Float(x + size * 0.34f, y + size * 0.30f), Math.max(1f, size * 0.2f),
                     new float[]{0f, 0.5f, 1f},
@@ -764,7 +777,6 @@ public class CduBezel extends JPanel {
             g.fill(lens);
 
         } else {
-            // Dark translucent lens in the LED's own hue, lighter toward the upper-left
             Color body = mixColor(coreColor, Color.BLACK, 0.70f);
             g.setPaint(new RadialGradientPaint(
                     new Point2D.Float(x + size * 0.38f, y + size * 0.32f), r * 1.35f,
@@ -773,7 +785,6 @@ public class CduBezel extends JPanel {
                             mixColor(coreColor, Color.BLACK, 0.88f)}));
             g.fill(lens);
 
-            // Faint LED die / reflector visible through the translucent lens
             g.setPaint(new RadialGradientPaint(
                     new Point2D.Float(cx, cy + size * 0.04f), Math.max(1f, size * 0.26f),
                     new float[]{0f, 1f},
@@ -781,13 +792,11 @@ public class CduBezel extends JPanel {
                             withAlpha(mixColor(coreColor, Color.BLACK, 0.2f), 0)}));
             g.fill(lens);
 
-            // Faint light catching the lower inner edge (light passing through the dome)
             g.setPaint(new GradientPaint(x, y + size * 0.6f,
                     withAlpha(mixColor(coreColor, Color.WHITE, 0.2f), 0),
                     x, y + size, withAlpha(mixColor(coreColor, Color.WHITE, 0.2f), 42)));
             g.fill(new Rectangle2D.Float(x, y + size * 0.6f, size, size * 0.4f));
 
-            // Wide soft sheen across the upper part: reads as glass, not a dot
             AffineTransform ts = new AffineTransform();
             ts.translate(cx - size * 0.05f, y + size * 0.22f);
             ts.scale(size * 0.45f, size * 0.28f);
@@ -800,21 +809,18 @@ public class CduBezel extends JPanel {
                     MultipleGradientPaint.ColorSpaceType.SRGB, ts));
             g.fill(lens);
 
-            // Tiny soft glint, upper-left
             g.setPaint(new RadialGradientPaint(
                     new Point2D.Float(x + size * 0.32f, y + size * 0.28f), Math.max(1f, size * 0.16f),
                     new float[]{0f, 1f},
                     new Color[]{withAlpha(highlightColor, 105), withAlpha(highlightColor, 0)}));
             g.fill(lens);
 
-            // Darker rim where the dome meets the bezel
             g.setStroke(new BasicStroke(Math.max(1.2f, size * 0.12f)));
             g.setColor(new Color(0, 0, 0, 90));
             g.draw(lens);
         }
         g.setClip(oldClip);
 
-        // 3. Thin lens edge (unlit only; a lit emitter has no visible outline)
         if (!isLit) {
             g.setStroke(new BasicStroke(0.7f));
             g.setPaint(new GradientPaint(x, y, new Color(70, 70, 75, 130),
@@ -822,7 +828,6 @@ public class CduBezel extends JPanel {
             g.draw(lens);
         }
 
-        // 4. Ambient glow drawn ON TOP, spilling over the bezel onto the panel
         if (isLit) {
             float glowRadius = size * 1.5f;
             g.setPaint(new RadialGradientPaint(
@@ -834,7 +839,6 @@ public class CduBezel extends JPanel {
             g.fill(new Ellipse2D.Float(cx - glowRadius, cy - glowRadius,
                     glowRadius * 2f, glowRadius * 2f));
 
-            // Tight overexposure right around the bezel edge
             float tight = size * 0.85f;
             g.setPaint(new RadialGradientPaint(
                     new Point2D.Float(cx, cy), tight,
@@ -847,5 +851,4 @@ public class CduBezel extends JPanel {
 
         g.dispose();
     }
-
 }
