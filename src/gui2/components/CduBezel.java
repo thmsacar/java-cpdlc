@@ -291,232 +291,561 @@ public class CduBezel extends JPanel {
         g2.fill(new Ellipse2D.Double(cx - 1.0, cy - 1.0, 2.0, 2.0));
     }
 
+//    private void drawAnnunciator(Graphics2D g2, int x, int y, String label, boolean isLit) {
+//        int width = 44;
+//        int height = 15;
+//        int cornerRadius = 4;
+//
+//        RoundRectangle2D.Float socketOuter = new RoundRectangle2D.Float(
+//                x - 1, y - 1, width + 2, height + 2, cornerRadius + 2, cornerRadius + 2);
+//        RoundRectangle2D.Float lensShape = new RoundRectangle2D.Float(
+//                x, y, width, height, cornerRadius, cornerRadius);
+//
+//        // 0. Cast shadow onto panel — grounds the whole unit, offset down-right from an
+//        //    implied upper-left light source
+//        g2.setColor(new Color(0, 0, 0, 70));
+//        g2.fill(new RoundRectangle2D.Float(x, y + 1.5f, width, height, cornerRadius + 2, cornerRadius + 2));
+//
+//        // 1. Dark bezel socket cut into polymer panel
+//        g2.setColor(new Color(15, 17, 21));
+//        g2.fill(socketOuter);
+//
+//        // 2. Socket rim — diagonal bevel stroke on the ACTUAL shape (not a mismatched arc),
+//        //    lit edge upper-left, shadow edge lower-right
+//        g2.setStroke(new BasicStroke(1.0f));
+//        g2.setPaint(new GradientPaint(x - 1, y - 1, new Color(80, 85, 95),
+//                x + width, y + height, new Color(30, 32, 38)));
+//        g2.draw(socketOuter);
+//
+//        // 4. Lens fill
+//        if (isLit) {
+//            // a. Base saturated amber gradient — deeper/richer than a generic yellow-orange,
+//            //    darker at bottom to imply the light source sits toward the top of the lens
+//            LinearGradientPaint lensGradient = new LinearGradientPaint(
+//                    new Point2D.Float(x, y), new Point2D.Float(x, y + height),
+//                    new float[]{0.0f, 0.45f, 1.0f},
+//                    new Color[]{new Color(255, 200, 60), new Color(250, 150, 10), new Color(195, 105, 0)}
+//            );
+//            g2.setPaint(lensGradient);
+//            g2.fill(lensShape);
+//
+//            // b. Bright hotspot — real lit lenses have a concentrated bright core near the
+//            //    filament/LED, not a uniform gradient across the whole surface
+//            Shape oldClip = g2.getClip();
+//            g2.clip(lensShape);
+//            RadialGradientPaint hotspot = new RadialGradientPaint(
+//                    new Point2D.Float(x + width * 0.4f, y + height * 0.4f),
+//                    width * 0.5f,
+//                    new float[]{0.0f, 0.5f, 1.0f},
+//                    new Color[]{new Color(255, 235, 150, 200), new Color(255, 180, 40, 90), new Color(255, 150, 0, 0)}
+//            );
+//            g2.setPaint(hotspot);
+//            g2.fill(lensShape);
+//
+//            // c. Diagonal glass glare streak — angled and tapered, clipped to the lens,
+//            //    reads as a curved glossy surface instead of a flat highlight bar
+//            Graphics2D gg = (Graphics2D) g2.create();
+//            gg.rotate(Math.toRadians(-20), x + width * 0.3, y + height * 0.3);
+//            GradientPaint glare = new GradientPaint(
+//                    x, y - 2, new Color(255, 255, 235, 150),
+//                    x, y + 5, new Color(255, 255, 235, 0));
+//            gg.setPaint(glare);
+//            gg.fill(new RoundRectangle2D.Float(x - 2, y - 3, width * 0.55f, 5f, 3, 3));
+//            gg.dispose();
+//            g2.setClip(oldClip);
+//
+//            // d. Bottom inner shadow — the far edge of a curved lens naturally falls off
+//            //    darker; without this the bottom edge looks pasted-on
+//            g2.setPaint(new GradientPaint(
+//                    x, y + height * 0.6f, new Color(0, 0, 0, 0),
+//                    x, y + height, new Color(0, 0, 0, 90)));
+//            Shape oldClip2 = g2.getClip();
+//            g2.clip(lensShape);
+//            g2.fill(new Rectangle2D.Float(x, y + height * 0.6f, width, height * 0.4f));
+//            g2.setClip(oldClip2);
+//
+//        } else {
+//            // a. Base lens material — off-center radial, molded translucent plastic look
+//            RadialGradientPaint lensBase = new RadialGradientPaint(
+//                    new Point2D.Float(x + width * 0.35f, y + height * 0.3f), width * 0.9f,
+//                    new float[]{0.0f, 0.6f, 1.0f},
+//                    new Color[]{new Color(54, 40, 14), new Color(38, 28, 10), new Color(24, 17, 6)}
+//            );
+//            g2.setPaint(lensBase);
+//            g2.fill(lensShape);
+//
+//            Shape oldClip = g2.getClip();
+//            g2.clip(lensShape);
+//
+//            // b. Bulb/filament silhouette faintly visible behind unlit translucent lens
+//            g2.setColor(new Color(12, 9, 3, 90));
+//            g2.fill(new Ellipse2D.Double(x + width * 0.5 - 5, y + height * 0.5 - 2.5, 10, 5));
+//
+//            // c. Faint ambient glass glare — same angled streak as the lit state, far dimmer,
+//            //    so the material reads as the same physical object in both states
+//            Graphics2D gg = (Graphics2D) g2.create();
+//            gg.rotate(Math.toRadians(-20), x + width * 0.3, y + height * 0.3);
+//            GradientPaint glare = new GradientPaint(
+//                    x, y - 2, new Color(160, 140, 90, 40),
+//                    x, y + 5, new Color(160, 140, 90, 0));
+//            gg.setPaint(glare);
+//            gg.fill(new RoundRectangle2D.Float(x - 2, y - 3, width * 0.55f, 5f, 3, 3));
+//            gg.dispose();
+//
+//            g2.setClip(oldClip);
+//
+//            // d. Beveled edge on the real shape — light upper-left, shadow lower-right
+//            g2.setStroke(new BasicStroke(0.8f));
+//            g2.setPaint(new GradientPaint(x, y, new Color(75, 58, 26, 140),
+//                    x + width, y + height, new Color(6, 5, 2, 160)));
+//            g2.draw(lensShape);
+//        }
+//
+//        // 5. Text
+//        Font font = new Font("Arial", Font.BOLD, 10);
+//        try {
+//            Map<TextAttribute, Object> attributes = new HashMap<>(font.getAttributes());
+//            attributes.put(TextAttribute.TRACKING, 0.06);
+//            font = font.deriveFont(attributes);
+//        } catch (Throwable ignored) {}
+//
+//        g2.setFont(font);
+//        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+//
+//        FontMetrics fm = g2.getFontMetrics(font);
+//        int strX = x + (width - fm.stringWidth(label)) / 2;
+//        int strY = y + ((height - fm.getHeight()) / 2) + fm.getAscent();
+//
+//        if (isLit) {
+//            float centerX = strX + fm.stringWidth(label) / 2.0f;
+//            float centerY = strY - (fm.getAscent() / 2.0f);
+//            RadialGradientPaint textDiffusion = new RadialGradientPaint(
+//                    new Point2D.Float(centerX, centerY), 20.0f,
+//                    new float[]{0.0f, 0.45f, 1.0f},
+//                    new Color[]{new Color(255, 240, 160, 190), new Color(255, 180, 30, 100), new Color(255, 130, 0, 0)}
+//            );
+//            g2.setPaint(textDiffusion);
+//            g2.fillRoundRect(x + 4, y + 1, width - 8, height - 2, 4, 4);
+//
+//            // Dark saturated text — reads as sitting under a bright translucent lens
+//            g2.setColor(new Color(70, 45, 10));
+//            g2.drawString(label, strX, strY);
+//        } else {
+//            g2.setColor(new Color(90, 68, 24));
+//            g2.drawString(label, strX, strY);
+//        }
+//
+//// 3. Ambient light spill — now an actual soft elliptical bloom, not a clipped rounded-rect
+//        if (isLit) {
+//            float centerX = x + width / 2.0f;
+//            float centerY = y + height / 2.0f;
+//
+//            float glowRx = width * 0.85f;   // horizontal reach
+//            float glowRy = height * 2.0f;   // vertical reach — taller since box is thin
+//
+//            AffineTransform glowTransform = new AffineTransform();
+//            glowTransform.translate(centerX, centerY);
+//            glowTransform.scale(glowRx, glowRy);
+//
+//            RadialGradientPaint boxGlow = new RadialGradientPaint(
+//                    new Point2D.Float(0, 0), 1.0f, new Point2D.Float(0, 0),
+//                    new float[]{0.00f, 0.35f, 0.55f, 0.75f, 1.00f},
+//                    new Color[]{
+//                            new Color(255, 150, 0, 95), new Color(255, 150, 0, 72),
+//                            new Color(255, 150, 0, 40), new Color(255, 150, 0, 15),
+//                            new Color(255, 150, 0, 0)
+//                    },
+//                    MultipleGradientPaint.CycleMethod.NO_CYCLE,
+//                    MultipleGradientPaint.ColorSpaceType.SRGB, glowTransform
+//            );
+//            g2.setPaint(boxGlow);
+//
+//            // Fill an ellipse sized to match the gradient's actual reach, not a rounded rect
+//            g2.fill(new Ellipse2D.Float(centerX - glowRx, centerY - glowRy,
+//                    glowRx * 2, glowRy * 2));
+//        }
+//    }
+
+    private void drawSheen(Graphics2D g, float x, float y, float w, float h, int alpha, Color c) {
+        // Soft dome of reflected light hugging the top edge; no hard outline anywhere
+        float rx = w * 0.6f, ry = h * 0.7f;
+        AffineTransform t = new AffineTransform();
+        t.translate(x + w * 0.35f, y - 1f);
+        t.scale(rx, ry);
+        g.setPaint(new RadialGradientPaint(
+                new Point2D.Float(0, 0), 1f, new Point2D.Float(0, 0),
+                new float[]{0f, 0.5f, 1f},
+                new Color[]{new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha),
+                        new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha / 3),
+                        new Color(c.getRed(), c.getGreen(), c.getBlue(), 0)},
+                MultipleGradientPaint.CycleMethod.NO_CYCLE,
+                MultipleGradientPaint.ColorSpaceType.SRGB, t));
+        g.fill(new Rectangle2D.Float(x, y, w, h));
+    }
+
     private void drawAnnunciator(Graphics2D g2, int x, int y, String label, boolean isLit) {
-        int width = 44;
-        int height = 15;
-        int cornerRadius = 4;
+        final int width = 44, height = 15, cr = 4;
 
-        RoundRectangle2D.Float socketOuter = new RoundRectangle2D.Float(
-                x - 1, y - 1, width + 2, height + 2, cornerRadius + 2, cornerRadius + 2);
-        RoundRectangle2D.Float lensShape = new RoundRectangle2D.Float(
-                x, y, width, height, cornerRadius, cornerRadius);
+        Graphics2D g = (Graphics2D) g2.create();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 
-        // 0. Cast shadow onto panel — grounds the whole unit, offset down-right from an
-        //    implied upper-left light source
-        g2.setColor(new Color(0, 0, 0, 70));
-        g2.fill(new RoundRectangle2D.Float(x, y + 1.5f, width, height, cornerRadius + 2, cornerRadius + 2));
+        float cx = x + width / 2f, cy = y + height / 2f;
+        RoundRectangle2D.Float socket = new RoundRectangle2D.Float(x - 1, y - 1, width + 2, height + 2, cr + 2, cr + 2);
+        RoundRectangle2D.Float lens = new RoundRectangle2D.Float(x, y, width, height, cr, cr);
 
-        // 1. Dark bezel socket cut into polymer panel
-        g2.setColor(new Color(15, 17, 21));
-        g2.fill(socketOuter);
-
-        // 2. Socket rim — diagonal bevel stroke on the ACTUAL shape (not a mismatched arc),
-        //    lit edge upper-left, shadow edge lower-right
-        g2.setStroke(new BasicStroke(1.0f));
-        g2.setPaint(new GradientPaint(x - 1, y - 1, new Color(80, 85, 95),
-                x + width, y + height, new Color(30, 32, 38)));
-        g2.draw(socketOuter);
-
-        // 4. Lens fill
+        // 0. Spill onto the panel (drawn first, behind everything)
         if (isLit) {
-            // a. Base saturated amber gradient — deeper/richer than a generic yellow-orange,
-            //    darker at bottom to imply the light source sits toward the top of the lens
-            LinearGradientPaint lensGradient = new LinearGradientPaint(
-                    new Point2D.Float(x, y), new Point2D.Float(x, y + height),
-                    new float[]{0.0f, 0.45f, 1.0f},
-                    new Color[]{new Color(255, 200, 60), new Color(250, 150, 10), new Color(195, 105, 0)}
-            );
-            g2.setPaint(lensGradient);
-            g2.fill(lensShape);
-
-            // b. Bright hotspot — real lit lenses have a concentrated bright core near the
-            //    filament/LED, not a uniform gradient across the whole surface
-            Shape oldClip = g2.getClip();
-            g2.clip(lensShape);
-            RadialGradientPaint hotspot = new RadialGradientPaint(
-                    new Point2D.Float(x + width * 0.4f, y + height * 0.4f),
-                    width * 0.5f,
-                    new float[]{0.0f, 0.5f, 1.0f},
-                    new Color[]{new Color(255, 235, 150, 200), new Color(255, 180, 40, 90), new Color(255, 150, 0, 0)}
-            );
-            g2.setPaint(hotspot);
-            g2.fill(lensShape);
-
-            // c. Diagonal glass glare streak — angled and tapered, clipped to the lens,
-            //    reads as a curved glossy surface instead of a flat highlight bar
-            Graphics2D gg = (Graphics2D) g2.create();
-            gg.rotate(Math.toRadians(-20), x + width * 0.3, y + height * 0.3);
-            GradientPaint glare = new GradientPaint(
-                    x, y - 2, new Color(255, 255, 235, 150),
-                    x, y + 5, new Color(255, 255, 235, 0));
-            gg.setPaint(glare);
-            gg.fill(new RoundRectangle2D.Float(x - 2, y - 3, width * 0.55f, 5f, 3, 3));
-            gg.dispose();
-            g2.setClip(oldClip);
-
-            // d. Bottom inner shadow — the far edge of a curved lens naturally falls off
-            //    darker; without this the bottom edge looks pasted-on
-            g2.setPaint(new GradientPaint(
-                    x, y + height * 0.6f, new Color(0, 0, 0, 0),
-                    x, y + height, new Color(0, 0, 0, 90)));
-            Shape oldClip2 = g2.getClip();
-            g2.clip(lensShape);
-            g2.fill(new Rectangle2D.Float(x, y + height * 0.6f, width, height * 0.4f));
-            g2.setClip(oldClip2);
-
-        } else {
-            // a. Base lens material — off-center radial, molded translucent plastic look
-            RadialGradientPaint lensBase = new RadialGradientPaint(
-                    new Point2D.Float(x + width * 0.35f, y + height * 0.3f), width * 0.9f,
-                    new float[]{0.0f, 0.6f, 1.0f},
-                    new Color[]{new Color(54, 40, 14), new Color(38, 28, 10), new Color(24, 17, 6)}
-            );
-            g2.setPaint(lensBase);
-            g2.fill(lensShape);
-
-            Shape oldClip = g2.getClip();
-            g2.clip(lensShape);
-
-            // b. Bulb/filament silhouette faintly visible behind unlit translucent lens
-            g2.setColor(new Color(12, 9, 3, 90));
-            g2.fill(new Ellipse2D.Double(x + width * 0.5 - 5, y + height * 0.5 - 2.5, 10, 5));
-
-            // c. Faint ambient glass glare — same angled streak as the lit state, far dimmer,
-            //    so the material reads as the same physical object in both states
-            Graphics2D gg = (Graphics2D) g2.create();
-            gg.rotate(Math.toRadians(-20), x + width * 0.3, y + height * 0.3);
-            GradientPaint glare = new GradientPaint(
-                    x, y - 2, new Color(160, 140, 90, 40),
-                    x, y + 5, new Color(160, 140, 90, 0));
-            gg.setPaint(glare);
-            gg.fill(new RoundRectangle2D.Float(x - 2, y - 3, width * 0.55f, 5f, 3, 3));
-            gg.dispose();
-
-            g2.setClip(oldClip);
-
-            // d. Beveled edge on the real shape — light upper-left, shadow lower-right
-            g2.setStroke(new BasicStroke(0.8f));
-            g2.setPaint(new GradientPaint(x, y, new Color(75, 58, 26, 140),
-                    x + width, y + height, new Color(6, 5, 2, 160)));
-            g2.draw(lensShape);
-        }
-
-        // 5. Text
-        Font font = new Font("Arial", Font.BOLD, 10);
-        try {
-            Map<TextAttribute, Object> attributes = new HashMap<>(font.getAttributes());
-            attributes.put(TextAttribute.TRACKING, 0.06);
-            font = font.deriveFont(attributes);
-        } catch (Throwable ignored) {}
-
-        g2.setFont(font);
-        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-
-        FontMetrics fm = g2.getFontMetrics(font);
-        int strX = x + (width - fm.stringWidth(label)) / 2;
-        int strY = y + ((height - fm.getHeight()) / 2) + fm.getAscent();
-
-        if (isLit) {
-            float centerX = strX + fm.stringWidth(label) / 2.0f;
-            float centerY = strY - (fm.getAscent() / 2.0f);
-            RadialGradientPaint textDiffusion = new RadialGradientPaint(
-                    new Point2D.Float(centerX, centerY), 20.0f,
-                    new float[]{0.0f, 0.45f, 1.0f},
-                    new Color[]{new Color(255, 240, 160, 190), new Color(255, 180, 30, 100), new Color(255, 130, 0, 0)}
-            );
-            g2.setPaint(textDiffusion);
-            g2.fillRoundRect(x + 4, y + 1, width - 8, height - 2, 4, 4);
-
-            // Dark saturated text — reads as sitting under a bright translucent lens
-            g2.setColor(new Color(70, 45, 10));
-            g2.drawString(label, strX, strY);
-        } else {
-            g2.setColor(new Color(90, 68, 24));
-            g2.drawString(label, strX, strY);
-        }
-
-// 3. Ambient light spill — now an actual soft elliptical bloom, not a clipped rounded-rect
-        if (isLit) {
-            float centerX = x + width / 2.0f;
-            float centerY = y + height / 2.0f;
-
-            float glowRx = width * 0.85f;   // horizontal reach
-            float glowRy = height * 2.0f;   // vertical reach — taller since box is thin
-
-            AffineTransform glowTransform = new AffineTransform();
-            glowTransform.translate(centerX, centerY);
-            glowTransform.scale(glowRx, glowRy);
-
-            RadialGradientPaint boxGlow = new RadialGradientPaint(
-                    new Point2D.Float(0, 0), 1.0f, new Point2D.Float(0, 0),
-                    new float[]{0.00f, 0.35f, 0.55f, 0.75f, 1.00f},
-                    new Color[]{
-                            new Color(255, 150, 0, 95), new Color(255, 150, 0, 72),
-                            new Color(255, 150, 0, 40), new Color(255, 150, 0, 15),
-                            new Color(255, 150, 0, 0)
-                    },
+            float rx = width * 0.8f, ry = height * 1.9f;
+            AffineTransform t = new AffineTransform();
+            t.translate(cx, cy);
+            t.scale(rx, ry);
+            g.setPaint(new RadialGradientPaint(
+                    new Point2D.Float(0, 0), 1f, new Point2D.Float(0, 0),
+                    new float[]{0f, 0.3f, 0.55f, 0.8f, 1f},
+                    new Color[]{new Color(255, 150, 20, 100), new Color(255, 140, 10, 70),
+                            new Color(255, 130, 0, 32), new Color(255, 120, 0, 10),
+                            new Color(255, 120, 0, 0)},
                     MultipleGradientPaint.CycleMethod.NO_CYCLE,
-                    MultipleGradientPaint.ColorSpaceType.SRGB, glowTransform
-            );
-            g2.setPaint(boxGlow);
-
-            // Fill an ellipse sized to match the gradient's actual reach, not a rounded rect
-            g2.fill(new Ellipse2D.Float(centerX - glowRx, centerY - glowRy,
-                    glowRx * 2, glowRy * 2));
+                    MultipleGradientPaint.ColorSpaceType.SRGB, t));
+            g.fill(new Ellipse2D.Float(cx - rx, cy - ry, rx * 2, ry * 2));
+        } else {
+            // contact shadow only when unlit
+            g.setColor(new Color(0, 0, 0, 70));
+            g.fill(new RoundRectangle2D.Float(x, y + 1.5f, width, height, cr + 2, cr + 2));
         }
+
+        // 1. Bezel socket + rim
+        g.setColor(new Color(12, 13, 16));
+        g.fill(socket);
+        g.setStroke(new BasicStroke(1f));
+        g.setPaint(new GradientPaint(x - 1, y - 1, new Color(85, 90, 100),
+                x + width, y + height, new Color(25, 27, 32)));
+        g.draw(socket);
+        if (isLit) {
+            g.setStroke(new BasicStroke(1f));
+            g.setColor(new Color(255, 150, 30, 110));
+            g.draw(socket);
+        }
+
+        // 2. Lens
+        Shape oldClip = g.getClip();
+        g.clip(lens);
+
+        if (isLit) {
+            // Bright amber, lighter at top, deeper at bottom
+            g.setPaint(new GradientPaint(x, y, new Color(255, 198, 62),
+                    x, y + height, new Color(255, 142, 6)));
+            g.fill(lens);
+
+            // Warm hotspot behind the LED
+            AffineTransform t = new AffineTransform();
+            t.translate(cx, cy - 0.5f);
+            t.scale(width * 0.5f, height * 0.9f);
+            g.setPaint(new RadialGradientPaint(
+                    new Point2D.Float(0, 0), 1f, new Point2D.Float(0, 0),
+                    new float[]{0f, 0.45f, 1f},
+                    new Color[]{new Color(255, 245, 185, 235), new Color(255, 215, 105, 110),
+                            new Color(255, 190, 50, 0)},
+                    MultipleGradientPaint.CycleMethod.NO_CYCLE,
+                    MultipleGradientPaint.ColorSpaceType.SRGB, t));
+            g.fill(lens);
+
+            // Gentle edge falloff (thin, soft, not an outline)
+            g.setStroke(new BasicStroke(2.4f));
+            g.setColor(new Color(200, 90, 0, 55));
+            g.draw(lens);
+
+            // Faint glass sheen
+            drawSheen(g, x, y, width, height, 28, new Color(255, 250, 225));
+        } else {
+            g.setPaint(new GradientPaint(x, y, new Color(74, 50, 14),
+                    x + width * 0.4f, y + height, new Color(38, 26, 8)));
+            g.fill(lens);
+
+            // Faint warm bulb/LED visible through the unlit lens (~6% alpha)
+            g.setColor(new Color(255, 170, 60, 16));
+            g.fill(new Ellipse2D.Float(cx - 7f, cy - 3f, 14f, 6f));
+
+            // Recessed look
+            g.setStroke(new BasicStroke(1.2f));
+            g.setColor(new Color(0, 0, 0, 110));
+            g.draw(new Line2D.Float(x + cr, y + 0.6f, x + width - cr, y + 0.6f));
+            g.setColor(new Color(255, 200, 110, 28));
+            g.draw(new Line2D.Float(x + cr, y + height - 0.6f, x + width - cr, y + height - 0.6f));
+
+            // Soft reflected-light sheen across the top
+            drawSheen(g, x, y, width, height, 80, new Color(255, 240, 205));
+
+            // Thin edge highlight that fades out at both ends
+            g.setStroke(new BasicStroke(0.9f));
+            g.setPaint(new LinearGradientPaint(
+                    new Point2D.Float(x, 0), new Point2D.Float(x + width, 0),
+                    new float[]{0f, 0.2f, 0.55f, 1f},
+                    new Color[]{new Color(255, 235, 190, 0), new Color(255, 235, 190, 75),
+                            new Color(255, 235, 190, 35), new Color(255, 235, 190, 0)}));
+            g.draw(new Line2D.Float(x + 2, y + 1.4f, x + width - 2, y + 1.4f));
+        }
+        g.setClip(oldClip);
+
+        // 3. Legend (a mask: dark in both states)
+        Font font = new Font("Arial", Font.BOLD, 10);
+        Map<TextAttribute, Object> attrs = new HashMap<>(font.getAttributes());
+        attrs.put(TextAttribute.TRACKING, 0.06);
+        font = font.deriveFont(attrs);
+
+        GlyphVector gv = font.createGlyphVector(g.getFontRenderContext(), label);
+        Rectangle2D vb = gv.getVisualBounds();
+        float tx = (float) (x + (width - vb.getWidth()) / 2 - vb.getX());
+        float ty = (float) (y + (height - vb.getHeight()) / 2 - vb.getY());
+
+        g.clip(lens);
+        if (isLit) {
+            Shape outline = gv.getOutline(tx, ty);
+            g.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.setColor(new Color(255, 235, 150, 70));
+            g.draw(outline);
+            g.setColor(new Color(105, 48, 0, 240));
+            g.fill(outline);
+        } else {
+            g.setColor(new Color(255, 190, 90, 30));
+            g.drawGlyphVector(gv, tx, ty + 1f);
+            g.setColor(new Color(22, 14, 4, 215));
+            g.drawGlyphVector(gv, tx, ty);
+        }
+        g.setClip(oldClip);
+
+        // 4. Final thin lens edge
+        g.setStroke(new BasicStroke(0.8f));
+        g.setPaint(isLit ? new Color(150, 70, 0, 110)
+                : new GradientPaint(x, y, new Color(90, 70, 30, 140),
+                x + width, y + height, new Color(5, 4, 2, 170)));
+        g.draw(lens);
+
+        g.dispose();
+    }
+
+//    private void drawRoundLed(Graphics2D g2, int x, int y, int size, Color coreColor, Color highlightColor, boolean isLit) {
+//        float centerX = x + size / 2.0f;
+//        float centerY = y + size / 2.0f;
+//
+//        // 1. Metallic bezel ring — drawn first, as the base
+//        if (!isLit) {
+//            g2.setColor(new Color(15, 17, 20));
+//            g2.fill(new Ellipse2D.Double(x - 1, y - 1, size + 2, size + 2));
+//            g2.setColor(new Color(90, 95, 105));
+//            g2.draw(new Ellipse2D.Double(x - 1, y - 1, size+2, size+2));
+//        }
+//
+//        // 2. Core LED body
+//        g2.setColor(coreColor);
+//        g2.fill(new Ellipse2D.Double(x, y, size, size));
+//
+//        // 3. Glossy specular highlight
+//        g2.setColor(highlightColor);
+//        g2.fill(new Ellipse2D.Double(x + 2, y + 2, size / 3.0, size / 3.0));
+//
+//
+//        // 4. Ambient glow — now drawn ON TOP of the bezel, spilling over it
+//        if (isLit) {
+//            Point2D center = new Point2D.Float(centerX, centerY);
+//
+//            int r = coreColor.getRed();
+//            int g = coreColor.getGreen();
+//            int b = coreColor.getBlue();
+//
+//            float glowRadius = size * 1.5f;
+//
+//            RadialGradientPaint ledGlow = new RadialGradientPaint(
+//                    center,
+//                    glowRadius,
+//                    new float[]{0.00f, 0.35f, 0.55f, 0.75f, 1.00f},
+//                    new Color[]{
+//                            new Color(r, g, b, 90),
+//                            new Color(r, g, b, 70),
+//                            new Color(r, g, b, 40),
+//                            new Color(r, g, b, 15),
+//                            new Color(r, g, b, 0)
+//                    }
+//            );
+//
+//            g2.setPaint(ledGlow);
+//            double glowDiameter = glowRadius * 2.0;
+//            double glowX = centerX - glowRadius;
+//            double glowY = centerY - glowRadius;
+//            g2.fill(new Ellipse2D.Double(glowX, glowY, glowDiameter, glowDiameter));
+//        }
+//
+//
+//    }
+
+// Required imports:
+// import java.awt.*;
+// import java.awt.geom.*;
+
+    private static Color mixColor(Color a, Color b, float t) {
+        t = Math.max(0f, Math.min(1f, t));
+        return new Color(
+                Math.round(a.getRed() + (b.getRed() - a.getRed()) * t),
+                Math.round(a.getGreen() + (b.getGreen() - a.getGreen()) * t),
+                Math.round(a.getBlue() + (b.getBlue() - a.getBlue()) * t));
+    }
+
+    private static Color withAlpha(Color c, int alpha) {
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), Math.max(0, Math.min(255, alpha)));
     }
 
     private void drawRoundLed(Graphics2D g2, int x, int y, int size, Color coreColor, Color highlightColor, boolean isLit) {
-        float centerX = x + size / 2.0f;
-        float centerY = y + size / 2.0f;
+        Graphics2D g = (Graphics2D) g2.create();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
-        // 1. Metallic bezel ring — drawn first, as the base
+        final float cx = x + size / 2.0f;
+        final float cy = y + size / 2.0f;
+        final float r = size / 2.0f;
+
+        Ellipse2D.Float lens = new Ellipse2D.Float(x, y, size, size);
+        Ellipse2D.Float socket = new Ellipse2D.Float(x - 1.2f, y - 1.2f, size + 2.4f, size + 2.4f);
+
+        // 0. Contact shadow on the panel (unlit only; lit is dominated by its own glow)
         if (!isLit) {
-            g2.setColor(new Color(15, 17, 20));
-            g2.fill(new Ellipse2D.Double(x - 1, y - 1, size + 2, size + 2));
-            g2.setColor(new Color(90, 95, 105));
-            g2.draw(new Ellipse2D.Double(x - 1, y - 1, size+2, size+2));
+            g.setColor(new Color(0, 0, 0, 80));
+            g.fill(new Ellipse2D.Float(x - 1f, y + 0.4f, size + 2f, size + 2f));
         }
 
-        // 2. Core LED body
-        g2.setColor(coreColor);
-        g2.fill(new Ellipse2D.Double(x, y, size, size));
+        // 1. Bezel: dark socket + beveled rim (unlit only; when lit the glow swallows it)
+        if (!isLit) {
+            g.setColor(new Color(12, 13, 16));
+            g.fill(socket);
+            g.setStroke(new BasicStroke(1f));
+            g.setPaint(new GradientPaint(x - 1, y - 1, new Color(100, 105, 115),
+                    x + size + 1, y + size + 1, new Color(22, 24, 29)));
+            g.draw(socket);
+        }
 
-        // 3. Glossy specular highlight
-        g2.setColor(highlightColor);
-        g2.fill(new Ellipse2D.Double(x + 2, y + 2, size / 3.0, size / 3.0));
+        // 2. Lens
+        Shape oldClip = g.getClip();
+        g.clip(lens);
 
-
-        // 4. Ambient glow — now drawn ON TOP of the bezel, spilling over it
         if (isLit) {
-            Point2D center = new Point2D.Float(centerX, centerY);
+            // Hot core -> saturated body color -> darker edge (dome-shaped diffuser)
+            g.setPaint(new RadialGradientPaint(
+                    new Point2D.Float(cx, cy - size * 0.04f), r * 1.08f,
+                    new float[]{0f, 0.35f, 0.75f, 1f},
+                    new Color[]{mixColor(coreColor, Color.WHITE, 0.72f),
+                            mixColor(coreColor, Color.WHITE, 0.28f),
+                            coreColor,
+                            mixColor(coreColor, Color.BLACK, 0.18f)}));
+            g.fill(lens);
 
-            int r = coreColor.getRed();
-            int g = coreColor.getGreen();
-            int b = coreColor.getBlue();
+            // Soft dome sheen across the top (much fainter than when unlit)
+            AffineTransform ts = new AffineTransform();
+            ts.translate(cx, y + size * 0.2f);
+            ts.scale(size * 0.42f, size * 0.26f);
+            g.setPaint(new RadialGradientPaint(
+                    new Point2D.Float(0, 0), 1f, new Point2D.Float(0, 0),
+                    new float[]{0f, 0.5f, 1f},
+                    new Color[]{withAlpha(highlightColor, 110), withAlpha(highlightColor, 35),
+                            withAlpha(highlightColor, 0)},
+                    MultipleGradientPaint.CycleMethod.NO_CYCLE,
+                    MultipleGradientPaint.ColorSpaceType.SRGB, ts));
+            g.fill(lens);
 
-            float glowRadius = size * 1.5f;
+            // Soft specular glint (radial falloff, no hard edge)
+            g.setPaint(new RadialGradientPaint(
+                    new Point2D.Float(x + size * 0.34f, y + size * 0.30f), Math.max(1f, size * 0.2f),
+                    new float[]{0f, 0.5f, 1f},
+                    new Color[]{withAlpha(highlightColor, 190), withAlpha(highlightColor, 60),
+                            withAlpha(highlightColor, 0)}));
+            g.fill(lens);
 
-            RadialGradientPaint ledGlow = new RadialGradientPaint(
-                    center,
-                    glowRadius,
-                    new float[]{0.00f, 0.35f, 0.55f, 0.75f, 1.00f},
-                    new Color[]{
-                            new Color(r, g, b, 90),
-                            new Color(r, g, b, 70),
-                            new Color(r, g, b, 40),
-                            new Color(r, g, b, 15),
-                            new Color(r, g, b, 0)
-                    }
-            );
+        } else {
+            // Dark translucent lens in the LED's own hue, lighter toward the upper-left
+            Color body = mixColor(coreColor, Color.BLACK, 0.70f);
+            g.setPaint(new RadialGradientPaint(
+                    new Point2D.Float(x + size * 0.38f, y + size * 0.32f), r * 1.35f,
+                    new float[]{0f, 0.55f, 1f},
+                    new Color[]{mixColor(coreColor, Color.BLACK, 0.52f), body,
+                            mixColor(coreColor, Color.BLACK, 0.88f)}));
+            g.fill(lens);
 
-            g2.setPaint(ledGlow);
-            double glowDiameter = glowRadius * 2.0;
-            double glowX = centerX - glowRadius;
-            double glowY = centerY - glowRadius;
-            g2.fill(new Ellipse2D.Double(glowX, glowY, glowDiameter, glowDiameter));
+            // Faint LED die / reflector visible through the translucent lens
+            g.setPaint(new RadialGradientPaint(
+                    new Point2D.Float(cx, cy + size * 0.04f), Math.max(1f, size * 0.26f),
+                    new float[]{0f, 1f},
+                    new Color[]{withAlpha(mixColor(coreColor, Color.BLACK, 0.2f), 55),
+                            withAlpha(mixColor(coreColor, Color.BLACK, 0.2f), 0)}));
+            g.fill(lens);
+
+            // Faint light catching the lower inner edge (light passing through the dome)
+            g.setPaint(new GradientPaint(x, y + size * 0.6f,
+                    withAlpha(mixColor(coreColor, Color.WHITE, 0.2f), 0),
+                    x, y + size, withAlpha(mixColor(coreColor, Color.WHITE, 0.2f), 42)));
+            g.fill(new Rectangle2D.Float(x, y + size * 0.6f, size, size * 0.4f));
+
+            // Wide soft sheen across the upper part: reads as glass, not a dot
+            AffineTransform ts = new AffineTransform();
+            ts.translate(cx - size * 0.05f, y + size * 0.22f);
+            ts.scale(size * 0.45f, size * 0.28f);
+            g.setPaint(new RadialGradientPaint(
+                    new Point2D.Float(0, 0), 1f, new Point2D.Float(0, 0),
+                    new float[]{0f, 0.5f, 1f},
+                    new Color[]{withAlpha(highlightColor, 120), withAlpha(highlightColor, 40),
+                            withAlpha(highlightColor, 0)},
+                    MultipleGradientPaint.CycleMethod.NO_CYCLE,
+                    MultipleGradientPaint.ColorSpaceType.SRGB, ts));
+            g.fill(lens);
+
+            // Tiny soft glint, upper-left
+            g.setPaint(new RadialGradientPaint(
+                    new Point2D.Float(x + size * 0.32f, y + size * 0.28f), Math.max(1f, size * 0.16f),
+                    new float[]{0f, 1f},
+                    new Color[]{withAlpha(highlightColor, 105), withAlpha(highlightColor, 0)}));
+            g.fill(lens);
+
+            // Darker rim where the dome meets the bezel
+            g.setStroke(new BasicStroke(Math.max(1.2f, size * 0.12f)));
+            g.setColor(new Color(0, 0, 0, 90));
+            g.draw(lens);
+        }
+        g.setClip(oldClip);
+
+        // 3. Thin lens edge (unlit only; a lit emitter has no visible outline)
+        if (!isLit) {
+            g.setStroke(new BasicStroke(0.7f));
+            g.setPaint(new GradientPaint(x, y, new Color(70, 70, 75, 130),
+                    x + size, y + size, new Color(0, 0, 0, 170)));
+            g.draw(lens);
         }
 
+        // 4. Ambient glow drawn ON TOP, spilling over the bezel onto the panel
+        if (isLit) {
+            float glowRadius = size * 1.5f;
+            g.setPaint(new RadialGradientPaint(
+                    new Point2D.Float(cx, cy), glowRadius,
+                    new float[]{0.00f, 0.30f, 0.50f, 0.72f, 1.00f},
+                    new Color[]{withAlpha(coreColor, 95), withAlpha(coreColor, 70),
+                            withAlpha(coreColor, 38), withAlpha(coreColor, 14),
+                            withAlpha(coreColor, 0)}));
+            g.fill(new Ellipse2D.Float(cx - glowRadius, cy - glowRadius,
+                    glowRadius * 2f, glowRadius * 2f));
 
+            // Tight overexposure right around the bezel edge
+            float tight = size * 0.85f;
+            g.setPaint(new RadialGradientPaint(
+                    new Point2D.Float(cx, cy), tight,
+                    new float[]{0f, 0.6f, 1f},
+                    new Color[]{withAlpha(mixColor(coreColor, Color.WHITE, 0.35f), 60),
+                            withAlpha(mixColor(coreColor, Color.WHITE, 0.2f), 40),
+                            withAlpha(coreColor, 0)}));
+            g.fill(new Ellipse2D.Float(cx - tight, cy - tight, tight * 2f, tight * 2f));
+        }
+
+        g.dispose();
     }
+
 }
