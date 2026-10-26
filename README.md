@@ -2,7 +2,7 @@
 Java CPDLC is a multi-platform CPDLC Client for HoppieAcars. 
 It is written on Java so you can use it on any platform (Windows/Linux/macOS).
 
-With version 2.0.0, Java CPDLC features a brand new **CDU style GUI** as the default interface. The **legacy GUI** remains available as well. Active development and future bug fixes are focused on the CDU style GUI; the legacy interface will remain available, though bugs may occur.
+With version v2, Java CPDLC features a brand new **CDU style GUI** as the default interface. The **legacy GUI** remains available as well. Active development and future bug fixes are focused on the CDU style GUI; the legacy interface will remain available, though bugs may occur.
 
 <p align="center">
   <img src="src/resources/images/screenshot_new_gui.png" width="70%" alt="Java CPDLC CDU Style Interface"><br>
@@ -37,37 +37,31 @@ The project uses **Maven** for the build process, so no manual library downloads
 2. **Run:** After the build is complete, you can find executable JAR files in the `target/` folder:
    - **CDU Style GUI (Default)**:
      ```bash
-     java -jar target/java-cpdlc-2.0.0.jar
+     java -jar target/java-cpdlc-2.1.0.jar
      ```
    - **Legacy GUI**:
      ```bash
-     java -jar target/java-cpdlc-2.0.0-legacy.jar
+     java -jar target/java-cpdlc-2.1.0-legacy.jar
      ```
    
 ## Usage
 1. Once compiled and run, you should have a login page. You need to put in your callsign and Hoppie ID. Click SAVE button
 2. Thereafter, everything should be pretty straight forward.
 
-- If your callsign is in green color, the connection with Hoppie server has established.
-- If any connection problem occurs your callsign will become red.
-
-### Message Color Coding
-- **Blue**: CPDLC messages
-- **Yellow**: Telex messages
-- **Red**: System messages (Mostly related to Hoppie connection )
+- If the LED on top left is in green color, the connection with Hoppie server has established.
+- If any connection problem occurs the LED will become red.
 
 ### Automatic CPDLC Handover & Logoff
 Incoming ATC handover instructions and logoff messages are processed automatically
 - **Handover**: Automatically requests a logon to the next ATS unit and logs off from the previous station once accepted.
 - **Logoff**: Automatically disconnects from the active ATS unit upon receiving a service termination message.
 
-
+### Message Color Coding in Legacy Version
+- **Blue**: CPDLC messages
+- **Yellow**: Telex messages
+- **Red**: System messages (Mostly related to Hoppie connection )
 
 ## Contribution
-As of now, the code doesn't have javadoc so it's a bit of mess. I will for sure write javadoc and necessary comments to the code. 
+Any pull requests are welcome.
 
-However, any pull requests are still welcome. See below what I am currently working on. 
-
-#### Features to implement
-- Oceanic Clearance implementation
 

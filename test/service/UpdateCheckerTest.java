@@ -22,9 +22,11 @@ public class UpdateCheckerTest {
         assertTrue(UpdateChecker.isNewerVersion("1.1.2", "1.1.3"));
         assertTrue(UpdateChecker.isNewerVersion("1.1.2", "v1.2.0"));
         assertTrue(UpdateChecker.isNewerVersion("1.1.2", "2.0.0"));
+        assertTrue(UpdateChecker.isNewerVersion("2.0.0", "2.1.0"));
         assertTrue(UpdateChecker.isNewerVersion("1.1.2", "1.1.2.1"));
 
         // Equal or older version cases
+        assertFalse(UpdateChecker.isNewerVersion("2.1.0", "2.0.0"));
         assertFalse(UpdateChecker.isNewerVersion("1.1.2", "1.1.2"));
         assertFalse(UpdateChecker.isNewerVersion("1.1.2", "v1.1.2"));
         assertFalse(UpdateChecker.isNewerVersion("1.1.2", "1.1.1"));
