@@ -34,6 +34,10 @@ public class MessageDetailPage implements CduPage {
         return "MESSAGE DETAIL";
     }
 
+    public int getPageOffset() {
+        return pageOffset;
+    }
+
 
     @Override
     public void renderPage(CduDisplay display, CduController controller) {
@@ -116,12 +120,21 @@ public class MessageDetailPage implements CduPage {
             }
         }
 
-        // Line 5: Navigation (<BACK and NEXT>/<PREV)
-        LineItem rightNav = totalPages > 1 ? 
-            new LineItem("", (pageOffset + linesPerPage < totalLines ? "NEXT>" : "<PREV"), DisplayColor.WHITE) :
-            new LineItem("", "", DisplayColor.WHITE);
+        // Line 5: Navigation (LSK 6L: <BACK or <PREV; LSK 6R: NEXT> or BACK>)
+        LineItem leftNav = pageOffset > 0 ? 
+            new LineItem("", "<PREV", DisplayColor.WHITE) : 
+            new LineItem("", "<BACK", DisplayColor.WHITE);
 
-        display.setLine(5, new LineItem("", "<BACK", DisplayColor.WHITE), rightNav);
+        LineItem rightNav;
+        if (pageOffset + linesPerPage < totalLines) {
+            rightNav = new LineItem("", "NEXT>", DisplayColor.WHITE);
+        } else if (totalPages > 1) {
+            rightNav = new LineItem("", "BACK>", DisplayColor.WHITE);
+        } else {
+            rightNav = new LineItem("", "", DisplayColor.WHITE);
+        }
+
+        display.setLine(5, leftNav, rightNav);
     }
 
     private boolean requiresReplyPrompt(CduController controller) {
@@ -160,11 +173,6 @@ public class MessageDetailPage implements CduPage {
     public void onLskPressed(int index, boolean isLeft, String scratchpad, CduController controller) {
         String input = scratchpad != null ? scratchpad.trim().toUpperCase(Locale.ENGLISH) : "";
 
-        if (isLeft && index == 5) { // LSK 6L: <BACK
-            controller.popPage();
-            return;
-        }
-
         boolean hasReplyPrompts = requiresReplyPrompt(controller);
         int linesPerPage = hasReplyPrompts ? 3 : 5;
 
@@ -174,11 +182,20 @@ public class MessageDetailPage implements CduPage {
         int totalLines = lines.size();
         int totalPages = Math.max(1, (int) Math.ceil((double) totalLines / linesPerPage));
 
-        if (!isLeft && index == 5 && totalPages > 1) { // LSK 6R: NEXT> / <PREV
+        if (isLeft && index == 5) { // LSK 6L: <BACK (page 1) or <PREV (page > 1)
+            if (pageOffset > 0) {
+                pageOffset = Math.max(0, pageOffset - linesPerPage);
+            } else {
+                controller.popPage();
+            }
+            return;
+        }
+
+        if (!isLeft && index == 5 && totalPages > 1) { // LSK 6R: NEXT> or BACK>
             if (pageOffset + linesPerPage < totalLines) {
                 pageOffset += linesPerPage;
             } else {
-                pageOffset = 0;
+                controller.popPage();
             }
             return;
         }
